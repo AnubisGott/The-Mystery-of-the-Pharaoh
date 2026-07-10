@@ -376,6 +376,26 @@ func _press_god_key(with_ctrl: bool, with_alt: bool) -> void:
 	Input.parse_input_event(ev)
 
 
+# ------------------------------------------------------------ sound tests
+
+func test_footsteps_fire_while_walking() -> void:
+	_check(player.has_node("FootstepPlayer"), "FootstepPlayer node missing")
+
+	Input.action_press("move_forward")
+	var stepped := false
+	for i in 90:
+		await get_tree().physics_frame
+		if player._last_step_index > 0:
+			stepped = true
+			break
+	Input.action_release("move_forward")
+	_check(stepped, "no footstep triggered while walking")
+
+	for i in 10:
+		await get_tree().physics_frame
+	_check(player._last_step_index == 0, "step counter not reset when standing")
+
+
 # --------------------------------------------------------- monument tests
 
 func test_monument_and_exit_marker() -> void:

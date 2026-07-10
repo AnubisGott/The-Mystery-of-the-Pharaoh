@@ -1,11 +1,24 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://player/player.gd" id="1"]
 [ext_resource type="PackedScene" path="res://models/adventurer.glb" id="2"]
+[ext_resource type="AudioStream" path="res://sounds/footstep_sand_1.wav" id="3"]
+[ext_resource type="AudioStream" path="res://sounds/footstep_sand_2.wav" id="4"]
+[ext_resource type="AudioStream" path="res://sounds/footstep_sand_3.wav" id="5"]
+[ext_resource type="AudioStream" path="res://sounds/footstep_sand_4.wav" id="6"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
 radius = 0.35
 height = 1.8
+
+[sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_steps"]
+random_pitch = 1.15
+random_volume_offset_db = 2.0
+streams_count = 4
+stream_0/stream = ExtResource("3")
+stream_1/stream = ExtResource("4")
+stream_2/stream = ExtResource("5")
+stream_3/stream = ExtResource("6")
 
 [node name="Player" type="CharacterBody3D"]
 script = ExtResource("1")
@@ -22,3 +35,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, 0)
 [node name="Camera3D" type="Camera3D" parent="CameraPivot"]
 transform = Transform3D(1, 0, 0, 0, 0.990268, 0.139173, 0, -0.139173, 0.990268, 0, 0.5, 3.5)
 current = true
+
+[node name="FootstepPlayer" type="AudioStreamPlayer" parent="."]
+stream = SubResource("AudioStreamRandomizer_steps")
+volume_db = -8.0

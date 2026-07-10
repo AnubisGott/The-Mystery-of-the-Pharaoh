@@ -19,11 +19,13 @@ const CAMERA_HEIGHT: float = 2.3
 @onready var _leg_r: Node3D = $Visual/LegR
 @onready var _arm_l: Node3D = $Visual/ArmL
 @onready var _arm_r: Node3D = $Visual/ArmR
+@onready var _footstep_player: AudioStreamPlayer = $FootstepPlayer
 
 var _pitch: float = 0.0
 var _yaw: float = 0.0
 var _is_ducking: bool = false
 var _walk_phase: float = 0.0
+var _last_step_index: int = 0
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 
 
@@ -121,8 +123,15 @@ func _animate_walk(delta: float) -> void:
 		_leg_r.rotation.x = -swing
 		_arm_l.rotation.x = -swing * 0.6
 		_arm_r.rotation.x = swing * 0.6
+
+		# One footfall per half stride, when the leading leg comes down.
+		var step_index := int(_walk_phase / PI)
+		if step_index != _last_step_index:
+			_last_step_index = step_index
+			_footstep_player.play()
 	else:
 		_walk_phase = 0.0
+		_last_step_index = 0
 		var ease_back := minf(10.0 * delta, 1.0)
 		for limb in [_leg_l, _leg_r, _arm_l, _arm_r]:
 			limb.rotation.x = lerp_angle(limb.rotation.x, 0.0, ease_back)
