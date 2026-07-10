@@ -5,7 +5,7 @@ signal player_hit
 const Spear2D := preload("res://hazards/spear_2d.gd")
 
 const SPEAR_SPEED: float = 900.0
-const LOW_HEIGHT_FRACTION: float = 0.78
+const LOW_HEIGHT_FRACTION: float = 0.86
 const HIGH_HEIGHT_FRACTION: float = 0.60
 const HIT_ZONE_HALF_WIDTH: float = 40.0
 const OFFSCREEN_MARGIN: float = 120.0
