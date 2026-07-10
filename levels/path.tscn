@@ -21,10 +21,10 @@ emission_energy_multiplier = 1.2
 
 [sub_resource type="BoxMesh" id="BoxMesh_sand"]
 material = SubResource("StandardMaterial3D_sand")
-size = Vector3(60, 0.25, 60)
+size = Vector3(100, 0.25, 100)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_sand"]
-size = Vector3(60, 0.25, 60)
+size = Vector3(100, 0.25, 100)
 
 [sub_resource type="Curve3D" id="Curve3D_track"]
 
@@ -66,18 +66,18 @@ path_interval = 0.5
 material = SubResource("StandardMaterial3D_path")
 
 [node name="GoalGate" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, -26)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, -41)
 mesh = SubResource("BoxMesh_goal")
 
 [node name="WinZone" type="Area3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, -25.4)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, -40.4)
 script = ExtResource("2")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="WinZone"]
 shape = SubResource("BoxShape3D_goalzone")
 
 [node name="Player" parent="." instance=ExtResource("1")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 19)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 29)
 
 [node name="SpearLayer" type="CanvasLayer" parent="."]
 script = ExtResource("4")

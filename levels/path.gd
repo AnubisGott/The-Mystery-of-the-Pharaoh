@@ -1,11 +1,16 @@
 extends Node3D
 
 const PATH_HALF_WIDTH: float = 1.5
-const START_Z: float = 20.0
-const END_Z: float = -25.0
+const START_Z: float = 30.0
+const END_Z: float = -40.0
 const AMPLITUDE: float = 3.0
 const WAVELENGTH: float = 15.0
 const SAMPLE_STEP: float = 1.0
+
+# The path is straight before/after these, winding in between.
+const WINDING_START_Z: float = 20.0
+const WINDING_END_Z: float = -30.0
+const WINDING_FADE: float = 6.0
 
 const SPEAR_MIN_INTERVAL: float = 1.6
 const SPEAR_MAX_INTERVAL: float = 3.0
@@ -13,7 +18,7 @@ const SPEAR_MAX_INTERVAL: float = 3.0
 # Practice near the start: spears alternate low (jump) and high (duck)
 # in a fixed rhythm. Random spears only begin past the practice zone.
 const PRACTICE_INTERVAL: float = 2.4
-const RANDOM_SPEARS_START_Z: float = 8.0
+const RANDOM_SPEARS_START_Z: float = 18.0
 
 @onready var player: CharacterBody3D = $Player
 @onready var track: Path3D = $Track
@@ -52,9 +57,19 @@ func _build_curve() -> Curve3D:
 	return curve
 
 
-# The path winds left and right like a snake while heading forward.
+# The path winds left and right like a snake in its middle section;
+# the start and the end are straight. A smoothstep envelope fades the
+# winding in and out so there are no kinks.
 func _path_x(z: float) -> float:
-	return AMPLITUDE * sin(TAU * (START_Z - z) / WAVELENGTH)
+	if z >= WINDING_START_Z or z <= WINDING_END_Z:
+		return 0.0
+
+	var fade_in := (WINDING_START_Z - z) / WINDING_FADE
+	var fade_out := (z - WINDING_END_Z) / WINDING_FADE
+	var envelope := clampf(minf(fade_in, fade_out), 0.0, 1.0)
+	envelope = envelope * envelope * (3.0 - 2.0 * envelope)
+
+	return AMPLITUDE * envelope * sin(TAU * (WINDING_START_Z - z) / WAVELENGTH)
 
 
 func _physics_process(_delta: float) -> void:
