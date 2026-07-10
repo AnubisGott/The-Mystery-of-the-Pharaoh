@@ -15,10 +15,15 @@ const CAMERA_HEIGHT: float = 2.3
 @onready var camera_pivot: Node3D = $CameraPivot
 @onready var collision_shape: CollisionShape3D = $CollisionShape3D
 @onready var visual: Node3D = $Visual
+@onready var _leg_l: Node3D = $Visual/LegL
+@onready var _leg_r: Node3D = $Visual/LegR
+@onready var _arm_l: Node3D = $Visual/ArmL
+@onready var _arm_r: Node3D = $Visual/ArmR
 
 var _pitch: float = 0.0
 var _yaw: float = 0.0
 var _is_ducking: bool = false
+var _walk_phase: float = 0.0
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 
 
@@ -69,6 +74,7 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 	camera_pivot.global_position.y = CAMERA_HEIGHT
+	_animate_walk(delta)
 
 
 func is_ducking() -> bool:
@@ -93,12 +99,33 @@ func _set_ducking(ducking: bool) -> void:
 
 	# Shift the body by the height difference in the same frame the
 	# capsule resizes, so the feet stay planted and only the head moves.
+	# The visual's origin is at the feet: keep it on the capsule bottom.
 	if ducking:
 		visual.scale.y = DUCK_HEIGHT / STAND_HEIGHT
+		visual.position.y = -DUCK_HEIGHT / 2.0
 		position.y -= (STAND_HEIGHT - DUCK_HEIGHT) / 2.0
 	else:
 		visual.scale.y = 1.0
+		visual.position.y = -STAND_HEIGHT / 2.0
 		position.y += (STAND_HEIGHT - DUCK_HEIGHT) / 2.0
+
+
+# Simple procedural walk: legs swing opposite each other, arms counter.
+func _animate_walk(delta: float) -> void:
+	var ground_speed := Vector2(velocity.x, velocity.z).length()
+
+	if ground_speed > 0.2 and is_on_floor():
+		_walk_phase += delta * ground_speed * 2.2
+		var swing := sin(_walk_phase) * 0.55
+		_leg_l.rotation.x = swing
+		_leg_r.rotation.x = -swing
+		_arm_l.rotation.x = -swing * 0.6
+		_arm_r.rotation.x = swing * 0.6
+	else:
+		_walk_phase = 0.0
+		var ease_back := minf(10.0 * delta, 1.0)
+		for limb in [_leg_l, _leg_r, _arm_l, _arm_r]:
+			limb.rotation.x = lerp_angle(limb.rotation.x, 0.0, ease_back)
 
 
 func _toggle_pause() -> void:
