@@ -3,7 +3,6 @@ extends Node2D
 var is_high: bool = false
 var direction: float = 1.0
 var speed: float = 900.0
-var checked: bool = false
 
 
 func _physics_process(delta: float) -> void:

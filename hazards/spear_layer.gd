@@ -7,8 +7,12 @@ const Spear2D := preload("res://hazards/spear_2d.gd")
 const SPEAR_SPEED: float = 900.0
 const LOW_HEIGHT_FRACTION: float = 0.86
 const HIGH_HEIGHT_FRACTION: float = 0.60
-const HIT_ZONE_HALF_WIDTH: float = 40.0
 const OFFSCREEN_MARGIN: float = 120.0
+
+# Drawn spear extent around its origin (see spear_2d.gd _draw).
+const SPEAR_TIP: float = 92.0
+const SPEAR_TAIL: float = 80.0
+const CHARACTER_HALF_WIDTH: float = 35.0
 
 @onready var player: CharacterBody3D = $"../Player"
 
@@ -34,20 +38,25 @@ func spawn_spear(is_high: bool, from_left: bool) -> void:
 	add_child(spear)
 
 
-# A spear "hits" when it crosses the character at screen center while
-# the required dodge is not active: low spears need the player airborne,
-# high spears need the player ducking.
+# The dodge must be active for as long as any part of the drawn spear
+# overlaps the character at screen center: low spears need the player
+# airborne, high spears need the player ducking. Jumping after the tip
+# has already reached the character is too late.
 func _physics_process(_delta: float) -> void:
 	var center_x := get_viewport().get_visible_rect().size.x * 0.5
 
 	for child in get_children():
 		var spear := child as Spear2D
-		if spear == null or spear.checked:
-			continue
-		if absf(spear.position.x - center_x) > HIT_ZONE_HALF_WIDTH:
+		if spear == null:
 			continue
 
-		spear.checked = true
+		var lead := spear.position.x + spear.direction * SPEAR_TIP
+		var tail := spear.position.x - spear.direction * SPEAR_TAIL
+		if maxf(lead, tail) < center_x - CHARACTER_HALF_WIDTH:
+			continue
+		if minf(lead, tail) > center_x + CHARACTER_HALF_WIDTH:
+			continue
+
 		var dodged: bool = player.is_ducking() if spear.is_high else not player.is_on_floor()
 		if not dodged:
 			player_hit.emit()
