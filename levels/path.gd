@@ -51,9 +51,11 @@ func _ready() -> void:
 	GameManager.god_mode_changed.connect(_on_god_mode_changed)
 
 	# The GLBs carry geometry only; the triplanar sandstone materials
-	# need no UVs and match the rest of the monument.
+	# need no UVs and match the rest of the monument. The scan head
+	# keeps its own photo texture.
 	for mesh in $Monument/Sphinx.find_children("*", "MeshInstance3D"):
-		mesh.material_override = SANDSTONE_MATERIAL
+		if not String(mesh.name).begins_with("SphinxHead"):
+			mesh.material_override = SANDSTONE_MATERIAL
 	for mesh in $Monument/Pyramid.find_children("*", "MeshInstance3D"):
 		mesh.material_override = PYRAMID_MATERIAL
 

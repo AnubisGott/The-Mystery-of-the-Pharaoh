@@ -72,39 +72,8 @@ def build_sphinx() -> None:
         for toe in (-0.62, 0.0, 0.62):
             add_box("toe", (0.5, 0.9, 1.0), (side * 2.8 + toe, -7.35, 0.1), subsurf=1)
 
-    # Taller oval head; the nemes hood dominates it like the reference:
-    # a wide flaring trapezoid behind plus angled side wings that sweep
-    # from the crown down toward the shoulders.
-    add_box("head", (2.4, 2.1, 3.0), (0.0, -1.7, 7.0), subsurf=2)
-    nemes = add_box("nemes", (6.4, 2.6, 3.2), (0.0, -0.9, 6.9), bevel=0.2)
-    taper_top(nemes, 0.45, 0.7)
-    add_box("wing_l", (0.7, 2.2, 3.8), (-2.35, -1.5, 5.7), bevel=0.15, rot=(0.0, 0.5, 0.0))
-    add_box("wing_r", (0.7, 2.2, 3.8), (2.35, -1.5, 5.7), bevel=0.15, rot=(0.0, -0.5, 0.0))
-
-    nose = add_box("nose", (0.4, 0.55, 0.7), (0.0, -2.78, 6.7), subsurf=1)
-    taper_top(nose, 0.6, 0.85)
-
-    # Carved face details: they protrude from the head's front surface
-    # (y ~ -2.6 after subdivision shrink) so light and shadow model them.
-    add_box("brow", (1.9, 0.45, 0.28), (0.0, -2.68, 7.55), subsurf=1)
-    add_box("eye_l", (0.5, 0.22, 0.26), (-0.62, -2.7, 7.22), subsurf=1)
-    add_box("eye_r", (0.5, 0.22, 0.26), (0.62, -2.7, 7.22), subsurf=1)
-    add_box("mouth", (0.78, 0.26, 0.2), (0.0, -2.74, 6.2), subsurf=1)
-    add_box("ear_l", (0.28, 0.5, 0.7), (-1.15, -2.0, 7.05), subsurf=1)
-    add_box("ear_r", (0.28, 0.5, 0.7), (1.15, -2.0, 7.05), subsurf=1)
-
-    # Nemes band across the forehead with the uraeus sitting on it.
-    add_box("band", (2.3, 0.45, 0.45), (0.0, -2.55, 7.9), bevel=0.1)
-    add_box("uraeus", (0.22, 0.3, 0.5), (0.0, -2.72, 7.96), subsurf=1)
-
-    # Segmented false beard, flaring wider toward the bottom.
-    for i in range(4):
-        add_box("beard_seg", (0.34 + i * 0.045, 0.36, 0.3),
-                (0.0, -2.62, 5.6 - i * 0.34), bevel=0.05)
-
-    # Nemes lappets falling onto the chest, like the reference statue.
-    add_box("lappet_l", (0.9, 0.5, 2.4), (-1.55, -2.75, 5.35), bevel=0.12, rot=(0.12, 0.0, 0.0))
-    add_box("lappet_r", (0.9, 0.5, 2.4), (1.55, -2.75, 5.35), bevel=0.12, rot=(0.12, 0.0, 0.0))
+    # The head (with its own nemes) comes from a CC-BY photogrammetry
+    # scan, grafted in import_scan_head().
 
 
 def apply_modifiers_and_join() -> None:
@@ -121,11 +90,72 @@ def apply_modifiers_and_join() -> None:
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 
 
+# The head comes from "The Great Sphinx of Giza - Egypt" by Chenzoss
+# (sketchfab.com, CC Attribution). The scan is one mesh: crop the head
+# region, normalize it, and place it on the shoulders as a SEPARATE
+# object so the game keeps its photo texture (the procedural body gets
+# the triplanar sandstone override).
+SCAN_PATH = "requirements/sphinx-scan.glb"
+HEAD_CROP_MIN_Z = 0.47
+HEAD_CROP_MAX_Y = 0.40
+HEAD_TARGET_WIDTH = 4.6
+HEAD_LOCATION = (0.0, -0.45, 5.3)
+
+
+def import_scan_head() -> None:
+    import bmesh
+
+    existing = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=SCAN_PATH)
+    imported = [o for o in bpy.data.objects if o not in existing]
+
+    head = None
+    for obj in imported:
+        if obj.type == "MESH":
+            head = obj
+    bpy.ops.object.select_all(action="DESELECT")
+    head.select_set(True)
+    bpy.context.view_layer.objects.active = head
+    bpy.ops.object.parent_clear(type="CLEAR_KEEP_TRANSFORM")
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+
+    for obj in imported:
+        if obj is not head:
+            bpy.data.objects.remove(obj)
+
+    bm = bmesh.new()
+    bm.from_mesh(head.data)
+    doomed = [v for v in bm.verts if v.co.z < HEAD_CROP_MIN_Z or v.co.y > HEAD_CROP_MAX_Y]
+    bmesh.ops.delete(bm, geom=doomed, context="VERTS")
+    bm.to_mesh(head.data)
+    bm.free()
+
+    # Recenter (x centered, y centered, neck bottom at z=0) and scale to
+    # the game head size.
+    xs = [v.co.x for v in head.data.vertices]
+    ys = [v.co.y for v in head.data.vertices]
+    zs = [v.co.z for v in head.data.vertices]
+    scale = HEAD_TARGET_WIDTH / (max(xs) - min(xs))
+    cx = (max(xs) + min(xs)) / 2.0
+    cy = (max(ys) + min(ys)) / 2.0
+    for v in head.data.vertices:
+        v.co.x = (v.co.x - cx) * scale
+        v.co.y = (v.co.y - cy) * scale
+        v.co.z = (v.co.z - min(zs)) * scale
+
+    head.name = "SphinxHead"
+    head.location = HEAD_LOCATION
+    dims = (max(xs) - min(xs), max(ys) - min(ys), max(zs) - min(zs))
+    print("head scaled by %.2f, size: %.2f x %.2f x %.2f"
+            % (scale, dims[0] * scale, dims[1] * scale, dims[2] * scale))
+
+
 def main() -> None:
     out_path = sys.argv[sys.argv.index("--") + 1]
     clear_scene()
     build_sphinx()
     apply_modifiers_and_join()
+    import_scan_head()
     bpy.ops.export_scene.gltf(filepath=out_path, export_format="GLB")
     print("exported:", out_path)
 
