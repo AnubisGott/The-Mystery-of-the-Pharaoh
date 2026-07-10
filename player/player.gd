@@ -1,5 +1,7 @@
 extends CharacterBody3D
 
+signal respawned
+
 @export var move_speed: float = 5.0
 @export var sprint_speed: float = 7.5
 @export var duck_speed: float = 2.5
@@ -152,6 +154,7 @@ func reset_to_start(spawn: Transform3D) -> void:
 	_yaw = 0.0
 	_pitch = 0.0
 	camera_pivot.rotation.x = 0.0
+	respawned.emit()
 
 
 func _set_ducking(ducking: bool) -> void:

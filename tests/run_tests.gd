@@ -591,7 +591,7 @@ func test_pendulum_kills_and_god_mode_spares() -> void:
 	var hall := await _spawn_hall()
 	var hall_player: CharacterBody3D = hall.get_node("Player")
 	var pendulums := get_tree().get_nodes_in_group("pendulums")
-	_check(pendulums.size() == 6, "expected 6 pendulums, found %d" % pendulums.size())
+	_check(pendulums.size() == 9, "expected 9 pendulums, found %d" % pendulums.size())
 
 	# A pendulum too close to a corner carves its wall pocket into the
 	# corner mouth and blocks the turn.
@@ -609,7 +609,7 @@ func test_pendulum_kills_and_god_mode_spares() -> void:
 		for i in range(hall.LEGS.size()):
 			var origin: Vector3 = hall.LEGS[i]["origin"]
 			var dir: Vector3 = hall.LEGS[i]["dir"]
-			var length: float = (hall.CORNER_DS[i] if i < hall.CORNER_DS.size() else 141.0) \
+			var length: float = (hall.CORNER_DS[i] if i < hall.CORNER_DS.size() else hall.END_D) \
 					- (0.0 if i == 0 else hall.CORNER_DS[i - 1])
 			var u: float = clampf((local - origin).dot(dir), 0.0, length)
 			var closest: Vector3 = origin + dir * u
@@ -668,10 +668,10 @@ func test_kill_plane_resets_fall() -> void:
 	await _free_hall(hall)
 
 
-func test_crack_tile_falls_and_respawns() -> void:
+func test_crack_tile_stays_down_until_death() -> void:
 	var hall := await _spawn_hall()
 	var tiles := get_tree().get_nodes_in_group("crack_tiles")
-	_check(tiles.size() == 20, "expected 20 crack tiles, found %d" % tiles.size())
+	_check(tiles.size() == 28, "expected 28 crack tiles, found %d" % tiles.size())
 
 	var tile: StaticBody3D = tiles[0]
 	var rest_y: float = tile.position.y
@@ -680,12 +680,19 @@ func test_crack_tile_falls_and_respawns() -> void:
 		await get_tree().physics_frame
 	_check(tile.position.y < rest_y - 1.0, "tile did not fall after trigger")
 
-	for i in 240:
+	# No automatic respawn: the tile stays down.
+	for i in 120:
+		await get_tree().physics_frame
+	_check(tile.position.y < rest_y - 1.0, "tile came back without a death")
+
+	# Dying restores every tile.
+	hall._on_trap_hit()
+	for i in 150:
 		await get_tree().physics_frame
 		if is_equal_approx(tile.position.y, rest_y) and tile._armed:
 			break
-	_check(is_equal_approx(tile.position.y, rest_y), "tile did not respawn")
-	_check(tile._armed, "tile not re-armed after respawn")
+	_check(is_equal_approx(tile.position.y, rest_y), "tile not restored after death")
+	_check(tile._armed, "tile not re-armed after death")
 	await _free_hall(hall)
 
 

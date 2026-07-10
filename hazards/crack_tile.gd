@@ -2,10 +2,10 @@ extends StaticBody3D
 
 # A floor tile that cracks and falls shortly after being stepped on:
 # 0.0 s step -> 0.6 s crack sound and darkening -> 1.0 s wobble ->
-# 1.4 s fall. Respawns a few seconds later. One tween chain, no awaits.
+# 1.4 s fall. Fallen tiles stay down until the level calls reset()
+# (when the player dies). One tween chain, no awaits.
 const TILE_SIZE: float = 2.1
 const THICKNESS: float = 0.4
-const RESPAWN_DELAY: float = 3.0
 
 var _material: StandardMaterial3D
 var _mesh: MeshInstance3D
@@ -13,6 +13,7 @@ var _collision: CollisionShape3D
 var _crack_player: AudioStreamPlayer3D
 var _armed: bool = true
 var _rest_position: Vector3
+var _tween: Tween
 
 
 func _ready() -> void:
@@ -59,17 +60,15 @@ func _on_body_entered(body: Node3D) -> void:
 
 func _trigger() -> void:
 	_armed = false
-	var tween := create_tween()
-	tween.tween_interval(0.6)
-	tween.tween_callback(_crack)
-	tween.tween_interval(0.4)
-	tween.tween_callback(_wobble)
-	tween.tween_interval(0.4)
-	tween.tween_callback(_fall)
-	tween.tween_property(self, "position:y", _rest_position.y - 6.0, 0.6) \
+	_tween = create_tween()
+	_tween.tween_interval(0.6)
+	_tween.tween_callback(_crack)
+	_tween.tween_interval(0.4)
+	_tween.tween_callback(_wobble)
+	_tween.tween_interval(0.4)
+	_tween.tween_callback(_fall)
+	_tween.tween_property(self, "position:y", _rest_position.y - 6.0, 0.6) \
 			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tween.tween_interval(RESPAWN_DELAY)
-	tween.tween_callback(_respawn)
 
 
 func _crack() -> void:
@@ -86,7 +85,10 @@ func _fall() -> void:
 	_collision.set_deferred("disabled", true)
 
 
-func _respawn() -> void:
+# Restores the tile; the level calls this when the player respawns.
+func reset() -> void:
+	if _tween != null and _tween.is_valid():
+		_tween.kill()
 	position = _rest_position
 	rotation.z = 0.0
 	_collision.set_deferred("disabled", false)
