@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=22 format=3]
 
 [ext_resource type="PackedScene" path="res://player/player.tscn" id="1"]
 [ext_resource type="Script" path="res://exit/win_zone.gd" id="2"]
@@ -11,26 +11,55 @@ albedo_color = Color(0.76, 0.64, 0.42, 1)
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_path"]
 albedo_color = Color(0.5, 0.28, 0.24, 1)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_goal"]
-albedo_color = Color(1, 0.78, 0.2, 1)
-metallic = 0.6
-roughness = 0.3
-emission_enabled = true
-emission = Color(1, 0.7, 0.15, 1)
-emission_energy_multiplier = 1.2
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sphinx"]
+albedo_color = Color(0.93, 0.74, 0.48, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pyramid"]
+albedo_color = Color(0.87, 0.66, 0.38, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_doorway"]
+albedo_color = Color(0.08, 0.06, 0.04, 1)
 
 [sub_resource type="BoxMesh" id="BoxMesh_sand"]
 material = SubResource("StandardMaterial3D_sand")
-size = Vector3(100, 0.25, 100)
+size = Vector3(200, 0.25, 200)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_sand"]
-size = Vector3(100, 0.25, 100)
+size = Vector3(200, 0.25, 200)
 
 [sub_resource type="Curve3D" id="Curve3D_track"]
 
-[sub_resource type="BoxMesh" id="BoxMesh_goal"]
-material = SubResource("StandardMaterial3D_goal")
-size = Vector3(3.4, 2.8, 0.4)
+[sub_resource type="PrismMesh" id="PrismMesh_pyramid"]
+material = SubResource("StandardMaterial3D_pyramid")
+size = Vector3(70, 30, 45)
+
+[sub_resource type="BoxMesh" id="BoxMesh_leg"]
+material = SubResource("StandardMaterial3D_sphinx")
+size = Vector3(1.7, 2, 5)
+
+[sub_resource type="BoxMesh" id="BoxMesh_paw"]
+material = SubResource("StandardMaterial3D_sphinx")
+size = Vector3(1.9, 1, 1.6)
+
+[sub_resource type="BoxMesh" id="BoxMesh_chest"]
+material = SubResource("StandardMaterial3D_sphinx")
+size = Vector3(7.4, 3.2, 3.5)
+
+[sub_resource type="BoxMesh" id="BoxMesh_rear"]
+material = SubResource("StandardMaterial3D_sphinx")
+size = Vector3(7.4, 5, 4)
+
+[sub_resource type="BoxMesh" id="BoxMesh_head"]
+material = SubResource("StandardMaterial3D_sphinx")
+size = Vector3(2.4, 2.4, 2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_nemes"]
+material = SubResource("StandardMaterial3D_sphinx")
+size = Vector3(4.2, 2.2, 0.7)
+
+[sub_resource type="BoxMesh" id="BoxMesh_doorway"]
+material = SubResource("StandardMaterial3D_doorway")
+size = Vector3(3.8, 2.6, 0.2)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_goalzone"]
 size = Vector3(3.4, 2.5, 0.6)
@@ -65,12 +94,50 @@ path_interval_type = 0
 path_interval = 0.5
 material = SubResource("StandardMaterial3D_path")
 
-[node name="GoalGate" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, -41)
-mesh = SubResource("BoxMesh_goal")
+[node name="Monument" type="Node3D" parent="."]
+
+[node name="Pyramid" type="MeshInstance3D" parent="Monument"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 15, -72)
+mesh = SubResource("PrismMesh_pyramid")
+
+[node name="LeftLeg" type="MeshInstance3D" parent="Monument"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.8, 1, -44.5)
+mesh = SubResource("BoxMesh_leg")
+
+[node name="RightLeg" type="MeshInstance3D" parent="Monument"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.8, 1, -44.5)
+mesh = SubResource("BoxMesh_leg")
+
+[node name="LeftPaw" type="MeshInstance3D" parent="Monument"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.8, 0.5, -41.7)
+mesh = SubResource("BoxMesh_paw")
+
+[node name="RightPaw" type="MeshInstance3D" parent="Monument"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.8, 0.5, -41.7)
+mesh = SubResource("BoxMesh_paw")
+
+[node name="Chest" type="MeshInstance3D" parent="Monument"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.2, -45.5)
+mesh = SubResource("BoxMesh_chest")
+
+[node name="RearBody" type="MeshInstance3D" parent="Monument"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, -49.5)
+mesh = SubResource("BoxMesh_rear")
+
+[node name="Head" type="MeshInstance3D" parent="Monument"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.6, -46.2)
+mesh = SubResource("BoxMesh_head")
+
+[node name="Nemes" type="MeshInstance3D" parent="Monument"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.8, -47.4)
+mesh = SubResource("BoxMesh_nemes")
+
+[node name="Doorway" type="MeshInstance3D" parent="Monument"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, -47.35)
+mesh = SubResource("BoxMesh_doorway")
 
 [node name="WinZone" type="Area3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, -40.4)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, -45)
 script = ExtResource("2")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="WinZone"]

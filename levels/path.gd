@@ -2,7 +2,7 @@ extends Node3D
 
 const PATH_HALF_WIDTH: float = 1.5
 const START_Z: float = 30.0
-const END_Z: float = -40.0
+const END_Z: float = -45.0
 const AMPLITUDE: float = 3.0
 const WAVELENGTH: float = 15.0
 const SAMPLE_STEP: float = 1.0
