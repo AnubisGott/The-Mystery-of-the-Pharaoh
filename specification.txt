@@ -53,27 +53,12 @@ Mouse = look around
 Esc = pause
 
 
-If the player reached the end.
-
-Won!
-
-Add two buttons:
-
-Play Again
-Exit
-
-Blender later - You don't need Blender at all for the first working version.
-
-A Windows EXE
-
-
+A Windows EXE in the build folder
 
 Remaining polish candidates: 
-- face details for the sphinx 
+- improve the face details for the sphinx 
 
 add sounds (splice library), ambient audio (wind, footsteps), ägyptisch-mystische Sounds, Percussion oder Ambient-Loops
 
 add intro sequence for every level
-
-add success sound on level end
 

@@ -20,6 +20,15 @@ func _ready() -> void:
 	_music_player = AudioStreamPlayer.new()
 	_music_player.volume_db = -6.0
 	add_child(_music_player)
+	# Route window-close through quit_game() so the music stops a frame
+	# before shutdown: an MP3 still playing at exit leaks its playback
+	# object (cosmetic engine warning).
+	get_tree().auto_accept_quit = false
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		quit_game()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -76,4 +85,7 @@ func win_game() -> void:
 
 
 func quit_game() -> void:
+	_music_player.stop()
+	_music_player.stream = null
+	await get_tree().process_frame
 	get_tree().quit()
