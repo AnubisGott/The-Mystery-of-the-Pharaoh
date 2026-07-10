@@ -129,7 +129,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.35, -96.55)
 mesh = SubResource("BoxMesh_doorway")
 
 [node name="ExitSign" type="MeshInstance3D" parent="Monument"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.35, -96.38)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.95, 2.4, -96.38)
 mesh = SubResource("BoxMesh_exit_sign")
 
 [node name="WinZone" type="Area3D" parent="."]
