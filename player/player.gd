@@ -8,6 +8,9 @@ extends CharacterBody3D
 
 const STAND_HEIGHT: float = 1.8
 const DUCK_HEIGHT: float = 1.0
+# Keeps the view steady while the body jumps or ducks, so screen-space
+# overlays (the 2D spears) visibly fly straight.
+const CAMERA_HEIGHT: float = 2.3
 
 @onready var camera_pivot: Node3D = $CameraPivot
 @onready var collision_shape: CollisionShape3D = $CollisionShape3D
@@ -65,6 +68,7 @@ func _physics_process(delta: float) -> void:
 		velocity.y = jump_velocity
 
 	move_and_slide()
+	camera_pivot.global_position.y = CAMERA_HEIGHT
 
 
 func is_ducking() -> bool:
