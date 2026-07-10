@@ -72,31 +72,35 @@ def build_sphinx() -> None:
         for toe in (-0.62, 0.0, 0.62):
             add_box("toe", (0.5, 0.9, 1.0), (side * 2.8 + toe, -7.35, 0.1), subsurf=1)
 
-    # Head with nemes headdress (trapezoid flaring downward) and nose.
-    # The nemes is wider than the head so the side wings read clearly.
-    add_box("head", (2.4, 2.2, 2.6), (0.0, -1.7, 6.9), subsurf=2)
-    nemes = add_box("nemes", (5.2, 2.4, 2.8), (0.0, -0.9, 6.7), bevel=0.2)
-    taper_top(nemes, 0.5, 0.7)
-    nose = add_box("nose", (0.4, 0.55, 0.7), (0.0, -2.78, 6.6), subsurf=1)
+    # Taller oval head; the nemes hood dominates it like the reference:
+    # a wide flaring trapezoid behind plus angled side wings that sweep
+    # from the crown down toward the shoulders.
+    add_box("head", (2.4, 2.1, 3.0), (0.0, -1.7, 7.0), subsurf=2)
+    nemes = add_box("nemes", (6.4, 2.6, 3.2), (0.0, -0.9, 6.9), bevel=0.2)
+    taper_top(nemes, 0.45, 0.7)
+    add_box("wing_l", (0.7, 2.2, 3.8), (-2.35, -1.5, 5.7), bevel=0.15, rot=(0.0, 0.5, 0.0))
+    add_box("wing_r", (0.7, 2.2, 3.8), (2.35, -1.5, 5.7), bevel=0.15, rot=(0.0, -0.5, 0.0))
+
+    nose = add_box("nose", (0.4, 0.55, 0.7), (0.0, -2.78, 6.7), subsurf=1)
     taper_top(nose, 0.6, 0.85)
 
     # Carved face details: they protrude from the head's front surface
     # (y ~ -2.6 after subdivision shrink) so light and shadow model them.
-    add_box("brow", (1.9, 0.45, 0.28), (0.0, -2.68, 7.4), subsurf=1)
-    add_box("eye_l", (0.5, 0.22, 0.26), (-0.62, -2.7, 7.08), subsurf=1)
-    add_box("eye_r", (0.5, 0.22, 0.26), (0.62, -2.7, 7.08), subsurf=1)
-    add_box("mouth", (0.78, 0.26, 0.2), (0.0, -2.74, 6.12), subsurf=1)
-    add_box("ear_l", (0.28, 0.5, 0.7), (-1.15, -2.05, 6.95), subsurf=1)
-    add_box("ear_r", (0.28, 0.5, 0.7), (1.15, -2.05, 6.95), subsurf=1)
+    add_box("brow", (1.9, 0.45, 0.28), (0.0, -2.68, 7.55), subsurf=1)
+    add_box("eye_l", (0.5, 0.22, 0.26), (-0.62, -2.7, 7.22), subsurf=1)
+    add_box("eye_r", (0.5, 0.22, 0.26), (0.62, -2.7, 7.22), subsurf=1)
+    add_box("mouth", (0.78, 0.26, 0.2), (0.0, -2.74, 6.2), subsurf=1)
+    add_box("ear_l", (0.28, 0.5, 0.7), (-1.15, -2.0, 7.05), subsurf=1)
+    add_box("ear_r", (0.28, 0.5, 0.7), (1.15, -2.0, 7.05), subsurf=1)
 
     # Nemes band across the forehead with the uraeus sitting on it.
-    add_box("band", (2.3, 0.45, 0.45), (0.0, -2.55, 7.72), bevel=0.1)
-    add_box("uraeus", (0.22, 0.3, 0.5), (0.0, -2.72, 7.78), subsurf=1)
+    add_box("band", (2.3, 0.45, 0.45), (0.0, -2.55, 7.9), bevel=0.1)
+    add_box("uraeus", (0.22, 0.3, 0.5), (0.0, -2.72, 7.96), subsurf=1)
 
     # Segmented false beard, flaring wider toward the bottom.
     for i in range(4):
         add_box("beard_seg", (0.34 + i * 0.045, 0.36, 0.3),
-                (0.0, -2.62, 5.55 - i * 0.34), bevel=0.05)
+                (0.0, -2.62, 5.6 - i * 0.34), bevel=0.05)
 
     # Nemes lappets falling onto the chest, like the reference statue.
     add_box("lappet_l", (0.9, 0.5, 2.4), (-1.55, -2.75, 5.35), bevel=0.12, rot=(0.12, 0.0, 0.0))
