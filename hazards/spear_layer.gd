@@ -13,6 +13,13 @@ const OFFSCREEN_MARGIN: float = 120.0
 @onready var player: CharacterBody3D = $"../Player"
 
 
+func has_active_spears() -> bool:
+	for child in get_children():
+		if child is Spear2D:
+			return true
+	return false
+
+
 func spawn_spear(is_high: bool, from_left: bool) -> void:
 	var view_size := get_viewport().get_visible_rect().size
 	var spear := Spear2D.new()

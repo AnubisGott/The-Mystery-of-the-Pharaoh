@@ -72,13 +72,17 @@ func _restart_spear_timer() -> void:
 	_spear_timer.start(randf_range(SPEAR_MIN_INTERVAL, SPEAR_MAX_INTERVAL))
 
 
+# Only one spear may be on screen at a time: a low and a high spear
+# together would be impossible to dodge.
 func _on_spear_timer_timeout() -> void:
-	if player.global_position.z < RANDOM_SPEARS_START_Z:
+	if player.global_position.z < RANDOM_SPEARS_START_Z and not spear_layer.has_active_spears():
 		spear_layer.spawn_spear(randf() < 0.5, randf() < 0.5)
 	_restart_spear_timer()
 
 
 func _on_practice_timer_timeout() -> void:
+	if spear_layer.has_active_spears():
+		return
 	spear_layer.spawn_spear(_practice_high, _practice_high)
 	_practice_high = not _practice_high
 
