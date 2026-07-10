@@ -91,8 +91,11 @@ func _set_ducking(ducking: bool) -> void:
 	var capsule: CapsuleShape3D = collision_shape.shape
 	capsule.height = DUCK_HEIGHT if ducking else STAND_HEIGHT
 
+	# Shift the body by the height difference in the same frame the
+	# capsule resizes, so the feet stay planted and only the head moves.
 	if ducking:
 		visual.scale.y = DUCK_HEIGHT / STAND_HEIGHT
+		position.y -= (STAND_HEIGHT - DUCK_HEIGHT) / 2.0
 	else:
 		visual.scale.y = 1.0
 		position.y += (STAND_HEIGHT - DUCK_HEIGHT) / 2.0
