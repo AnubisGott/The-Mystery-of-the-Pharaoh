@@ -77,19 +77,28 @@ def build_sphinx() -> None:
     add_box("head", (2.4, 2.2, 2.6), (0.0, -1.7, 6.9), subsurf=2)
     nemes = add_box("nemes", (5.2, 2.4, 2.8), (0.0, -0.9, 6.7), bevel=0.2)
     taper_top(nemes, 0.5, 0.7)
-    add_box("nose", (0.36, 0.55, 0.6), (0.0, -2.8, 6.65), subsurf=1)
+    nose = add_box("nose", (0.4, 0.55, 0.7), (0.0, -2.78, 6.6), subsurf=1)
+    taper_top(nose, 0.6, 0.85)
 
     # Carved face details: they protrude from the head's front surface
     # (y ~ -2.6 after subdivision shrink) so light and shadow model them.
     add_box("brow", (1.9, 0.45, 0.28), (0.0, -2.68, 7.4), subsurf=1)
     add_box("eye_l", (0.5, 0.22, 0.26), (-0.62, -2.7, 7.08), subsurf=1)
     add_box("eye_r", (0.5, 0.22, 0.26), (0.62, -2.7, 7.08), subsurf=1)
-    add_box("mouth", (0.7, 0.25, 0.18), (0.0, -2.74, 6.15), subsurf=1)
-    add_box("uraeus", (0.2, 0.3, 0.6), (0.0, -1.85, 8.15), subsurf=1)
+    add_box("mouth", (0.78, 0.26, 0.2), (0.0, -2.74, 6.12), subsurf=1)
+    add_box("ear_l", (0.28, 0.5, 0.7), (-1.15, -2.05, 6.95), subsurf=1)
+    add_box("ear_r", (0.28, 0.5, 0.7), (1.15, -2.05, 6.95), subsurf=1)
 
-    # Long braided false beard and the nemes lappets falling onto the
-    # chest, like the reference statue.
-    add_box("beard", (0.38, 0.38, 1.5), (0.0, -2.62, 5.0), bevel=0.08, rot=(0.12, 0.0, 0.0))
+    # Nemes band across the forehead with the uraeus sitting on it.
+    add_box("band", (2.3, 0.45, 0.45), (0.0, -2.55, 7.72), bevel=0.1)
+    add_box("uraeus", (0.22, 0.3, 0.5), (0.0, -2.72, 7.78), subsurf=1)
+
+    # Segmented false beard, flaring wider toward the bottom.
+    for i in range(4):
+        add_box("beard_seg", (0.34 + i * 0.045, 0.36, 0.3),
+                (0.0, -2.62, 5.55 - i * 0.34), bevel=0.05)
+
+    # Nemes lappets falling onto the chest, like the reference statue.
     add_box("lappet_l", (0.9, 0.5, 2.4), (-1.55, -2.75, 5.35), bevel=0.12, rot=(0.12, 0.0, 0.0))
     add_box("lappet_r", (0.9, 0.5, 2.4), (1.55, -2.75, 5.35), bevel=0.12, rot=(0.12, 0.0, 0.0))
 
