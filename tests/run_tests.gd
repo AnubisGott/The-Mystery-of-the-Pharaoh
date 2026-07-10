@@ -529,6 +529,114 @@ func test_win_screen_plays_success_jingle() -> void:
 	await get_tree().physics_frame
 
 
+# ---------------------------------------------------------- level 2 tests
+
+# Instantiates the pendulum hall away from the level-1 geometry that the
+# suite keeps loaded, and settles its player.
+func _spawn_hall() -> Node3D:
+	var hall: Node3D = load("res://levels/pendulum_hall.tscn").instantiate()
+	hall.position = Vector3(300.0, 0.0, 0.0)
+	add_child(hall)
+	var hall_player: CharacterBody3D = hall.get_node("Player")
+	for i in 60:
+		await get_tree().physics_frame
+		if hall_player.is_on_floor():
+			break
+	return hall
+
+
+func _free_hall(hall: Node3D) -> void:
+	hall.queue_free()
+	await get_tree().physics_frame
+
+
+func test_sprint_is_faster() -> void:
+	Input.action_press("move_forward")
+	for i in 15:
+		await get_tree().physics_frame
+	var walk_speed := Vector2(player.velocity.x, player.velocity.z).length()
+
+	Input.action_press("sprint")
+	for i in 15:
+		await get_tree().physics_frame
+	var sprint_speed := Vector2(player.velocity.x, player.velocity.z).length()
+	Input.action_release("sprint")
+	Input.action_release("move_forward")
+
+	_check(absf(walk_speed - 5.0) < 0.5, "walk speed off: %f" % walk_speed)
+	_check(sprint_speed > 6.5, "sprint not faster: %f" % sprint_speed)
+
+
+func test_level_chain_scenes_exist() -> void:
+	for scene_path in GameManager.LEVEL_SCENES:
+		_check(ResourceLoader.exists(scene_path), "missing level scene: %s" % scene_path)
+	_check(GameManager.LEVEL_SCENES.size() >= 2, "expected at least two levels")
+
+
+func test_pendulum_kills_and_god_mode_spares() -> void:
+	var hall := await _spawn_hall()
+	var hall_player: CharacterBody3D = hall.get_node("Player")
+	var pendulums := get_tree().get_nodes_in_group("pendulums")
+	_check(pendulums.size() == 6, "expected 6 pendulums, found %d" % pendulums.size())
+
+	hall_player.global_position = Vector3(300.0, 1.0, -20.0)
+	await get_tree().physics_frame
+	hall._on_trap_hit()
+	var reset := false
+	for i in 150:
+		await get_tree().physics_frame
+		if hall_player.global_position.z > 1.0 and not hall_player.is_dying():
+			reset = true
+			break
+	_check(reset, "pendulum hit did not reset the player")
+
+	GameManager.god_mode = true
+	hall_player.global_position = Vector3(300.0, 1.0, -20.0)
+	await get_tree().physics_frame
+	hall._on_trap_hit()
+	for i in 10:
+		await get_tree().physics_frame
+	_check(hall_player.global_position.z < -15.0, "god mode did not spare the player")
+	GameManager.god_mode = false
+	await _free_hall(hall)
+
+
+func test_kill_plane_resets_fall() -> void:
+	var hall := await _spawn_hall()
+	var hall_player: CharacterBody3D = hall.get_node("Player")
+	hall_player.global_position = Vector3(300.0, -10.0, -20.0)
+	var reset := false
+	for i in 120:
+		await get_tree().physics_frame
+		if hall_player.global_position.z > 1.0 and hall_player.global_position.y > -2.0 \
+				and not hall_player.is_dying():
+			reset = true
+			break
+	_check(reset, "kill plane did not reset the falling player")
+	await _free_hall(hall)
+
+
+func test_crack_tile_falls_and_respawns() -> void:
+	var hall := await _spawn_hall()
+	var tiles := get_tree().get_nodes_in_group("crack_tiles")
+	_check(tiles.size() == 16, "expected 16 crack tiles, found %d" % tiles.size())
+
+	var tile: StaticBody3D = tiles[0]
+	var rest_y: float = tile.position.y
+	tile._trigger()
+	for i in 130:
+		await get_tree().physics_frame
+	_check(tile.position.y < rest_y - 1.0, "tile did not fall after trigger")
+
+	for i in 240:
+		await get_tree().physics_frame
+		if is_equal_approx(tile.position.y, rest_y) and tile._armed:
+			break
+	_check(is_equal_approx(tile.position.y, rest_y), "tile did not respawn")
+	_check(tile._armed, "tile not re-armed after respawn")
+	await _free_hall(hall)
+
+
 # --------------------------------------------------------- monument tests
 
 func test_monument_and_exit_marker() -> void:

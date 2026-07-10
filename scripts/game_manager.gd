@@ -5,8 +5,13 @@ signal god_mode_changed(enabled: bool)
 signal music_enabled_changed(enabled: bool)
 
 const MAIN_MENU_SCENE: String = "res://ui/main_menu.tscn"
-const PATH_SCENE: String = "res://levels/path.tscn"
 const WIN_SCREEN_SCENE: String = "res://ui/win_screen.tscn"
+const LEVEL_SCENES: Array[String] = [
+	"res://levels/path.tscn",
+	"res://levels/pendulum_hall.tscn",
+]
+
+var current_level: int = 0
 
 # Hidden cheat, toggled with Alt+Shift+G: spears cannot kill.
 var god_mode: bool = false
@@ -66,9 +71,22 @@ func set_music_enabled(enabled: bool) -> void:
 
 
 func start_game() -> void:
+	current_level = 0
 	get_tree().paused = false
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-	get_tree().change_scene_to_file(PATH_SCENE)
+	get_tree().change_scene_to_file(LEVEL_SCENES[0])
+
+
+# Called by a level's exit zone: loads the next level, or the win
+# screen after the last one.
+func complete_level() -> void:
+	current_level += 1
+	if current_level < LEVEL_SCENES.size():
+		get_tree().paused = false
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		get_tree().call_deferred("change_scene_to_file", LEVEL_SCENES[current_level])
+	else:
+		win_game()
 
 
 func show_main_menu() -> void:

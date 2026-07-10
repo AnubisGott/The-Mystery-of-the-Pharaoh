@@ -144,6 +144,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 29)
 
 [node name="StartWall" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 30.2)
+collision_layer = 2
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="StartWall"]
 shape = SubResource("BoxShape3D_start_wall")
@@ -177,6 +178,7 @@ grow_horizontal = 0
 grow_vertical = 2
 text = "W A S D - Move
 Mouse - Look
+Shift - Sprint
 Space - Jump low spears
 Ctrl - Duck high spears
 M - Music on/off

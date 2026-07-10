@@ -1,6 +1,7 @@
 extends CharacterBody3D
 
 @export var move_speed: float = 5.0
+@export var sprint_speed: float = 7.5
 @export var duck_speed: float = 2.5
 @export var jump_velocity: float = 3.8
 @export var mouse_sensitivity: float = 0.0025
@@ -35,6 +36,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	add_to_group("player")
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	$CameraPivot/CameraArm.add_excluded_object(get_rid())
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -70,7 +72,11 @@ func _physics_process(delta: float) -> void:
 	if Input.is_action_pressed("duck") != _is_ducking:
 		_set_ducking(not _is_ducking)
 
-	var speed := duck_speed if _is_ducking else move_speed
+	var speed := move_speed
+	if _is_ducking:
+		speed = duck_speed
+	elif Input.is_action_pressed("sprint"):
+		speed = sprint_speed
 	var input_vector := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	var direction := (global_transform.basis * Vector3(input_vector.x, 0.0, input_vector.y)).normalized()
 
@@ -102,7 +108,7 @@ func is_dying() -> bool:
 # spear knocks the body forward, one against the feet sweeps it backwards.
 # One tween chain, no awaits: a coroutine suspended on a SceneTreeTimer
 # leaks at exit if the game quits mid-sequence.
-func die_and_reset(spawn: Transform3D, hit_high: bool = true) -> void:
+func die_and_reset(spawn: Transform3D, hit_high: bool = true, animate: bool = true) -> void:
 	if _is_dying:
 		return
 
@@ -110,11 +116,15 @@ func die_and_reset(spawn: Transform3D, hit_high: bool = true) -> void:
 	_hit_player.play()
 	velocity = Vector3.ZERO
 
-	var fall_angle := -PI / 2.0 if hit_high else PI / 2.0
 	var tween := create_tween()
-	tween.tween_property(visual, "rotation:x", fall_angle, 0.6) \
-			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tween.tween_interval(0.5)
+	if animate:
+		var fall_angle := -PI / 2.0 if hit_high else PI / 2.0
+		tween.tween_property(visual, "rotation:x", fall_angle, 0.6) \
+				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		tween.tween_interval(0.5)
+	else:
+		# Falling into a pit: no tip-over animation, just a short beat.
+		tween.tween_interval(0.4)
 	tween.tween_callback(_finish_death.bind(spawn))
 
 
