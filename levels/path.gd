@@ -2,14 +2,14 @@ extends Node3D
 
 const PATH_HALF_WIDTH: float = 1.5
 const START_Z: float = 30.0
-const END_Z: float = -45.0
+const END_Z: float = -95.0
 const AMPLITUDE: float = 3.0
 const WAVELENGTH: float = 15.0
 const SAMPLE_STEP: float = 1.0
 
 # The path is straight before/after these, winding in between.
 const WINDING_START_Z: float = 20.0
-const WINDING_END_Z: float = -30.0
+const WINDING_END_Z: float = -80.0
 const WINDING_FADE: float = 6.0
 
 const SPEAR_MIN_INTERVAL: float = 1.6

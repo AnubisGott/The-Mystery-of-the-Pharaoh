@@ -22,10 +22,10 @@ albedo_color = Color(0.08, 0.06, 0.04, 1)
 
 [sub_resource type="BoxMesh" id="BoxMesh_sand"]
 material = SubResource("StandardMaterial3D_sand")
-size = Vector3(200, 0.25, 200)
+size = Vector3(300, 0.25, 300)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_sand"]
-size = Vector3(200, 0.25, 200)
+size = Vector3(300, 0.25, 300)
 
 [sub_resource type="Curve3D" id="Curve3D_track"]
 
@@ -97,47 +97,47 @@ material = SubResource("StandardMaterial3D_path")
 [node name="Monument" type="Node3D" parent="."]
 
 [node name="Pyramid" type="MeshInstance3D" parent="Monument"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 15, -72)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 15, -122)
 mesh = SubResource("PrismMesh_pyramid")
 
 [node name="LeftLeg" type="MeshInstance3D" parent="Monument"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.8, 1, -44.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.8, 1, -94.5)
 mesh = SubResource("BoxMesh_leg")
 
 [node name="RightLeg" type="MeshInstance3D" parent="Monument"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.8, 1, -44.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.8, 1, -94.5)
 mesh = SubResource("BoxMesh_leg")
 
 [node name="LeftPaw" type="MeshInstance3D" parent="Monument"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.8, 0.5, -41.7)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.8, 0.5, -91.7)
 mesh = SubResource("BoxMesh_paw")
 
 [node name="RightPaw" type="MeshInstance3D" parent="Monument"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.8, 0.5, -41.7)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.8, 0.5, -91.7)
 mesh = SubResource("BoxMesh_paw")
 
 [node name="Chest" type="MeshInstance3D" parent="Monument"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.2, -45.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.2, -95.5)
 mesh = SubResource("BoxMesh_chest")
 
 [node name="RearBody" type="MeshInstance3D" parent="Monument"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, -49.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, -99.5)
 mesh = SubResource("BoxMesh_rear")
 
 [node name="Head" type="MeshInstance3D" parent="Monument"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.6, -46.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.6, -96.2)
 mesh = SubResource("BoxMesh_head")
 
 [node name="Nemes" type="MeshInstance3D" parent="Monument"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.8, -47.4)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.8, -97.4)
 mesh = SubResource("BoxMesh_nemes")
 
 [node name="Doorway" type="MeshInstance3D" parent="Monument"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, -47.35)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, -97.35)
 mesh = SubResource("BoxMesh_doorway")
 
 [node name="WinZone" type="Area3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, -45)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, -95)
 script = ExtResource("2")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="WinZone"]
