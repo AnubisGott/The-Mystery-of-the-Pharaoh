@@ -55,6 +55,8 @@ Esc = pause
 
 A Windows EXE in the build folder
 
+
+todo-list:
 Remaining polish candidates: 
 - improve the face details for the sphinx 
 
