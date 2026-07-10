@@ -119,7 +119,7 @@ material = SubResource("StandardMaterial3D_path")
 [node name="Monument" type="Node3D" parent="."]
 
 [node name="Pyramid" parent="Monument" instance=ExtResource("15")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -122)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -135)
 
 [node name="Sphinx" parent="Monument" instance=ExtResource("14")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -96.9)

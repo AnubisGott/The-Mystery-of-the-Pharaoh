@@ -18,12 +18,14 @@ def clear_scene() -> None:
     bpy.ops.object.delete()
 
 
-def add_box(name: str, dims: tuple, loc: tuple, subsurf: int = 0, bevel: float = 0.0) -> bpy.types.Object:
+def add_box(name: str, dims: tuple, loc: tuple, subsurf: int = 0, bevel: float = 0.0,
+		rot: tuple = (0.0, 0.0, 0.0)) -> bpy.types.Object:
     bpy.ops.mesh.primitive_cube_add(size=1, location=loc)
     obj = bpy.context.active_object
     obj.name = name
     obj.scale = dims
-    bpy.ops.object.transform_apply(scale=True)
+    obj.rotation_euler = rot
+    bpy.ops.object.transform_apply(rotation=True, scale=True)
 
     if subsurf > 0:
         mod = obj.modifiers.new("subsurf", "SUBSURF")
@@ -49,15 +51,26 @@ def taper_top(obj: bpy.types.Object, x_factor: float, y_factor: float) -> None:
 def build_sphinx() -> None:
     # Statue-like: big forms are beveled blocks (carved stone), only the
     # head is organic via subsurf. Ground-touching parts extend a bit
-    # below z=0 so nothing floats.
+    # below z=0 so nothing floats. Proportions follow the classic lying
+    # lion: long body, raised haunches, tail around the right hip.
+    # The "rear" front face at y=-0.2 is the passage back wall; the level
+    # places the dark exit opening against it, so keep that plane.
     add_box("rear", (7.4, 5.2, 4.4), (0.0, 2.4, 1.9), bevel=0.5)
     add_box("chest", (7.0, 3.0, 3.2), (0.0, -1.2, 4.1), bevel=0.4)
+    add_box("rump", (6.2, 4.0, 3.6), (0.0, 5.4, 1.5), bevel=0.4)
+    add_box("haunch_l", (1.9, 3.4, 3.8), (-2.5, 4.6, 1.8), subsurf=2)
+    add_box("haunch_r", (1.9, 3.4, 3.8), (2.5, 4.6, 1.8), subsurf=2)
+    add_box("tail", (0.5, 3.4, 0.5), (2.95, 5.6, 0.45), subsurf=1, rot=(0.0, 0.0, 0.12))
+    add_box("tail_tip", (0.55, 1.0, 0.55), (3.25, 3.8, 0.4), subsurf=1)
 
-    # Front legs frame the entrance; keep |x| <= 1.9 free.
-    add_box("leg_l", (1.8, 5.2, 2.2), (-2.8, -2.3, 0.7), bevel=0.3)
-    add_box("leg_r", (1.8, 5.2, 2.2), (2.8, -2.3, 0.7), bevel=0.3)
-    add_box("paw_l", (2.0, 1.8, 1.2), (-2.8, -5.4, 0.2), bevel=0.3)
-    add_box("paw_r", (2.0, 1.8, 1.2), (2.8, -5.4, 0.2), bevel=0.3)
+    # Long front legs with toed paws frame the entrance; keep |x| <= 1.9 free.
+    add_box("leg_l", (1.8, 6.4, 2.0), (-2.8, -2.9, 0.6), bevel=0.3)
+    add_box("leg_r", (1.8, 6.4, 2.0), (2.8, -2.9, 0.6), bevel=0.3)
+    add_box("paw_l", (1.9, 1.8, 1.1), (-2.8, -6.6, 0.15), bevel=0.25)
+    add_box("paw_r", (1.9, 1.8, 1.1), (2.8, -6.6, 0.15), bevel=0.25)
+    for side in (-1.0, 1.0):
+        for toe in (-0.62, 0.0, 0.62):
+            add_box("toe", (0.5, 0.9, 1.0), (side * 2.8 + toe, -7.35, 0.1), subsurf=1)
 
     # Head with nemes headdress (trapezoid flaring downward) and nose.
     # The nemes is wider than the head so the side wings read clearly.
@@ -72,8 +85,13 @@ def build_sphinx() -> None:
     add_box("eye_l", (0.5, 0.22, 0.26), (-0.62, -2.7, 7.08), subsurf=1)
     add_box("eye_r", (0.5, 0.22, 0.26), (0.62, -2.7, 7.08), subsurf=1)
     add_box("mouth", (0.7, 0.25, 0.18), (0.0, -2.74, 6.15), subsurf=1)
-    add_box("beard", (0.4, 0.4, 1.0), (0.0, -2.5, 5.35), bevel=0.08)
     add_box("uraeus", (0.2, 0.3, 0.6), (0.0, -1.85, 8.15), subsurf=1)
+
+    # Long braided false beard and the nemes lappets falling onto the
+    # chest, like the reference statue.
+    add_box("beard", (0.38, 0.38, 1.5), (0.0, -2.62, 5.0), bevel=0.08, rot=(0.12, 0.0, 0.0))
+    add_box("lappet_l", (0.9, 0.5, 2.4), (-1.55, -2.75, 5.35), bevel=0.12, rot=(0.12, 0.0, 0.0))
+    add_box("lappet_r", (0.9, 0.5, 2.4), (1.55, -2.75, 5.35), bevel=0.12, rot=(0.12, 0.0, 0.0))
 
 
 def apply_modifiers_and_join() -> None:
