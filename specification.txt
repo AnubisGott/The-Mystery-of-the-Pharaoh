@@ -68,7 +68,7 @@ A Windows EXE
 
 
 
-Remaining polish candidates, whenever you like: a stepped pyramid model (the last prism placeholder), face details for the sphinx, jump/duck poses for the adventurer (bent knees), or sound effects.
+Remaining polish candidates, whenever you like: face details for the sphinx, jump/duck poses for the adventurer (bent knees), or sound effects.
 
 add a dark enterance at the end of the level
 
@@ -76,4 +76,8 @@ add some straight path behind the start point
 
 dont jump so high, dont duck so extreme
 
-add sounds (splice library)
+add sounds (splice library), ambient audio (wind, footsteps), ägyptisch-mystische Sounds, Percussion oder Ambient-Loops
+
+add intro sequence for every level
+
+add welcome screen

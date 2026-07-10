@@ -5,8 +5,10 @@ signal player_hit
 const Spear2D := preload("res://hazards/spear_2d.gd")
 
 const SPEAR_SPEED: float = 900.0
-const LOW_HEIGHT_FRACTION: float = 0.86
-const HIGH_HEIGHT_FRACTION: float = 0.60
+# World-space heights above the character's feet; projected to screen
+# at spawn time so the lanes track the character at any camera pitch.
+const LOW_ANKLE_HEIGHT: float = 0.25
+const HIGH_CHEST_HEIGHT: float = 1.55
 const OFFSCREEN_MARGIN: float = 120.0
 
 # Drawn spear extent around its origin (see spear_2d.gd _draw).
@@ -33,9 +35,17 @@ func spawn_spear(is_high: bool, from_left: bool) -> void:
 	spear.scale.x = spear.direction
 	spear.position = Vector2(
 		-OFFSCREEN_MARGIN if from_left else view_size.x + OFFSCREEN_MARGIN,
-		view_size.y * (HIGH_HEIGHT_FRACTION if is_high else LOW_HEIGHT_FRACTION)
+		_lane_screen_y(is_high)
 	)
 	add_child(spear)
+
+
+# The Visual node's origin sits at the character's feet, standing or
+# ducking; project the lane height next to it onto the screen.
+func _lane_screen_y(is_high: bool) -> float:
+	var feet: Vector3 = player.get_node("Visual").global_position
+	var lane := feet + Vector3.UP * (HIGH_CHEST_HEIGHT if is_high else LOW_ANKLE_HEIGHT)
+	return get_viewport().get_camera_3d().unproject_position(lane).y
 
 
 # The dodge must be active for as long as any part of the drawn spear
