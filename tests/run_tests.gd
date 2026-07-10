@@ -593,6 +593,29 @@ func test_pendulum_kills_and_god_mode_spares() -> void:
 	var pendulums := get_tree().get_nodes_in_group("pendulums")
 	_check(pendulums.size() == 6, "expected 6 pendulums, found %d" % pendulums.size())
 
+	# A pendulum too close to a corner carves its wall pocket into the
+	# corner mouth and blocks the turn.
+	for data in hall.PENDULUM_DS:
+		for corner_d in hall.CORNER_DS:
+			_check(absf(data[0] - corner_d) >= 3.5,
+					"pendulum at d=%s too close to corner at d=%s" % [data[0], corner_d])
+
+	# Every hazard must lie inside the corridor (regression: a stale
+	# leg lookup once placed late hazards beyond the last corner).
+	var hazards := pendulums + get_tree().get_nodes_in_group("crack_tiles")
+	for hazard in hazards:
+		var local: Vector3 = hazard.global_position - hall.position
+		var best := 1e9
+		for i in range(hall.LEGS.size()):
+			var origin: Vector3 = hall.LEGS[i]["origin"]
+			var dir: Vector3 = hall.LEGS[i]["dir"]
+			var length: float = (hall.CORNER_DS[i] if i < hall.CORNER_DS.size() else 141.0) \
+					- (0.0 if i == 0 else hall.CORNER_DS[i - 1])
+			var u: float = clampf((local - origin).dot(dir), 0.0, length)
+			var closest: Vector3 = origin + dir * u
+			best = minf(best, Vector2(local.x - closest.x, local.z - closest.z).length())
+		_check(best < 2.3, "hazard at %s lies %f m outside the corridor" % [hazard.global_position, best])
+
 	hall_player.global_position = Vector3(300.0, 1.0, -12.0)
 	await get_tree().physics_frame
 	hall._on_trap_hit()

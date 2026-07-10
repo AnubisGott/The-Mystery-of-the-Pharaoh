@@ -50,7 +50,7 @@ const PENDULUM_DS := [
 	[67.0, 0.0],
 	[73.0, PI],
 	[106.0, 0.0],
-	[116.0, 0.9],
+	[117.5, 0.9],
 	[127.0, PI * 0.6],
 ]
 
@@ -93,11 +93,10 @@ func _on_trap_hit() -> void:
 # ------------------------------------------------------- corridor frames
 
 func _leg_for(d: float) -> int:
-	if d <= CORNER_DS[0]:
-		return 0
-	if d <= CORNER_DS[1]:
-		return 1
-	return 2
+	for i in range(CORNER_DS.size()):
+		if d <= CORNER_DS[i]:
+			return i
+	return CORNER_DS.size()
 
 
 func _leg_u(d: float, leg: int) -> float:
