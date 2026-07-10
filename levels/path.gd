@@ -1,6 +1,7 @@
 extends Node3D
 
 const SANDSTONE_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_sphinx.tres")
+const LEVEL_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel01.mp3")
 const PYRAMID_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_pyramid.tres")
 
 const PATH_HALF_WIDTH: float = 1.5
@@ -42,6 +43,7 @@ var _practice_high: bool = false
 func _ready() -> void:
 	track.curve = _build_curve()
 	_spawn_transform = player.global_transform
+	GameManager.play_music(LEVEL_MUSIC)
 	spear_layer.player_hit.connect(_on_player_hit)
 	god_label.visible = GameManager.god_mode
 	GameManager.god_mode_changed.connect(func(enabled: bool): god_label.visible = enabled)

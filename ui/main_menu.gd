@@ -1,9 +1,10 @@
 extends Control
 
+const MENU_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel01.mp3")
+
 @onready var start_button: Button = $Center/Panel/MenuItems/StartButton
 @onready var quit_button: Button = $Center/Panel/MenuItems/QuitButton
 @onready var music_button: Button = $Center/Panel/MenuItems/MusicButton
-@onready var music_player: AudioStreamPlayer = $MusicPlayer
 
 
 func _ready() -> void:
@@ -13,10 +14,11 @@ func _ready() -> void:
 	start_button.pressed.connect(_on_start_pressed)
 	quit_button.pressed.connect(_on_quit_pressed)
 	music_button.pressed.connect(_on_music_pressed)
+	GameManager.music_enabled_changed.connect(func(_enabled: bool): _update_music_label())
 	start_button.grab_focus()
 
-	music_player.stream.loop = true
-	_apply_music_setting()
+	GameManager.play_music(MENU_MUSIC)
+	_update_music_label()
 
 
 func _on_start_pressed() -> void:
@@ -28,14 +30,8 @@ func _on_quit_pressed() -> void:
 
 
 func _on_music_pressed() -> void:
-	GameManager.music_enabled = not GameManager.music_enabled
-	_apply_music_setting()
+	GameManager.set_music_enabled(not GameManager.music_enabled)
 
 
-func _apply_music_setting() -> void:
-	music_button.text = "Music: On" if GameManager.music_enabled else "Music: Off"
-	if GameManager.music_enabled:
-		if not music_player.playing:
-			music_player.play()
-	else:
-		music_player.stop()
+func _update_music_label() -> void:
+	music_button.text = "Music: On (M)" if GameManager.music_enabled else "Music: Off (M)"

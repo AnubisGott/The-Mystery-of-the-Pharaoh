@@ -460,27 +460,51 @@ func test_footsteps_fire_while_walking() -> void:
 
 
 func test_menu_music_plays_and_toggles() -> void:
-	GameManager.music_enabled = true
+	GameManager.set_music_enabled(true)
 	var menu: Control = load("res://ui/main_menu.tscn").instantiate()
 	add_child(menu)
 	await get_tree().physics_frame
 
-	var music: AudioStreamPlayer = menu.get_node("MusicPlayer")
+	var music: AudioStreamPlayer = GameManager._music_player
 	var toggle: Button = menu.get_node("Center/Panel/MenuItems/MusicButton")
 	_check(music.playing, "menu music not playing on start")
 	_check(music.stream.loop, "menu music does not loop")
-	_check(toggle.text == "Music: On", "toggle label wrong while on")
+	_check(toggle.text == "Music: On (M)", "toggle label wrong while on")
 
 	toggle.pressed.emit()
 	_check(not GameManager.music_enabled, "toggle did not disable music setting")
 	_check(not music.playing, "music still playing after toggle off")
-	_check(toggle.text == "Music: Off", "toggle label wrong while off")
+	_check(toggle.text == "Music: Off (M)", "toggle label wrong while off")
 
 	toggle.pressed.emit()
 	_check(music.playing, "music not playing after toggle back on")
 
 	menu.queue_free()
 	await get_tree().physics_frame
+
+
+func test_level_starts_music_and_m_key_toggles() -> void:
+	GameManager.set_music_enabled(true)
+	GameManager._music_player.stop()
+	GameManager.play_music(level.LEVEL_MUSIC)
+	_check(GameManager._music_player.playing, "level music not playing")
+	_check(GameManager._music_player.stream == level.LEVEL_MUSIC, "level music wrong track")
+
+	var ev := InputEventKey.new()
+	ev.physical_keycode = KEY_M
+	ev.pressed = true
+	Input.parse_input_event(ev)
+	await get_tree().physics_frame
+	_check(not GameManager.music_enabled, "M key did not disable music")
+	_check(not GameManager._music_player.playing, "music still playing after M")
+
+	var ev2 := InputEventKey.new()
+	ev2.physical_keycode = KEY_M
+	ev2.pressed = true
+	Input.parse_input_event(ev2)
+	await get_tree().physics_frame
+	_check(GameManager.music_enabled, "M key did not re-enable music")
+	_check(GameManager._music_player.playing, "music not resumed after M")
 
 
 # --------------------------------------------------------- monument tests
