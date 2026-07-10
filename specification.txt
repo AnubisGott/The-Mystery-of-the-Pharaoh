@@ -1,0 +1,67 @@
+The Mystery of the Pharaoh
+
+Game Objective
+
+The player walks along a path. He can only walk forward and sideways. He cannot leave the path. He can use the mouse to change his line of sight. After walking forward for a while, he reaches the goal and the game ends.
+
+``` The complete process:
+
+Start the game
+→ Main menu
+→ Enter the arena
+→ Collect three energy cells
+→ Exit opens
+→ Reach the exit
+→ Win
+→ Restart or quit
+
+You'll learn a surprising amount with this:
+
+Godot project setup
+3D scenes
+Player movement
+Camera
+Collapses
+Collectible objects
+UI
+Signals
+Win condition
+Scene change
+Windows export
+What's omitted
+
+Minimal setup
+
+You only need these elements:
+
+Element: Task
+Player: Move and look around
+Arena: A path bordered on the right and left by an ankle-high barrier.
+Exit: End of level
+HUD: -
+Winning screen
+Restart or quit
+Main menu: Start and close the game
+View: First Person
+
+First-person controls - You see the world directly from the player's perspective.
+
+Controls:
+
+WASD = move
+Mouse = look around
+Esc = pause
+
+
+If the player reached the end.
+
+Won!
+
+Add two buttons:
+
+Play Again
+Exit
+
+Blender later - You don't need Blender at all for the first working version.
+
+A Windows EXE

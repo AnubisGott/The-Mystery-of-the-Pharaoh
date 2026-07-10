@@ -1,0 +1,64 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://ui/win_screen.gd" id="1"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.09, 0.075, 0.03, 0.94)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="WinScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.03, 0.025, 0.01, 1)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="Center"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="MenuItems" type="VBoxContainer" parent="Center/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="Center/Panel/MenuItems"]
+layout_mode = 2
+text = "The Mystery is Solved"
+horizontal_alignment = 1
+
+[node name="Message" type="Label" parent="Center/Panel/MenuItems"]
+layout_mode = 2
+text = "You collected all golden scarabs and escaped the tomb."
+horizontal_alignment = 1
+
+[node name="PlayAgainButton" type="Button" parent="Center/Panel/MenuItems"]
+custom_minimum_size = Vector2(260, 44)
+layout_mode = 2
+text = "Play Again"
+
+[node name="QuitButton" type="Button" parent="Center/Panel/MenuItems"]
+custom_minimum_size = Vector2(260, 44)
+layout_mode = 2
+text = "Quit"
