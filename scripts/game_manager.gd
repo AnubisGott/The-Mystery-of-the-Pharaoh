@@ -7,7 +7,7 @@ const MAIN_MENU_SCENE: String = "res://ui/main_menu.tscn"
 const PATH_SCENE: String = "res://levels/path.tscn"
 const WIN_SCREEN_SCENE: String = "res://ui/win_screen.tscn"
 
-# Hidden cheat, toggled with Ctrl+Shift+G: spears cannot kill.
+# Hidden cheat, toggled with Alt+Shift+G: spears cannot kill.
 var god_mode: bool = false
 
 
@@ -17,7 +17,7 @@ func _ready() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo \
-			and event.physical_keycode == KEY_G and event.ctrl_pressed and event.shift_pressed:
+			and event.physical_keycode == KEY_G and event.alt_pressed and event.shift_pressed:
 		god_mode = not god_mode
 		god_mode_changed.emit(god_mode)
 
