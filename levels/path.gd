@@ -1,5 +1,7 @@
 extends Node3D
 
+const SANDSTONE_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_sphinx.tres")
+
 const PATH_HALF_WIDTH: float = 1.5
 const START_Z: float = 30.0
 const END_Z: float = -95.0
@@ -37,6 +39,11 @@ func _ready() -> void:
 	spear_layer.player_hit.connect(_on_player_hit)
 	god_label.visible = GameManager.god_mode
 	GameManager.god_mode_changed.connect(func(enabled: bool): god_label.visible = enabled)
+
+	# The GLB carries geometry only; the triplanar sandstone material
+	# needs no UVs and matches the rest of the monument.
+	for mesh in $Monument/Sphinx.find_children("*", "MeshInstance3D"):
+		mesh.material_override = SANDSTONE_MATERIAL
 
 	_spear_timer = Timer.new()
 	_spear_timer.one_shot = true
