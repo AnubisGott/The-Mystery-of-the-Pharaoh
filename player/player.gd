@@ -100,6 +100,8 @@ func is_dying() -> bool:
 
 # Hit by a spear: thud, fall over, lie still, then restart. A head-high
 # spear knocks the body forward, one against the feet sweeps it backwards.
+# One tween chain, no awaits: a coroutine suspended on a SceneTreeTimer
+# leaks at exit if the game quits mid-sequence.
 func die_and_reset(spawn: Transform3D, hit_high: bool = true) -> void:
 	if _is_dying:
 		return
@@ -112,9 +114,11 @@ func die_and_reset(spawn: Transform3D, hit_high: bool = true) -> void:
 	var tween := create_tween()
 	tween.tween_property(visual, "rotation:x", fall_angle, 0.6) \
 			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	await tween.finished
-	await get_tree().create_timer(0.5).timeout
+	tween.tween_interval(0.5)
+	tween.tween_callback(_finish_death.bind(spawn))
 
+
+func _finish_death(spawn: Transform3D) -> void:
 	visual.rotation.x = 0.0
 	reset_to_start(spawn)
 	_is_dying = false
