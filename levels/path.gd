@@ -123,4 +123,4 @@ func _on_practice_timer_timeout() -> void:
 func _on_player_hit() -> void:
 	if GameManager.god_mode:
 		return
-	player.reset_to_start(_spawn_transform)
+	player.die_and_reset(_spawn_transform)

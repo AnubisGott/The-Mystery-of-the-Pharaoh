@@ -55,8 +55,24 @@ func _reset_state() -> void:
 	GameManager.god_mode = false
 	layer._clear_spears()
 	level._practice_high = false
+	# Queued-free spears stay alive until frame end and can still score a
+	# hit; let that frame pass, then wait out any running death sequence.
+	await get_tree().physics_frame
+	for i in 150:
+		if not player.is_dying():
+			break
+		await get_tree().physics_frame
 	player.reset_to_start(level._spawn_transform)
 	await _settle()
+
+
+# Waits for the death sequence to finish and the player to be reset.
+func _await_death_reset() -> bool:
+	for i in 150:
+		await get_tree().physics_frame
+		if player.global_position.z > 25.0 and not player.is_dying():
+			return true
+	return false
 
 
 func _settle() -> void:
@@ -250,8 +266,8 @@ func test_low_spear_hits_standing_player() -> void:
 	_spawn_spear_with_tip_at(false, -30.0)
 	for i in 3:
 		await get_tree().physics_frame
-	_check(player.global_position.z > 25.0, "standing player not reset by low spear")
 	_check(_spear_count() == 0, "spears not cleared after hit")
+	_check(await _await_death_reset(), "standing player not reset by low spear")
 
 
 func test_high_spear_hits_standing_player() -> void:
@@ -259,7 +275,22 @@ func test_high_spear_hits_standing_player() -> void:
 	_spawn_spear_with_tip_at(true, -30.0)
 	for i in 3:
 		await get_tree().physics_frame
-	_check(player.global_position.z > 25.0, "standing player not reset by high spear")
+	_check(await _await_death_reset(), "standing player not reset by high spear")
+
+
+func test_death_plays_sound_and_animation() -> void:
+	await _place_on_path(10.0)
+	level._on_player_hit()
+	for i in 10:
+		await get_tree().physics_frame
+
+	_check(player.is_dying(), "player not in dying state after hit")
+	_check(player.get_node("HitPlayer") != null, "HitPlayer node missing")
+	var visual: Node3D = player.get_node("Visual")
+	_check(visual.rotation.x < -0.05, "death animation did not start tipping the body")
+
+	_check(await _await_death_reset(), "death sequence did not end in a reset")
+	_check(absf(visual.rotation.x) < 0.01, "body rotation not restored after reset")
 
 
 func test_ducking_dodges_high_spear() -> void:
@@ -270,14 +301,21 @@ func test_ducking_dodges_high_spear() -> void:
 	_spawn_spear_with_tip_at(true, -30.0)
 	for i in 3:
 		await get_tree().physics_frame
-	Input.action_release("duck")
 	_check(player.global_position.z < 15.0, "ducking player was reset by high spear")
+
+	# Keep ducking until the spear is gone: releasing mid-overlap would
+	# legitimately count as a hit.
+	layer._clear_spears()
+	await get_tree().physics_frame
+	Input.action_release("duck")
 
 
 func test_jumping_dodges_low_spear() -> void:
 	await _place_on_path(10.0)
+	Input.action_release("jump")
+	await get_tree().physics_frame
 	Input.action_press("jump")
-	for i in 5:
+	for i in 15:
 		await get_tree().physics_frame
 		if not player.is_on_floor():
 			break
@@ -362,8 +400,7 @@ func test_god_mode_prevents_reset() -> void:
 
 	GameManager.god_mode = false
 	level._on_player_hit()
-	await get_tree().physics_frame
-	_check(player.global_position.z > 25.0, "player not reset after god mode off")
+	_check(await _await_death_reset(), "player not reset after god mode off")
 
 
 func _press_god_key(with_ctrl: bool, with_alt: bool) -> void:

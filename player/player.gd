@@ -20,10 +20,12 @@ const CAMERA_HEIGHT: float = 2.3
 @onready var _arm_l: Node3D = $Visual/ArmL
 @onready var _arm_r: Node3D = $Visual/ArmR
 @onready var _footstep_player: AudioStreamPlayer = $FootstepPlayer
+@onready var _hit_player: AudioStreamPlayer = $HitPlayer
 
 var _pitch: float = 0.0
 var _yaw: float = 0.0
 var _is_ducking: bool = false
+var _is_dying: bool = false
 var _walk_phase: float = 0.0
 var _last_step_index: int = 0
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
@@ -56,6 +58,15 @@ func _physics_process(delta: float) -> void:
 	if get_tree().paused:
 		return
 
+	if _is_dying:
+		velocity.x = 0.0
+		velocity.z = 0.0
+		if not is_on_floor():
+			velocity.y -= _gravity * delta
+		move_and_slide()
+		camera_pivot.global_position.y = CAMERA_HEIGHT
+		return
+
 	if Input.is_action_pressed("duck") != _is_ducking:
 		_set_ducking(not _is_ducking)
 
@@ -81,6 +92,30 @@ func _physics_process(delta: float) -> void:
 
 func is_ducking() -> bool:
 	return _is_ducking
+
+
+func is_dying() -> bool:
+	return _is_dying
+
+
+# Hit by a spear: thud, fall over forward, lie still, then restart.
+func die_and_reset(spawn: Transform3D) -> void:
+	if _is_dying:
+		return
+
+	_is_dying = true
+	_hit_player.play()
+	velocity = Vector3.ZERO
+
+	var tween := create_tween()
+	tween.tween_property(visual, "rotation:x", -PI / 2.0, 0.6) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	await tween.finished
+	await get_tree().create_timer(0.5).timeout
+
+	visual.rotation.x = 0.0
+	reset_to_start(spawn)
+	_is_dying = false
 
 
 func reset_to_start(spawn: Transform3D) -> void:
