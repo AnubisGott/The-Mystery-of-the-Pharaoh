@@ -1,7 +1,5 @@
 extends Node3D
 
-const SPEAR_SCENE: PackedScene = preload("res://hazards/spear.tscn")
-
 const PATH_HALF_WIDTH: float = 1.5
 const START_Z: float = 20.0
 const END_Z: float = -25.0
@@ -11,19 +9,15 @@ const SAMPLE_STEP: float = 1.0
 
 const SPEAR_MIN_INTERVAL: float = 1.6
 const SPEAR_MAX_INTERVAL: float = 3.0
-const SPEAR_SIDE_OFFSET: float = 13.0
-const SPEAR_LOW_Y: float = 0.35
-const SPEAR_HIGH_Y: float = 1.5
 
-# Practice zone: two spears repeat at the same fixed spot near the
-# start (low then high) so jump and duck can be tried safely. Random
-# spears only begin past it.
-const PRACTICE_Z: float = 13.0
+# Practice near the start: spears alternate low (jump) and high (duck)
+# in a fixed rhythm. Random spears only begin past the practice zone.
 const PRACTICE_INTERVAL: float = 2.4
 const RANDOM_SPEARS_START_Z: float = 8.0
 
 @onready var player: CharacterBody3D = $Player
 @onready var track: Path3D = $Track
+@onready var spear_layer: CanvasLayer = $SpearLayer
 
 var _spawn_transform: Transform3D
 var _spear_timer: Timer
@@ -34,6 +28,7 @@ var _practice_high: bool = false
 func _ready() -> void:
 	track.curve = _build_curve()
 	_spawn_transform = player.global_transform
+	spear_layer.player_hit.connect(_on_player_hit)
 
 	_spear_timer = Timer.new()
 	_spear_timer.one_shot = true
@@ -79,32 +74,13 @@ func _restart_spear_timer() -> void:
 
 func _on_spear_timer_timeout() -> void:
 	if player.global_position.z < RANDOM_SPEARS_START_Z:
-		_spawn_random_spear()
+		spear_layer.spawn_spear(randf() < 0.5, randf() < 0.5)
 	_restart_spear_timer()
 
 
 func _on_practice_timer_timeout() -> void:
-	_spawn_spear_at(PRACTICE_Z, _practice_high, _practice_high)
+	spear_layer.spawn_spear(_practice_high, _practice_high)
 	_practice_high = not _practice_high
-
-
-# A spear crosses the path slightly ahead of the player, from a random
-# side and at random height: low ones are jumped, high ones are ducked.
-func _spawn_random_spear() -> void:
-	var target_z: float = clamp(player.global_position.z - randf_range(3.0, 9.0), END_Z, START_Z)
-	_spawn_spear_at(target_z, randf() < 0.5, randf() < 0.5)
-
-
-func _spawn_spear_at(target_z: float, is_high: bool, from_left: bool) -> void:
-	var spear := SPEAR_SCENE.instantiate()
-	spear.direction = Vector3.RIGHT if from_left else Vector3.LEFT
-	spear.position = Vector3(
-		_path_x(target_z) + (-SPEAR_SIDE_OFFSET if from_left else SPEAR_SIDE_OFFSET),
-		SPEAR_HIGH_Y if is_high else SPEAR_LOW_Y,
-		target_z
-	)
-	spear.player_hit.connect(_on_player_hit)
-	add_child(spear)
 
 
 func _on_player_hit() -> void:

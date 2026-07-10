@@ -1,8 +1,9 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="PackedScene" path="res://player/player.tscn" id="1"]
 [ext_resource type="Script" path="res://exit/win_zone.gd" id="2"]
 [ext_resource type="Script" path="res://levels/path.gd" id="3"]
+[ext_resource type="Script" path="res://hazards/spear_layer.gd" id="4"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sand"]
 albedo_color = Color(0.76, 0.64, 0.42, 1)
@@ -77,6 +78,9 @@ shape = SubResource("BoxShape3D_goalzone")
 
 [node name="Player" parent="." instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 19)
+
+[node name="SpearLayer" type="CanvasLayer" parent="."]
+script = ExtResource("4")
 
 [node name="ControlsHint" type="CanvasLayer" parent="."]
 

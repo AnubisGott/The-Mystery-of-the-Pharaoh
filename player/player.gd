@@ -67,6 +67,10 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 
 
+func is_ducking() -> bool:
+	return _is_ducking
+
+
 func reset_to_start(spawn: Transform3D) -> void:
 	if _is_ducking:
 		_set_ducking(false)
