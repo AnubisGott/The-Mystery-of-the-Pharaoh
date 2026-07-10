@@ -4,7 +4,7 @@ A small Godot 4 first-person learning project.
 
 ## Goal
 
-Walk along a desert path bordered by ankle-high barriers. You cannot leave the path. Reach the golden gate at the end to win.
+Follow the zigzag path across the desert sand and reach the golden gate at its end to win.
 
 ## Current Target
 
