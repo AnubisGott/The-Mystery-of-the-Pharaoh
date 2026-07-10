@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://0uoca7xsrri4"
+path="res://.godot/imported/Dying Sound Hit By Spear.mp3-e3056db2fbd8029ec66f85a181ada461.mp3str"
+
+[deps]
+
+source_file="res://soundAndMusic/sounds/Dying Sound Hit By Spear.mp3"
+dest_files=["res://.godot/imported/Dying Sound Hit By Spear.mp3-e3056db2fbd8029ec66f85a181ada461.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

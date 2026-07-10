@@ -70,7 +70,6 @@ A Windows EXE
 
 Remaining polish candidates: 
 - face details for the sphinx 
-- jump/duck poses for the adventurer (bent knees)
 
 add sounds (splice library), ambient audio (wind, footsteps), ägyptisch-mystische Sounds, Percussion oder Ambient-Loops
 

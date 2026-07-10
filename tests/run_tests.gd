@@ -507,6 +507,21 @@ func test_level_starts_music_and_m_key_toggles() -> void:
 	_check(GameManager._music_player.playing, "music not resumed after M")
 
 
+func test_win_screen_plays_success_jingle() -> void:
+	GameManager.set_music_enabled(true)
+	var win_screen: Control = load("res://ui/win_screen.tscn").instantiate()
+	add_child(win_screen)
+	await get_tree().physics_frame
+
+	var music: AudioStreamPlayer = GameManager._music_player
+	_check(music.playing, "win jingle not playing")
+	_check(music.stream == win_screen.WIN_JINGLE, "win screen playing wrong track")
+	_check(not music.stream.loop, "win jingle should not loop")
+
+	win_screen.queue_free()
+	await get_tree().physics_frame
+
+
 # --------------------------------------------------------- monument tests
 
 func test_monument_and_exit_marker() -> void:

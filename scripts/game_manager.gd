@@ -36,9 +36,9 @@ func _unhandled_input(event: InputEvent) -> void:
 # Starts the track from the beginning (if music is enabled). The player
 # lives on the autoload, so music survives scene changes until the next
 # scene requests its own track.
-func play_music(stream: AudioStream) -> void:
+func play_music(stream: AudioStream, loop: bool = true) -> void:
 	if stream is AudioStreamMP3 or stream is AudioStreamOggVorbis:
-		stream.loop = true
+		stream.loop = loop
 	_music_player.stream = stream
 	if music_enabled:
 		_music_player.play()
