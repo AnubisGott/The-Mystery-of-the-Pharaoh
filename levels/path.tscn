@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3]
+[gd_scene load_steps=22 format=3]
 
 [ext_resource type="PackedScene" path="res://player/player.tscn" id="1"]
 [ext_resource type="Script" path="res://exit/win_zone.gd" id="2"]
@@ -69,6 +69,9 @@ size = Vector3(3.8, 2.6, 0.2)
 [sub_resource type="BoxShape3D" id="BoxShape3D_goalzone"]
 size = Vector3(3.4, 2.5, 0.6)
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_start_wall"]
+size = Vector3(8, 4, 0.5)
+
 [node name="Path" type="Node3D"]
 script = ExtResource("3")
 
@@ -123,6 +126,12 @@ shape = SubResource("BoxShape3D_goalzone")
 
 [node name="Player" parent="." instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 29)
+
+[node name="StartWall" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 30.2)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StartWall"]
+shape = SubResource("BoxShape3D_start_wall")
 
 [node name="SpearLayer" type="CanvasLayer" parent="."]
 script = ExtResource("4")
