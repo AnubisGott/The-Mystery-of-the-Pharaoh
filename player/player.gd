@@ -30,7 +30,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		var yaw_limit := deg_to_rad(yaw_limit_degrees)
 		_yaw = clamp(_yaw - event.relative.x * mouse_sensitivity, -yaw_limit, yaw_limit)
 		rotation.y = _yaw
-		_pitch = clamp(_pitch - event.relative.y * mouse_sensitivity, deg_to_rad(-85.0), deg_to_rad(85.0))
+		_pitch = clamp(_pitch - event.relative.y * mouse_sensitivity, deg_to_rad(-60.0), deg_to_rad(30.0))
 		camera_pivot.rotation.x = _pitch
 
 
