@@ -107,6 +107,13 @@ func win_game() -> void:
 
 
 func quit_game() -> void:
+	# Any stream still playing at shutdown leaks its playback object;
+	# stop every audio player in the tree, give the audio server one
+	# frame to release them, then quit.
+	for player in get_tree().root.find_children("*", "AudioStreamPlayer", true, false):
+		player.stop()
+	for player in get_tree().root.find_children("*", "AudioStreamPlayer3D", true, false):
+		player.stop()
 	_music_player.stop()
 	_music_player.stream = null
 	await get_tree().process_frame
