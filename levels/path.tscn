@@ -1,4 +1,4 @@
-[gd_scene load_steps=25 format=3]
+[gd_scene load_steps=21 format=3]
 
 [ext_resource type="PackedScene" path="res://player/player.tscn" id="1"]
 [ext_resource type="Script" path="res://exit/win_zone.gd" id="2"]
@@ -7,10 +7,8 @@
 [ext_resource type="Texture2D" path="res://textures/aerial_sand_diff_1k.jpg" id="5"]
 [ext_resource type="Texture2D" path="res://textures/aerial_sand_nor_gl_1k.jpg" id="6"]
 [ext_resource type="Texture2D" path="res://textures/aerial_sand_rough_1k.jpg" id="7"]
-[ext_resource type="Texture2D" path="res://textures/large_sandstone_blocks_diff_1k.jpg" id="11"]
-[ext_resource type="Texture2D" path="res://textures/large_sandstone_blocks_nor_gl_1k.jpg" id="12"]
-[ext_resource type="Texture2D" path="res://textures/large_sandstone_blocks_rough_1k.jpg" id="13"]
 [ext_resource type="PackedScene" path="res://models/sphinx.glb" id="14"]
+[ext_resource type="PackedScene" path="res://models/pyramid.glb" id="15"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.21, 0.42, 0.75, 1)
@@ -52,15 +50,6 @@ uv1_scale = Vector3(0.3, 0.3, 0.3)
 uv1_triplanar = true
 uv1_world_triplanar = true
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pyramid"]
-albedo_texture = ExtResource("11")
-roughness_texture = ExtResource("13")
-normal_enabled = true
-normal_texture = ExtResource("12")
-uv1_scale = Vector3(0.08, 0.08, 0.08)
-uv1_triplanar = true
-uv1_world_triplanar = true
-
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_doorway"]
 albedo_color = Color(0.08, 0.06, 0.04, 1)
 
@@ -72,10 +61,6 @@ size = Vector3(300, 0.25, 300)
 size = Vector3(300, 0.25, 300)
 
 [sub_resource type="Curve3D" id="Curve3D_track"]
-
-[sub_resource type="PrismMesh" id="PrismMesh_pyramid"]
-material = SubResource("StandardMaterial3D_pyramid")
-size = Vector3(70, 30, 45)
 
 [sub_resource type="BoxMesh" id="BoxMesh_doorway"]
 material = SubResource("StandardMaterial3D_doorway")
@@ -119,9 +104,8 @@ material = SubResource("StandardMaterial3D_path")
 
 [node name="Monument" type="Node3D" parent="."]
 
-[node name="Pyramid" type="MeshInstance3D" parent="Monument"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 15, -122)
-mesh = SubResource("PrismMesh_pyramid")
+[node name="Pyramid" parent="Monument" instance=ExtResource("15")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -122)
 
 [node name="Sphinx" parent="Monument" instance=ExtResource("14")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -96.9)
