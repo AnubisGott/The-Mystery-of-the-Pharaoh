@@ -46,7 +46,9 @@ func _ready() -> void:
 	GameManager.play_music(LEVEL_MUSIC)
 	spear_layer.player_hit.connect(_on_player_hit)
 	god_label.visible = GameManager.god_mode
-	GameManager.god_mode_changed.connect(func(enabled: bool): god_label.visible = enabled)
+	# Named method, not a lambda: connections from the autoload's signal
+	# to a lambda capture this scene strongly and leak it on scene change.
+	GameManager.god_mode_changed.connect(_on_god_mode_changed)
 
 	# The GLBs carry geometry only; the triplanar sandstone materials
 	# need no UVs and match the rest of the monument.
@@ -120,6 +122,10 @@ func _on_practice_timer_timeout() -> void:
 		return
 	spear_layer.spawn_spear(_practice_high, _practice_high)
 	_practice_high = not _practice_high
+
+
+func _on_god_mode_changed(enabled: bool) -> void:
+	god_label.visible = enabled
 
 
 func _on_player_hit(hit_high: bool) -> void:
