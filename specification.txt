@@ -76,8 +76,5 @@ add sounds (splice library), ambient audio (wind, footsteps), ägyptisch-mystisc
 
 add intro sequence for every level
 
-add welcome screen
+add success sound on level end
 
-animations for going, jumping, ducking
-
-add some tests, like ducking, jumping, hit boxes, staying on the path, ... all the things from this converation, ...

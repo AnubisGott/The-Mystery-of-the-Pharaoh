@@ -9,6 +9,7 @@ const WIN_SCREEN_SCENE: String = "res://ui/win_screen.tscn"
 
 # Hidden cheat, toggled with Alt+Shift+G: spears cannot kill.
 var god_mode: bool = false
+var music_enabled: bool = true
 
 
 func _ready() -> void:

@@ -1,7 +1,8 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://ui/main_menu.gd" id="1"]
 [ext_resource type="Texture2D" path="res://textures/start-screen.jpg" id="2"]
+[ext_resource type="AudioStream" path="res://soundAndMusic/music/AztekenherausforderungLevel01.mp3" id="3"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 bg_color = Color(0.09, 0.07, 0.04, 0.6)
@@ -56,3 +57,12 @@ text = "Enter the Tomb"
 custom_minimum_size = Vector2(260, 44)
 layout_mode = 2
 text = "Quit"
+
+[node name="MusicButton" type="Button" parent="Center/Panel/MenuItems"]
+custom_minimum_size = Vector2(260, 44)
+layout_mode = 2
+text = "Music: On"
+
+[node name="MusicPlayer" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("3")
+volume_db = -6.0

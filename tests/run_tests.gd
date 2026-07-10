@@ -459,6 +459,30 @@ func test_footsteps_fire_while_walking() -> void:
 	_check(player._last_step_index == 0, "step counter not reset when standing")
 
 
+func test_menu_music_plays_and_toggles() -> void:
+	GameManager.music_enabled = true
+	var menu: Control = load("res://ui/main_menu.tscn").instantiate()
+	add_child(menu)
+	await get_tree().physics_frame
+
+	var music: AudioStreamPlayer = menu.get_node("MusicPlayer")
+	var toggle: Button = menu.get_node("Center/Panel/MenuItems/MusicButton")
+	_check(music.playing, "menu music not playing on start")
+	_check(music.stream.loop, "menu music does not loop")
+	_check(toggle.text == "Music: On", "toggle label wrong while on")
+
+	toggle.pressed.emit()
+	_check(not GameManager.music_enabled, "toggle did not disable music setting")
+	_check(not music.playing, "music still playing after toggle off")
+	_check(toggle.text == "Music: Off", "toggle label wrong while off")
+
+	toggle.pressed.emit()
+	_check(music.playing, "music not playing after toggle back on")
+
+	menu.queue_free()
+	await get_tree().physics_frame
+
+
 # --------------------------------------------------------- monument tests
 
 func test_monument_and_exit_marker() -> void:
