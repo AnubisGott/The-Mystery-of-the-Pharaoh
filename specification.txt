@@ -68,11 +68,9 @@ A Windows EXE
 
 
 
-Remaining polish candidates, whenever you like: face details for the sphinx, jump/duck poses for the adventurer (bent knees), or sound effects.
-
-add a dark enterance at the end of the level
-
-add some straight path behind the start point
+Remaining polish candidates: 
+- face details for the sphinx 
+- jump/duck poses for the adventurer (bent knees)
 
 add sounds (splice library), ambient audio (wind, footsteps), ägyptisch-mystische Sounds, Percussion oder Ambient-Loops
 
@@ -81,3 +79,5 @@ add intro sequence for every level
 add welcome screen
 
 animations for going, jumping, ducking
+
+add some tests, like ducking, jumping, hit boxes, staying on the path, ... all the things from this converation, ...

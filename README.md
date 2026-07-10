@@ -21,3 +21,10 @@ blender --background --python tools/blender/make_sphinx.py -- models/sphinx.glb
 ```
 
 (Blender lives in `C:\dev\blender-5.1.2-windows-x64\`.)
+
+## Tests
+
+`run-tests.bat` runs the headless test suite (`tests/run_tests.tscn`)
+covering movement, spears, the path, god mode, and the monument. The
+exit code is the number of failures. Tests drive real physics and
+input, so a full run takes a few seconds.
