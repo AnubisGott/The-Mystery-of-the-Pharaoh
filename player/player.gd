@@ -2,12 +2,12 @@ extends CharacterBody3D
 
 @export var move_speed: float = 5.0
 @export var duck_speed: float = 2.5
-@export var jump_velocity: float = 4.8
+@export var jump_velocity: float = 3.8
 @export var mouse_sensitivity: float = 0.0025
 @export var yaw_limit_degrees: float = 45.0
 
 const STAND_HEIGHT: float = 1.8
-const DUCK_HEIGHT: float = 1.0
+const DUCK_HEIGHT: float = 1.3
 # Keeps the view steady while the body jumps or ducks, so screen-space
 # overlays (the 2D spears) visibly fly straight.
 const CAMERA_HEIGHT: float = 2.3
