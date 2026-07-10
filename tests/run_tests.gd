@@ -567,6 +567,20 @@ func test_sprint_is_faster() -> void:
 	_check(sprint_speed > 6.5, "sprint not faster: %f" % sprint_speed)
 
 
+func test_menu_has_level_entries() -> void:
+	var menu: Control = load("res://ui/main_menu.tscn").instantiate()
+	add_child(menu)
+	await get_tree().physics_frame
+
+	var level1: Button = menu.get_node("Center/Panel/MenuItems/Level1Button")
+	var level2: Button = menu.get_node("Center/Panel/MenuItems/Level2Button")
+	_check(level1.text.contains("Sphinx"), "level 1 entry missing its name")
+	_check(level2.text.contains("Pendulum"), "level 2 entry missing its name")
+
+	menu.queue_free()
+	await get_tree().physics_frame
+
+
 func test_level_chain_scenes_exist() -> void:
 	for scene_path in GameManager.LEVEL_SCENES:
 		_check(ResourceLoader.exists(scene_path), "missing level scene: %s" % scene_path)

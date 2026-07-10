@@ -47,10 +47,15 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="StartButton" type="Button" parent="Center/Panel/MenuItems"]
-custom_minimum_size = Vector2(260, 44)
+[node name="Level1Button" type="Button" parent="Center/Panel/MenuItems"]
+custom_minimum_size = Vector2(300, 44)
 layout_mode = 2
-text = "Enter the Tomb"
+text = "Level 1 - The Path of the Sphinx"
+
+[node name="Level2Button" type="Button" parent="Center/Panel/MenuItems"]
+custom_minimum_size = Vector2(300, 44)
+layout_mode = 2
+text = "Level 2 - The Pendulum's Journey"
 
 [node name="QuitButton" type="Button" parent="Center/Panel/MenuItems"]
 custom_minimum_size = Vector2(260, 44)

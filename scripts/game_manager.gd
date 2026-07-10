@@ -71,10 +71,14 @@ func set_music_enabled(enabled: bool) -> void:
 
 
 func start_game() -> void:
-	current_level = 0
+	start_level(0)
+
+
+func start_level(index: int) -> void:
+	current_level = clampi(index, 0, LEVEL_SCENES.size() - 1)
 	get_tree().paused = false
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-	get_tree().change_scene_to_file(LEVEL_SCENES[0])
+	get_tree().change_scene_to_file(LEVEL_SCENES[current_level])
 
 
 # Called by a level's exit zone: loads the next level, or the win

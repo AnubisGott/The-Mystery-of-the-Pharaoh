@@ -2,7 +2,8 @@ extends Control
 
 const MENU_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel01.mp3")
 
-@onready var start_button: Button = $Center/Panel/MenuItems/StartButton
+@onready var level1_button: Button = $Center/Panel/MenuItems/Level1Button
+@onready var level2_button: Button = $Center/Panel/MenuItems/Level2Button
 @onready var quit_button: Button = $Center/Panel/MenuItems/QuitButton
 @onready var music_button: Button = $Center/Panel/MenuItems/MusicButton
 
@@ -11,18 +12,19 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	get_tree().paused = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	start_button.pressed.connect(_on_start_pressed)
+	level1_button.pressed.connect(_on_level_pressed.bind(0))
+	level2_button.pressed.connect(_on_level_pressed.bind(1))
 	quit_button.pressed.connect(_on_quit_pressed)
 	music_button.pressed.connect(_on_music_pressed)
 	GameManager.music_enabled_changed.connect(_on_music_enabled_changed)
-	start_button.grab_focus()
+	level1_button.grab_focus()
 
 	GameManager.play_music(MENU_MUSIC)
 	_update_music_label()
 
 
-func _on_start_pressed() -> void:
-	GameManager.start_game()
+func _on_level_pressed(index: int) -> void:
+	GameManager.start_level(index)
 
 
 func _on_quit_pressed() -> void:
