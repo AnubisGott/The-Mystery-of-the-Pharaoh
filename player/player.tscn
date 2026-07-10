@@ -38,4 +38,4 @@ current = true
 
 [node name="FootstepPlayer" type="AudioStreamPlayer" parent="."]
 stream = SubResource("AudioStreamRandomizer_steps")
-volume_db = -8.0
+volume_db = -14.0

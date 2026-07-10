@@ -11,15 +11,17 @@ import struct
 import wave
 
 RATE = 44100
-DURATION = 0.16
+DURATION = 0.22
 VARIANTS = 4
 
 
 def generate(seed: int, path: str) -> None:
+    # Dune sand: a soft muffled "shff" - heavily low-passed noise with a
+    # slow attack and gentle decay, and only a hint of a thump.
     rnd = random.Random(seed)
     count = int(RATE * DURATION)
-    thump_freq = rnd.uniform(70.0, 95.0)
-    noise_cutoff = rnd.uniform(0.10, 0.16)
+    thump_freq = rnd.uniform(55.0, 70.0)
+    noise_cutoff = rnd.uniform(0.05, 0.08)
     samples = []
     low_pass = 0.0
 
@@ -28,16 +30,15 @@ def generate(seed: int, path: str) -> None:
 
         white = rnd.uniform(-1.0, 1.0)
         low_pass += noise_cutoff * (white - low_pass)
-        scuff_env = math.exp(-t * 30.0) * min(1.0, t / 0.004)
-        scuff = low_pass * scuff_env * 2.2
+        scuff_env = math.exp(-t * 16.0) * min(1.0, t / 0.02)
+        scuff = low_pass * scuff_env * 3.0
 
-        freq = thump_freq * max(0.5, 1.0 - t * 2.0)
-        thump = math.sin(math.tau * freq * t) * math.exp(-t * 45.0)
+        thump = math.sin(math.tau * thump_freq * t) * math.exp(-t * 30.0)
 
-        samples.append(0.7 * scuff + 0.5 * thump)
+        samples.append(0.85 * scuff + 0.12 * thump)
 
     peak = max(abs(s) for s in samples)
-    samples = [s / peak * 0.5 for s in samples]
+    samples = [s / peak * 0.35 for s in samples]
 
     with wave.open(path, "wb") as out:
         out.setnchannels(1)
