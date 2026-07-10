@@ -2,10 +2,12 @@ extends CharacterBody3D
 
 @export var move_speed: float = 5.0
 @export var mouse_sensitivity: float = 0.0025
+@export var yaw_limit_degrees: float = 45.0
 
 @onready var camera_pivot: Node3D = $CameraPivot
 
 var _pitch: float = 0.0
+var _yaw: float = 0.0
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 
 
@@ -25,7 +27,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-		rotate_y(-event.relative.x * mouse_sensitivity)
+		var yaw_limit := deg_to_rad(yaw_limit_degrees)
+		_yaw = clamp(_yaw - event.relative.x * mouse_sensitivity, -yaw_limit, yaw_limit)
+		rotation.y = _yaw
 		_pitch = clamp(_pitch - event.relative.y * mouse_sensitivity, deg_to_rad(-85.0), deg_to_rad(85.0))
 		camera_pivot.rotation.x = _pitch
 
