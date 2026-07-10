@@ -20,25 +20,23 @@ def generate(seed: int, path: str) -> None:
     # slow attack and gentle decay, and only a hint of a thump.
     rnd = random.Random(seed)
     count = int(RATE * DURATION)
-    thump_freq = rnd.uniform(55.0, 70.0)
-    noise_cutoff = rnd.uniform(0.05, 0.08)
+    noise_cutoff = rnd.uniform(0.03, 0.05)
     samples = []
     low_pass = 0.0
+    low_pass2 = 0.0
 
     for i in range(count):
         t = i / RATE
 
+        # Double low-pass: no transient survives, only a muffled sigh.
         white = rnd.uniform(-1.0, 1.0)
         low_pass += noise_cutoff * (white - low_pass)
-        scuff_env = math.exp(-t * 16.0) * min(1.0, t / 0.02)
-        scuff = low_pass * scuff_env * 3.0
-
-        thump = math.sin(math.tau * thump_freq * t) * math.exp(-t * 30.0)
-
-        samples.append(0.85 * scuff + 0.12 * thump)
+        low_pass2 += 0.25 * (low_pass - low_pass2)
+        scuff_env = math.exp(-t * 12.0) * min(1.0, t / 0.035)
+        samples.append(low_pass2 * scuff_env * 4.0)
 
     peak = max(abs(s) for s in samples)
-    samples = [s / peak * 0.35 for s in samples]
+    samples = [s / peak * 0.28 for s in samples]
 
     with wave.open(path, "wb") as out:
         out.setnchannels(1)
