@@ -45,12 +45,12 @@ theme_override_constants/separation = 14
 
 [node name="Title" type="Label" parent="Center/Panel/MenuItems"]
 layout_mode = 2
-text = "The Mystery is Solved"
+text = "Won!"
 horizontal_alignment = 1
 
 [node name="Message" type="Label" parent="Center/Panel/MenuItems"]
 layout_mode = 2
-text = "You collected all golden scarabs and escaped the tomb."
+text = "You reached the goal and solved the mystery of the pharaoh."
 horizontal_alignment = 1
 
 [node name="PlayAgainButton" type="Button" parent="Center/Panel/MenuItems"]
