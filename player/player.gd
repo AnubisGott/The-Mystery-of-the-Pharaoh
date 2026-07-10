@@ -98,8 +98,9 @@ func is_dying() -> bool:
 	return _is_dying
 
 
-# Hit by a spear: thud, fall over forward, lie still, then restart.
-func die_and_reset(spawn: Transform3D) -> void:
+# Hit by a spear: thud, fall over, lie still, then restart. A head-high
+# spear knocks the body forward, one against the feet sweeps it backwards.
+func die_and_reset(spawn: Transform3D, hit_high: bool = true) -> void:
 	if _is_dying:
 		return
 
@@ -107,8 +108,9 @@ func die_and_reset(spawn: Transform3D) -> void:
 	_hit_player.play()
 	velocity = Vector3.ZERO
 
+	var fall_angle := -PI / 2.0 if hit_high else PI / 2.0
 	var tween := create_tween()
-	tween.tween_property(visual, "rotation:x", -PI / 2.0, 0.6) \
+	tween.tween_property(visual, "rotation:x", fall_angle, 0.6) \
 			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	await tween.finished
 	await get_tree().create_timer(0.5).timeout

@@ -1,6 +1,6 @@
 extends CanvasLayer
 
-signal player_hit
+signal player_hit(hit_high: bool)
 
 const Spear2D := preload("res://hazards/spear_2d.gd")
 
@@ -70,7 +70,7 @@ func _physics_process(_delta: float) -> void:
 
 		var dodged: bool = player.is_ducking() if spear.is_high else not player.is_on_floor()
 		if not dodged:
-			player_hit.emit()
+			player_hit.emit(spear.is_high)
 			_clear_spears()
 			return
 

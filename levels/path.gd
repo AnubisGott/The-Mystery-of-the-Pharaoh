@@ -120,7 +120,7 @@ func _on_practice_timer_timeout() -> void:
 	_practice_high = not _practice_high
 
 
-func _on_player_hit() -> void:
+func _on_player_hit(hit_high: bool) -> void:
 	if GameManager.god_mode:
 		return
-	player.die_and_reset(_spawn_transform)
+	player.die_and_reset(_spawn_transform, hit_high)

@@ -278,16 +278,30 @@ func test_high_spear_hits_standing_player() -> void:
 	_check(await _await_death_reset(), "standing player not reset by high spear")
 
 
-func test_death_plays_sound_and_animation() -> void:
+func test_head_hit_falls_forward() -> void:
 	await _place_on_path(10.0)
-	level._on_player_hit()
+	level._on_player_hit(true)
 	for i in 10:
 		await get_tree().physics_frame
 
 	_check(player.is_dying(), "player not in dying state after hit")
 	_check(player.get_node("HitPlayer") != null, "HitPlayer node missing")
 	var visual: Node3D = player.get_node("Visual")
-	_check(visual.rotation.x < -0.05, "death animation did not start tipping the body")
+	_check(visual.rotation.x < -0.05, "head hit did not tip the body forward")
+
+	_check(await _await_death_reset(), "death sequence did not end in a reset")
+	_check(absf(visual.rotation.x) < 0.01, "body rotation not restored after reset")
+
+
+func test_feet_hit_falls_backwards() -> void:
+	await _place_on_path(10.0)
+	level._on_player_hit(false)
+	for i in 10:
+		await get_tree().physics_frame
+
+	_check(player.is_dying(), "player not in dying state after hit")
+	var visual: Node3D = player.get_node("Visual")
+	_check(visual.rotation.x > 0.05, "feet hit did not tip the body backwards")
 
 	_check(await _await_death_reset(), "death sequence did not end in a reset")
 	_check(absf(visual.rotation.x) < 0.01, "body rotation not restored after reset")
@@ -394,12 +408,12 @@ func test_god_mode_shortcut_toggles() -> void:
 func test_god_mode_prevents_reset() -> void:
 	await _place_on_path(10.0)
 	GameManager.god_mode = true
-	level._on_player_hit()
+	level._on_player_hit(true)
 	await get_tree().physics_frame
 	_check(player.global_position.z < 15.0, "player was reset despite god mode")
 
 	GameManager.god_mode = false
-	level._on_player_hit()
+	level._on_player_hit(true)
 	_check(await _await_death_reset(), "player not reset after god mode off")
 
 
