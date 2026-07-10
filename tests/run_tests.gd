@@ -668,10 +668,40 @@ func test_kill_plane_resets_fall() -> void:
 	await _free_hall(hall)
 
 
+func test_pendulum_speeds_random_per_run() -> void:
+	var hall := await _spawn_hall()
+	var pendulums := get_tree().get_nodes_in_group("pendulums")
+	var before: Array = []
+	var all_in_range := true
+	for p in pendulums:
+		before.append(p.period)
+		if p.period < p.MIN_PERIOD or p.period > p.MAX_PERIOD:
+			all_in_range = false
+	_check(all_in_range, "pendulum period outside allowed range")
+
+	var distinct := {}
+	for value in before:
+		distinct[value] = true
+	_check(distinct.size() > 1, "all pendulums share one speed")
+
+	# Dying re-rolls every speed.
+	hall._on_trap_hit()
+	for i in 150:
+		await get_tree().physics_frame
+		if not hall.get_node("Player").is_dying():
+			break
+	var changed := false
+	for i in range(pendulums.size()):
+		if not is_equal_approx(pendulums[i].period, before[i]):
+			changed = true
+	_check(changed, "speeds not re-rolled after death")
+	await _free_hall(hall)
+
+
 func test_crack_tile_stays_down_until_death() -> void:
 	var hall := await _spawn_hall()
 	var tiles := get_tree().get_nodes_in_group("crack_tiles")
-	_check(tiles.size() == 28, "expected 28 crack tiles, found %d" % tiles.size())
+	_check(tiles.size() == 30, "expected 30 crack tiles, found %d" % tiles.size())
 
 	var tile: StaticBody3D = tiles[0]
 	var rest_y: float = tile.position.y

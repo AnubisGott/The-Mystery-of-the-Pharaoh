@@ -1,22 +1,29 @@
 extends Node3D
 
-# A swinging pendulum blade. All pendulums share the same period and
-# accumulate time from scene start, so they are phase-locked and fully
-# predictable; individual timing differs only by phase_offset.
+# A swinging pendulum blade. Each pendulum rolls its own random period
+# when the level starts and again on every player respawn, so no two
+# runs feel identical; within a run every blade stays a readable sine.
 signal player_hit
 
-const PERIOD: float = 3.2
+const MIN_PERIOD: float = 2.2
+const MAX_PERIOD: float = 4.2
 const AMPLITUDE: float = deg_to_rad(55.0)
 const ARM_LENGTH: float = 3.4
 
 var phase_offset: float = 0.0
+var period: float = 3.2
 
 var _time: float = 0.0
 var _arm: Node3D
 
 
+func randomize_speed() -> void:
+	period = randf_range(MIN_PERIOD, MAX_PERIOD)
+
+
 func _ready() -> void:
 	add_to_group("pendulums")
+	randomize_speed()
 	_arm = Node3D.new()
 	add_child(_arm)
 
@@ -54,7 +61,7 @@ func _add_mesh(parent: Node3D, size: Vector3, pos: Vector3, material: Material) 
 
 func _physics_process(delta: float) -> void:
 	_time += delta
-	_arm.rotation.z = AMPLITUDE * sin(TAU * _time / PERIOD + phase_offset)
+	_arm.rotation.z = AMPLITUDE * sin(TAU * _time / period + phase_offset)
 
 
 func _on_body_entered(body: Node3D) -> void:

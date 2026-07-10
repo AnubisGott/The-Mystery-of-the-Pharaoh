@@ -42,16 +42,15 @@ const FLOOR_D_SEGMENTS := [
 	[111.0, 118.0], # S6 approach, through corner 3
 	[122.0, 128.0], # S6 middle platform
 	[132.0, 143.0], # landing, corner 4, finale first pendulum
-	[150.0, 153.0], # finale rest strip with pendulum
 	[160.0, 167.0], # finale landing and chamber entrance
 ]
 # The intro gauntlet: hole 2 (d 23-26), crumbling tiles (26-30),
-# hole 3 (30-33) with no solid ground between them. The finale leg
-# repeats the pattern twice: tiles (143-147), hole (147-150), and
-# tiles (153-157), hole (157-160).
+# hole 3 (30-33) with no solid ground between them. The finale leg has
+# no solid middle at all: tiles (143-147), hole (147-150), a long tile
+# field under a pendulum (150-157), and a final hole (157-160).
 const CRACK_D_ROWS := [
 	27.0, 29.0, 92.0, 94.0, 98.0, 104.0, 106.0, 110.0, 119.0, 121.0,
-	144.0, 146.0, 154.0, 156.0,
+	144.0, 146.0, 151.0, 153.0, 155.0,
 ]
 # Pendulums as (d, phase offset), phase-locked to a shared clock.
 const PENDULUM_DS := [
@@ -82,8 +81,9 @@ func _ready() -> void:
 
 	god_label.visible = GameManager.god_mode
 	GameManager.god_mode_changed.connect(_on_god_mode_changed)
-	# Fallen tiles stay down; they come back when the player respawns.
-	player.respawned.connect(_reset_crack_tiles)
+	# Every attempt is a fresh deal: fallen tiles come back and each
+	# pendulum rolls a new random speed.
+	player.respawned.connect(_on_player_respawned)
 
 
 func _physics_process(_delta: float) -> void:
@@ -104,9 +104,11 @@ func _on_trap_hit() -> void:
 	player.die_and_reset(_spawn_transform, true)
 
 
-func _reset_crack_tiles() -> void:
+func _on_player_respawned() -> void:
 	for tile in get_tree().get_nodes_in_group("crack_tiles"):
 		tile.reset()
+	for pendulum in get_tree().get_nodes_in_group("pendulums"):
+		pendulum.randomize_speed()
 
 
 # ------------------------------------------------------- corridor frames
