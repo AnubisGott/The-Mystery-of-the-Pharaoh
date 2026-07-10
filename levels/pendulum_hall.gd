@@ -18,34 +18,40 @@ const CEILING_Y: float = 4.5
 const KILL_Y: float = -6.0
 const SLOT_HALF: float = 0.7
 
-# The corridor: straight, a left turn, then a right turn to the chamber.
+# The corridor: intro leg, then three turns (left, left, right).
 const LEGS := [
 	{"origin": Vector3(0, 0, 6), "dir": Vector3(0, 0, -1), "yaw": 0.0},
-	{"origin": Vector3(0, 0, -44), "dir": Vector3(-1, 0, 0), "yaw": PI / 2.0},
-	{"origin": Vector3(-27, 0, -44), "dir": Vector3(0, 0, -1), "yaw": 0.0},
+	{"origin": Vector3(0, 0, -31), "dir": Vector3(-1, 0, 0), "yaw": PI / 2.0},
+	{"origin": Vector3(-50, 0, -31), "dir": Vector3(0, 0, 1), "yaw": PI},
+	{"origin": Vector3(-50, 0, -4), "dir": Vector3(-1, 0, 0), "yaw": PI / 2.0},
 ]
-const CORNER_DS := [50.0, 77.0]
+const CORNER_DS := [37.0, 87.0, 114.0]
 
 # Solid floor as (d_from, d_to); the gaps are holes and crumble fields.
 const FLOOR_D_SEGMENTS := [
-	[0.0, 44.0],   # start, S1 pendulum, S2 double pendulum
-	[47.0, 54.0],  # after the jump hole, through corner 1
-	[58.0, 60.0],  # safe strip inside crumble field (S4)
-	[62.0, 66.0],  # after S4
-	[70.0, 72.0],  # safe strip inside S5
-	[74.0, 81.0],  # S6 approach, through corner 2
-	[85.0, 91.0],  # S6 middle platform
-	[95.0, 104.0], # landing and chamber entrance
+	[0.0, 12.0],    # intro: first normal stretch
+	[15.0, 23.0],   # after hole 1
+	[33.0, 81.0],   # landing after the intro gauntlet, corner 1, the
+					# pendulum sections and the S3 jump hole approach
+	[84.0, 91.0],   # after the S3 hole, through corner 2
+	[95.0, 97.0],   # safe strip inside crumble field (S4)
+	[99.0, 103.0],  # after S4
+	[107.0, 109.0], # safe strip inside S5
+	[111.0, 118.0], # S6 approach, through corner 3
+	[122.0, 128.0], # S6 middle platform
+	[132.0, 141.0], # landing and chamber entrance
 ]
-const CRACK_D_ROWS := [55.0, 57.0, 61.0, 67.0, 69.0, 73.0, 82.0, 84.0]
+# The intro gauntlet: hole 2 (d 23-26), crumbling tiles (26-30),
+# hole 3 (30-33) with no solid ground between them.
+const CRACK_D_ROWS := [27.0, 29.0, 92.0, 94.0, 98.0, 104.0, 106.0, 110.0, 119.0, 121.0]
 # Pendulums as (d, phase offset), phase-locked to a shared clock.
 const PENDULUM_DS := [
-	[18.0, 0.0],
-	[30.0, 0.0],
-	[36.0, PI],
-	[69.0, 0.0],
-	[79.0, 0.9],
-	[90.0, PI * 0.6],
+	[55.0, 0.0],
+	[67.0, 0.0],
+	[73.0, PI],
+	[106.0, 0.0],
+	[116.0, 0.9],
+	[127.0, PI * 0.6],
 ]
 
 @onready var player: CharacterBody3D = $Player
@@ -144,39 +150,41 @@ func _build_geometry() -> void:
 			_leg_box(leg, (u_a + u_b) / 2.0, 0.0, -0.2,
 					CORRIDOR_WIDTH, 0.4, u_b - u_a, FLOOR_MATERIAL)
 
-	# Corner slabs (both turns sit on safe floor by design).
-	for corner_leg in [1, 2]:
-		var slab := LEGS[corner_leg]["origin"] as Vector3
+	# Corner slabs (all turns sit on safe floor by design).
+	for corner_leg in [1, 2, 3]:
 		_leg_box(corner_leg, 0.0, 0.0, -0.2, CORRIDOR_WIDTH, 0.4, CORRIDOR_WIDTH, FLOOR_MATERIAL)
 
 	# Walls per leg and side, with pockets cut out around pendulums. The
 	# u-ranges close the outer corner and leave the inner corner open.
-	_build_wall(0, WALL_V, -0.2, 52.4)
-	_build_wall(0, -WALL_V, -0.2, 47.8)
-	_build_wall(1, WALL_V, -2.6, 24.8)
-	_build_wall(1, -WALL_V, 2.0, 29.8)
-	_build_wall(2, WALL_V, 2.4, 27.4)
-	_build_wall(2, -WALL_V, -2.2, 27.4)
+	_build_wall(0, WALL_V, -0.2, 39.4)
+	_build_wall(0, -WALL_V, -0.2, 34.8)
+	_build_wall(1, WALL_V, -2.6, 52.4)
+	_build_wall(1, -WALL_V, 2.0, 47.8)
+	_build_wall(2, WALL_V, -2.6, 24.8)
+	_build_wall(2, -WALL_V, 2.0, 29.4)
+	_build_wall(3, WALL_V, 2.0, 27.4)
+	_build_wall(3, -WALL_V, -2.6, 27.4)
 
 	# Back wall, end wall, ceilings.
 	_leg_box(0, -0.4, 0.0, CEILING_Y / 2.0, CORRIDOR_WIDTH + 0.8, CEILING_Y + 1.0, 0.4, WALL_MATERIAL)
-	_leg_box(2, 27.6, 0.0, CEILING_Y / 2.0, CORRIDOR_WIDTH + 0.8, CEILING_Y + 1.0, 0.4, WALL_MATERIAL)
-	_leg_box(0, 26.0, 0.0, CEILING_Y + 0.2, CORRIDOR_WIDTH + 0.8, 0.4, 53.2, WALL_MATERIAL)
-	_leg_box(1, 13.6, 0.0, CEILING_Y + 0.2, CORRIDOR_WIDTH + 0.8, 0.4, 32.4, WALL_MATERIAL)
-	_leg_box(2, 12.8, 0.0, CEILING_Y + 0.2, CORRIDOR_WIDTH + 0.8, 0.4, 30.0, WALL_MATERIAL)
+	_leg_box(3, 27.6, 0.0, CEILING_Y / 2.0, CORRIDOR_WIDTH + 0.8, CEILING_Y + 1.0, 0.4, WALL_MATERIAL)
+	_leg_box(0, 19.6, 0.0, CEILING_Y + 0.2, CORRIDOR_WIDTH + 0.8, 0.4, 40.4, WALL_MATERIAL)
+	_leg_box(1, 24.9, 0.0, CEILING_Y + 0.2, CORRIDOR_WIDTH + 0.8, 0.4, 55.4, WALL_MATERIAL)
+	_leg_box(2, 13.6, 0.0, CEILING_Y + 0.2, CORRIDOR_WIDTH + 0.8, 0.4, 32.4, WALL_MATERIAL)
+	_leg_box(3, 12.6, 0.0, CEILING_Y + 0.2, CORRIDOR_WIDTH + 0.8, 0.4, 30.4, WALL_MATERIAL)
 
-	# Dark chamber opening with the exit marker at the end of leg 2.
+	# Dark chamber opening with the exit marker at the end of the last leg.
 	var dark := StandardMaterial3D.new()
 	dark.albedo_color = Color(0.02, 0.015, 0.01)
 	dark.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	_leg_box(2, 27.3, 0.0, 1.4, 3.0, 2.8, 0.2, dark, false)
+	_leg_box(3, 27.3, 0.0, 1.4, 3.0, 2.8, 0.2, dark, false)
 
 	var sign_material := StandardMaterial3D.new()
 	sign_material.albedo_color = Color(0.1, 0.85, 0.3)
 	sign_material.emission_enabled = true
 	sign_material.emission = Color(0.1, 0.85, 0.3)
 	sign_material.emission_energy_multiplier = 2.0
-	_leg_box(2, 27.15, -0.95, 2.4, 0.9, 0.4, 0.12, sign_material, false)
+	_leg_box(3, 27.15, 0.95, 2.4, 0.9, 0.4, 0.12, sign_material, false)
 
 
 func _split_at_corners(a: float, b: float) -> Array:
@@ -280,7 +288,7 @@ func _build_environment() -> void:
 
 	var d := 2.0
 	var side := 1.0
-	while d < 104.0:
+	while d < 141.0:
 		var leg := _leg_for(d)
 		var u := _leg_u(d, leg)
 		var light := OmniLight3D.new()

@@ -593,7 +593,7 @@ func test_pendulum_kills_and_god_mode_spares() -> void:
 	var pendulums := get_tree().get_nodes_in_group("pendulums")
 	_check(pendulums.size() == 6, "expected 6 pendulums, found %d" % pendulums.size())
 
-	hall_player.global_position = Vector3(300.0, 1.0, -20.0)
+	hall_player.global_position = Vector3(300.0, 1.0, -12.0)
 	await get_tree().physics_frame
 	hall._on_trap_hit()
 	var reset := false
@@ -605,12 +605,12 @@ func test_pendulum_kills_and_god_mode_spares() -> void:
 	_check(reset, "pendulum hit did not reset the player")
 
 	GameManager.god_mode = true
-	hall_player.global_position = Vector3(300.0, 1.0, -20.0)
+	hall_player.global_position = Vector3(300.0, 1.0, -12.0)
 	await get_tree().physics_frame
 	hall._on_trap_hit()
 	for i in 10:
 		await get_tree().physics_frame
-	_check(hall_player.global_position.z < -15.0, "god mode did not spare the player")
+	_check(hall_player.global_position.z < -8.0, "god mode did not spare the player")
 	GameManager.god_mode = false
 	await _free_hall(hall)
 
@@ -648,7 +648,7 @@ func test_kill_plane_resets_fall() -> void:
 func test_crack_tile_falls_and_respawns() -> void:
 	var hall := await _spawn_hall()
 	var tiles := get_tree().get_nodes_in_group("crack_tiles")
-	_check(tiles.size() == 16, "expected 16 crack tiles, found %d" % tiles.size())
+	_check(tiles.size() == 20, "expected 20 crack tiles, found %d" % tiles.size())
 
 	var tile: StaticBody3D = tiles[0]
 	var rest_y: float = tile.position.y
