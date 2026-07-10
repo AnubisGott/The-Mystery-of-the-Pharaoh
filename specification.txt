@@ -74,10 +74,10 @@ add a dark enterance at the end of the level
 
 add some straight path behind the start point
 
-dont jump so high, dont duck so extreme
-
 add sounds (splice library), ambient audio (wind, footsteps), ägyptisch-mystische Sounds, Percussion oder Ambient-Loops
 
 add intro sequence for every level
 
 add welcome screen
+
+animations for going, jumping, ducking

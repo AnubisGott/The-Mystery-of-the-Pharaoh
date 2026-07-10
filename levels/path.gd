@@ -4,7 +4,9 @@ const SANDSTONE_MATERIAL: StandardMaterial3D = preload("res://materials/sandston
 const PYRAMID_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_pyramid.tres")
 
 const PATH_HALF_WIDTH: float = 1.5
-const START_Z: float = 30.0
+# The curve starts 20 m behind the player spawn (z=29) so the path
+# visibly continues behind the start instead of ending at the feet.
+const START_Z: float = 50.0
 const END_Z: float = -95.0
 const AMPLITUDE: float = 3.0
 const WAVELENGTH: float = 15.0
