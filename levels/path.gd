@@ -23,6 +23,7 @@ const RANDOM_SPEARS_START_Z: float = 18.0
 @onready var player: CharacterBody3D = $Player
 @onready var track: Path3D = $Track
 @onready var spear_layer: CanvasLayer = $SpearLayer
+@onready var god_label: Label = $ControlsHint/Root/GodLabel
 
 var _spawn_transform: Transform3D
 var _spear_timer: Timer
@@ -34,6 +35,8 @@ func _ready() -> void:
 	track.curve = _build_curve()
 	_spawn_transform = player.global_transform
 	spear_layer.player_hit.connect(_on_player_hit)
+	god_label.visible = GameManager.god_mode
+	GameManager.god_mode_changed.connect(func(enabled: bool): god_label.visible = enabled)
 
 	_spear_timer = Timer.new()
 	_spear_timer.one_shot = true
@@ -103,4 +106,6 @@ func _on_practice_timer_timeout() -> void:
 
 
 func _on_player_hit() -> void:
+	if GameManager.god_mode:
+		return
 	player.reset_to_start(_spawn_transform)

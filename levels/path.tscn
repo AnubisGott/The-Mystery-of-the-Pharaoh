@@ -179,3 +179,13 @@ Space - Jump low spears
 Ctrl - Duck high spears
 Esc - Pause"
 horizontal_alignment = 2
+
+[node name="GodLabel" type="Label" parent="ControlsHint/Root"]
+visible = false
+layout_mode = 0
+offset_left = 20.0
+offset_top = 18.0
+offset_right = 200.0
+offset_bottom = 48.0
+theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
+text = "GOD MODE"
