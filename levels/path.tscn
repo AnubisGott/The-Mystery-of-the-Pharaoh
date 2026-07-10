@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="PackedScene" path="res://player/player.tscn" id="1"]
 [ext_resource type="Script" path="res://exit/win_zone.gd" id="2"]
@@ -8,7 +8,7 @@
 albedo_color = Color(0.76, 0.64, 0.42, 1)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_path"]
-albedo_color = Color(0.45, 0.3, 0.2, 1)
+albedo_color = Color(0.5, 0.28, 0.24, 1)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_goal"]
 albedo_color = Color(1, 0.78, 0.2, 1)
@@ -25,25 +25,7 @@ size = Vector3(60, 0.25, 60)
 [sub_resource type="BoxShape3D" id="BoxShape3D_sand"]
 size = Vector3(60, 0.25, 60)
 
-[sub_resource type="BoxMesh" id="BoxMesh_seg_z10"]
-material = SubResource("StandardMaterial3D_path")
-size = Vector3(3, 0.05, 10)
-
-[sub_resource type="BoxMesh" id="BoxMesh_seg_x12"]
-material = SubResource("StandardMaterial3D_path")
-size = Vector3(12, 0.05, 3)
-
-[sub_resource type="BoxMesh" id="BoxMesh_seg_z12"]
-material = SubResource("StandardMaterial3D_path")
-size = Vector3(3, 0.05, 12)
-
-[sub_resource type="BoxMesh" id="BoxMesh_seg_x18"]
-material = SubResource("StandardMaterial3D_path")
-size = Vector3(18, 0.05, 3)
-
-[sub_resource type="BoxMesh" id="BoxMesh_seg_z8"]
-material = SubResource("StandardMaterial3D_path")
-size = Vector3(3, 0.05, 8)
+[sub_resource type="Curve3D" id="Curve3D_track"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_goal"]
 material = SubResource("StandardMaterial3D_goal")
@@ -71,44 +53,27 @@ mesh = SubResource("BoxMesh_sand")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Sand"]
 shape = SubResource("BoxShape3D_sand")
 
-[node name="PathSegmentA" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 15)
-mesh = SubResource("BoxMesh_seg_z10")
+[node name="Track" type="Path3D" parent="."]
+curve = SubResource("Curve3D_track")
 
-[node name="PathSegmentB" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5, 0, 8.5)
-mesh = SubResource("BoxMesh_seg_x12")
-
-[node name="PathSegmentC" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 2.5)
-mesh = SubResource("BoxMesh_seg_z12")
-
-[node name="PathSegmentD" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -4)
-mesh = SubResource("BoxMesh_seg_x18")
-
-[node name="PathSegmentE" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.5, 0, -10)
-mesh = SubResource("BoxMesh_seg_z12")
-
-[node name="PathSegmentF" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 0, -17)
-mesh = SubResource("BoxMesh_seg_x12")
-
-[node name="PathSegmentG" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0, -21)
-mesh = SubResource("BoxMesh_seg_z8")
+[node name="PathSurface" type="CSGPolygon3D" parent="."]
+polygon = PackedVector2Array(-1.5, 0, 1.5, 0, 1.5, 0.05, -1.5, 0.05)
+mode = 2
+path_node = NodePath("../Track")
+path_interval_type = 0
+path_interval = 0.5
+material = SubResource("StandardMaterial3D_path")
 
 [node name="GoalGate" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 1.4, -25.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, -26)
 mesh = SubResource("BoxMesh_goal")
 
 [node name="WinZone" type="Area3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 1.2, -24.8)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, -25.4)
 script = ExtResource("2")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="WinZone"]
 shape = SubResource("BoxShape3D_goalzone")
 
 [node name="Player" parent="." instance=ExtResource("1")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 18)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 19)

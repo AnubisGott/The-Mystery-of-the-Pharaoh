@@ -1,39 +1,40 @@
 extends Node3D
 
-# Walkable ground rectangles (x, z) matching the visible path segments.
-const PATH_RECTS: Array[Rect2] = [
-	Rect2(-1.5, 10.0, 3.0, 10.0),
-	Rect2(-1.5, 7.0, 12.0, 3.0),
-	Rect2(7.5, -3.5, 3.0, 12.0),
-	Rect2(-9.0, -5.5, 18.0, 3.0),
-	Rect2(-9.0, -16.0, 3.0, 12.0),
-	Rect2(-9.0, -18.5, 12.0, 3.0),
-	Rect2(0.0, -25.0, 3.0, 8.0),
-]
+const PATH_HALF_WIDTH: float = 1.5
+const START_Z: float = 20.0
+const END_Z: float = -25.0
+const AMPLITUDE: float = 3.0
+const WAVELENGTH: float = 15.0
+const SAMPLE_STEP: float = 1.0
 
 @onready var player: CharacterBody3D = $Player
+@onready var track: Path3D = $Track
+
+
+func _ready() -> void:
+	track.curve = _build_curve()
+
+
+func _build_curve() -> Curve3D:
+	var curve := Curve3D.new()
+	var z := START_Z
+	while z >= END_Z - 0.01:
+		curve.add_point(Vector3(_path_x(z), 0.0, z))
+		z -= SAMPLE_STEP
+	return curve
+
+
+# The path winds left and right like a snake while heading forward.
+func _path_x(z: float) -> float:
+	return AMPLITUDE * sin(TAU * (START_Z - z) / WAVELENGTH)
 
 
 func _physics_process(_delta: float) -> void:
-	var position_2d := Vector2(player.global_position.x, player.global_position.z)
-	var clamped := _closest_point_on_path(position_2d)
-	if clamped != position_2d:
-		player.global_position.x = clamped.x
-		player.global_position.z = clamped.y
+	var p := player.global_position
+	var closest := track.curve.get_closest_point(Vector3(p.x, 0.0, p.z))
+	var offset := Vector2(p.x - closest.x, p.z - closest.z)
 
-
-func _closest_point_on_path(point: Vector2) -> Vector2:
-	var best_point := point
-	var best_distance := INF
-
-	for rect in PATH_RECTS:
-		if rect.has_point(point):
-			return point
-
-		var candidate := point.clamp(rect.position, rect.end)
-		var distance := candidate.distance_squared_to(point)
-		if distance < best_distance:
-			best_distance = distance
-			best_point = candidate
-
-	return best_point
+	if offset.length() > PATH_HALF_WIDTH:
+		var limited := offset.limit_length(PATH_HALF_WIDTH)
+		player.global_position.x = closest.x + limited.x
+		player.global_position.z = closest.z + limited.y
