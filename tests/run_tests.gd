@@ -393,15 +393,15 @@ func test_spear_lanes_track_character() -> void:
 
 func test_god_mode_shortcut_toggles() -> void:
 	_press_god_key(false, true)
-	await get_tree().physics_frame
+	await _await_input_dispatch()
 	_check(GameManager.god_mode, "Alt+Shift+G did not enable god mode")
 
 	_press_god_key(false, true)
-	await get_tree().physics_frame
+	await _await_input_dispatch()
 	_check(not GameManager.god_mode, "Alt+Shift+G did not disable god mode")
 
 	_press_god_key(true, false)
-	await get_tree().physics_frame
+	await _await_input_dispatch()
 	_check(not GameManager.god_mode, "Ctrl+Shift+G must not toggle god mode")
 
 
@@ -425,6 +425,19 @@ func _press_god_key(with_ctrl: bool, with_alt: bool) -> void:
 	ev.shift_pressed = true
 	ev.pressed = true
 	Input.parse_input_event(ev)
+
+
+func _press_key(keycode: Key) -> void:
+	var ev := InputEventKey.new()
+	ev.physical_keycode = keycode
+	ev.pressed = true
+	Input.parse_input_event(ev)
+
+
+# Key events are dispatched on process frames, not physics frames.
+func _await_input_dispatch() -> void:
+	for i in 3:
+		await get_tree().process_frame
 
 
 # ------------------------------------------------------------ sound tests
@@ -490,19 +503,13 @@ func test_level_starts_music_and_m_key_toggles() -> void:
 	_check(GameManager._music_player.playing, "level music not playing")
 	_check(GameManager._music_player.stream == level.LEVEL_MUSIC, "level music wrong track")
 
-	var ev := InputEventKey.new()
-	ev.physical_keycode = KEY_M
-	ev.pressed = true
-	Input.parse_input_event(ev)
-	await get_tree().physics_frame
+	_press_key(KEY_M)
+	await _await_input_dispatch()
 	_check(not GameManager.music_enabled, "M key did not disable music")
 	_check(not GameManager._music_player.playing, "music still playing after M")
 
-	var ev2 := InputEventKey.new()
-	ev2.physical_keycode = KEY_M
-	ev2.pressed = true
-	Input.parse_input_event(ev2)
-	await get_tree().physics_frame
+	_press_key(KEY_M)
+	await _await_input_dispatch()
 	_check(GameManager.music_enabled, "M key did not re-enable music")
 	_check(GameManager._music_player.playing, "music not resumed after M")
 
