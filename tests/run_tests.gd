@@ -615,6 +615,21 @@ func test_pendulum_kills_and_god_mode_spares() -> void:
 	await _free_hall(hall)
 
 
+func test_yaw_limited_outdoors_free_indoors() -> void:
+	# A hard mouse swipe to the right, applied to both players.
+	player._apply_look(Vector2(4000.0, 0.0))
+	_check(absf(player.rotation.y) <= deg_to_rad(45.5),
+			"level 1 yaw not clamped: %f" % player.rotation.y)
+	player._apply_look(Vector2(-4000.0, 0.0))
+
+	var hall := await _spawn_hall()
+	var hall_player: CharacterBody3D = hall.get_node("Player")
+	hall_player._apply_look(Vector2(4000.0, 0.0))
+	_check(absf(hall_player.rotation.y) > deg_to_rad(50.0),
+			"level 2 yaw unexpectedly clamped: %f" % hall_player.rotation.y)
+	await _free_hall(hall)
+
+
 func test_kill_plane_resets_fall() -> void:
 	var hall := await _spawn_hall()
 	var hall_player: CharacterBody3D = hall.get_node("Player")

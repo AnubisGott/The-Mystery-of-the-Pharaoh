@@ -5,6 +5,8 @@ extends CharacterBody3D
 @export var duck_speed: float = 2.5
 @export var jump_velocity: float = 3.8
 @export var mouse_sensitivity: float = 0.0025
+# Horizontal look limit around the spawn direction; 0 or less means
+# free 360-degree rotation (used indoors where the corridor turns).
 @export var yaw_limit_degrees: float = 45.0
 
 const STAND_HEIGHT: float = 1.8
@@ -49,11 +51,18 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+		_apply_look(event.relative)
+
+
+func _apply_look(relative: Vector2) -> void:
+	if yaw_limit_degrees > 0.0:
 		var yaw_limit := deg_to_rad(yaw_limit_degrees)
-		_yaw = clamp(_yaw - event.relative.x * mouse_sensitivity, -yaw_limit, yaw_limit)
-		rotation.y = _yaw
-		_pitch = clamp(_pitch - event.relative.y * mouse_sensitivity, deg_to_rad(-60.0), deg_to_rad(30.0))
-		camera_pivot.rotation.x = _pitch
+		_yaw = clamp(_yaw - relative.x * mouse_sensitivity, -yaw_limit, yaw_limit)
+	else:
+		_yaw = wrapf(_yaw - relative.x * mouse_sensitivity, -PI, PI)
+	rotation.y = _yaw
+	_pitch = clamp(_pitch - relative.y * mouse_sensitivity, deg_to_rad(-60.0), deg_to_rad(30.0))
+	camera_pivot.rotation.x = _pitch
 
 
 func _physics_process(delta: float) -> void:

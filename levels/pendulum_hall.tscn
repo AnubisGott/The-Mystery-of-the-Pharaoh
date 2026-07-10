@@ -12,6 +12,7 @@ script = ExtResource("1")
 
 [node name="Player" parent="." instance=ExtResource("2")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 3)
+yaw_limit_degrees = 0.0
 
 [node name="WinZone" type="Area3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -27, 1.6, -69.8)
