@@ -7,7 +7,9 @@ const PATH_HALF_WIDTH: float = 1.5
 # The curve starts 20 m behind the player spawn (z=29) so the path
 # visibly continues behind the start instead of ending at the feet.
 const START_Z: float = 50.0
-const END_Z: float = -95.0
+# The path ends at the back wall of the sphinx passage (the rear body
+# front face is at z=-96.7), right at the dark exit opening.
+const END_Z: float = -96.5
 const AMPLITUDE: float = 3.0
 const WAVELENGTH: float = 15.0
 const SAMPLE_STEP: float = 1.0

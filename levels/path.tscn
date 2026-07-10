@@ -51,7 +51,8 @@ uv1_triplanar = true
 uv1_world_triplanar = true
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_doorway"]
-albedo_color = Color(0.08, 0.06, 0.04, 1)
+shading_mode = 0
+albedo_color = Color(0.02, 0.015, 0.01, 1)
 
 [sub_resource type="BoxMesh" id="BoxMesh_sand"]
 material = SubResource("StandardMaterial3D_sand")
@@ -64,7 +65,7 @@ size = Vector3(300, 0.25, 300)
 
 [sub_resource type="BoxMesh" id="BoxMesh_doorway"]
 material = SubResource("StandardMaterial3D_doorway")
-size = Vector3(3.8, 2.6, 0.2)
+size = Vector3(3, 2.7, 0.2)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_goalzone"]
 size = Vector3(3.4, 2.5, 0.6)
@@ -114,11 +115,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -122)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -96.9)
 
 [node name="Doorway" type="MeshInstance3D" parent="Monument"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, -97.35)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.35, -96.55)
 mesh = SubResource("BoxMesh_doorway")
 
 [node name="WinZone" type="Area3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, -95)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, -96.2)
 script = ExtResource("2")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="WinZone"]
