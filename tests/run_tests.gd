@@ -378,6 +378,18 @@ func _press_god_key(with_ctrl: bool, with_alt: bool) -> void:
 
 # ------------------------------------------------------------ sound tests
 
+func test_spear_whoosh_triggers_near_center() -> void:
+	layer.spawn_spear(false, true)
+	var spear := _last_spear()
+	spear.position.x = _center_x() - Spear2D.WHOOSH_TRIGGER_DISTANCE - 120.0
+	spear._physics_process(1.0 / 60.0)
+	_check(not spear._whoosh_played, "whoosh played too far from center")
+
+	spear.position.x = _center_x() - Spear2D.WHOOSH_TRIGGER_DISTANCE + 60.0
+	spear._physics_process(1.0 / 60.0)
+	_check(spear._whoosh_played, "whoosh not triggered near screen center")
+
+
 func test_footsteps_fire_while_walking() -> void:
 	_check(player.has_node("FootstepPlayer"), "FootstepPlayer node missing")
 
