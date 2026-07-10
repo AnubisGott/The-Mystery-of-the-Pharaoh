@@ -1,8 +1,10 @@
 extends Node3D
 
-# Level 2: The Pendulum's Journey. A linear torch-lit hall inside the
-# pyramid, built from a section table: pendulums, jump holes, and
-# crumbling floor tiles, combined per the level design.
+# Level 2: The Pendulum's Journey. A torch-lit hall inside the pyramid
+# with two 90-degree turns, built from a section table measured in
+# distance d along the corridor centerline. Pendulums swing into
+# recessed wall pockets; the gaps between floor segments are the jump
+# holes and crumble fields.
 const LEVEL_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel02.mp3")
 const AMBIENT_PAD: AudioStream = preload("res://soundAndMusic/sounds/Pad-Sound.mp3")
 const WALL_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_sphinx.tres")
@@ -11,33 +13,39 @@ const PendulumScript := preload("res://hazards/pendulum.gd")
 const CrackTileScript := preload("res://hazards/crack_tile.gd")
 
 const CORRIDOR_WIDTH: float = 4.4
-const WALL_X: float = 2.4
+const WALL_V: float = 2.4
 const CEILING_Y: float = 4.5
 const KILL_Y: float = -6.0
+const SLOT_HALF: float = 0.7
 
-# Solid floor as (z_from, z_to) segments; the gaps between them are the
-# jump holes and crumble fields. Walking direction is -Z.
-const FLOOR_SEGMENTS := [
-	[6.0, -38.0],    # start, S1 pendulum, S2 double pendulum
-	[-41.0, -48.0],  # after the jump hole (S3)
-	[-52.0, -54.0],  # safe strip inside crumble field (S4)
-	[-56.0, -60.0],  # after S4
-	[-64.0, -66.0],  # safe strip inside S5
-	[-68.0, -75.0],  # S6 approach
-	[-79.0, -85.0],  # S6 middle platform
-	[-89.0, -98.0],  # landing and chamber entrance
+# The corridor: straight, a left turn, then a right turn to the chamber.
+const LEGS := [
+	{"origin": Vector3(0, 0, 6), "dir": Vector3(0, 0, -1), "yaw": 0.0},
+	{"origin": Vector3(0, 0, -44), "dir": Vector3(-1, 0, 0), "yaw": PI / 2.0},
+	{"origin": Vector3(-27, 0, -44), "dir": Vector3(0, 0, -1), "yaw": 0.0},
 ]
-# Crumbling tile rows (z center); each row is two tiles across.
-const CRACK_ROWS := [-49.0, -51.0, -55.0, -61.0, -63.0, -67.0, -76.0, -78.0]
-# Pendulums as (z, phase offset). S2's pair swings in opposition; the
-# shared clock keeps every blade predictable.
-const PENDULUMS := [
-	[-12.0, 0.0],
-	[-24.0, 0.0],
-	[-30.0, PI],
-	[-63.0, 0.0],
-	[-73.0, 0.9],
-	[-84.0, PI * 0.6],
+const CORNER_DS := [50.0, 77.0]
+
+# Solid floor as (d_from, d_to); the gaps are holes and crumble fields.
+const FLOOR_D_SEGMENTS := [
+	[0.0, 44.0],   # start, S1 pendulum, S2 double pendulum
+	[47.0, 54.0],  # after the jump hole, through corner 1
+	[58.0, 60.0],  # safe strip inside crumble field (S4)
+	[62.0, 66.0],  # after S4
+	[70.0, 72.0],  # safe strip inside S5
+	[74.0, 81.0],  # S6 approach, through corner 2
+	[85.0, 91.0],  # S6 middle platform
+	[95.0, 104.0], # landing and chamber entrance
+]
+const CRACK_D_ROWS := [55.0, 57.0, 61.0, 67.0, 69.0, 73.0, 82.0, 84.0]
+# Pendulums as (d, phase offset), phase-locked to a shared clock.
+const PENDULUM_DS := [
+	[18.0, 0.0],
+	[30.0, 0.0],
+	[36.0, PI],
+	[69.0, 0.0],
+	[79.0, 0.9],
+	[90.0, PI * 0.6],
 ]
 
 @onready var player: CharacterBody3D = $Player
@@ -76,6 +84,168 @@ func _on_trap_hit() -> void:
 	player.die_and_reset(_spawn_transform, true)
 
 
+# ------------------------------------------------------- corridor frames
+
+func _leg_for(d: float) -> int:
+	if d <= CORNER_DS[0]:
+		return 0
+	if d <= CORNER_DS[1]:
+		return 1
+	return 2
+
+
+func _leg_u(d: float, leg: int) -> float:
+	return d if leg == 0 else d - CORNER_DS[leg - 1]
+
+
+func _right(leg: int) -> Vector3:
+	return (LEGS[leg]["dir"] as Vector3).cross(Vector3.UP)
+
+
+func _pos(leg: int, u: float, v: float, y: float) -> Vector3:
+	return (LEGS[leg]["origin"] as Vector3) + (LEGS[leg]["dir"] as Vector3) * u \
+			+ _right(leg) * v + Vector3.UP * y
+
+
+# Places a box aligned to a leg: size is (across, height, along).
+func _leg_box(leg: int, u: float, v: float, y: float, size_v: float, size_y: float,
+		size_u: float, material: Material, with_collision: bool = true) -> void:
+	var parent: Node3D
+	if with_collision:
+		var body := StaticBody3D.new()
+		var collision := CollisionShape3D.new()
+		var shape := BoxShape3D.new()
+		shape.size = Vector3(size_v, size_y, size_u)
+		collision.shape = shape
+		body.add_child(collision)
+		parent = body
+	else:
+		parent = Node3D.new()
+	parent.position = _pos(leg, u, v, y)
+	parent.rotation.y = LEGS[leg]["yaw"]
+	add_child(parent)
+
+	var mesh := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = Vector3(size_v, size_y, size_u)
+	box.material = material
+	mesh.mesh = box
+	parent.add_child(mesh)
+
+
+# ------------------------------------------------------------- building
+
+func _build_geometry() -> void:
+	for segment in FLOOR_D_SEGMENTS:
+		for piece in _split_at_corners(segment[0], segment[1]):
+			var leg := _leg_for((piece[0] + piece[1]) / 2.0)
+			var u_a := _leg_u(piece[0], leg)
+			var u_b := _leg_u(piece[1], leg)
+			_leg_box(leg, (u_a + u_b) / 2.0, 0.0, -0.2,
+					CORRIDOR_WIDTH, 0.4, u_b - u_a, FLOOR_MATERIAL)
+
+	# Corner slabs (both turns sit on safe floor by design).
+	for corner_leg in [1, 2]:
+		var slab := LEGS[corner_leg]["origin"] as Vector3
+		_leg_box(corner_leg, 0.0, 0.0, -0.2, CORRIDOR_WIDTH, 0.4, CORRIDOR_WIDTH, FLOOR_MATERIAL)
+
+	# Walls per leg and side, with pockets cut out around pendulums. The
+	# u-ranges close the outer corner and leave the inner corner open.
+	_build_wall(0, WALL_V, -0.2, 52.4)
+	_build_wall(0, -WALL_V, -0.2, 47.8)
+	_build_wall(1, WALL_V, -2.6, 24.8)
+	_build_wall(1, -WALL_V, 2.0, 29.8)
+	_build_wall(2, WALL_V, 2.4, 27.4)
+	_build_wall(2, -WALL_V, -2.2, 27.4)
+
+	# Back wall, end wall, ceilings.
+	_leg_box(0, -0.4, 0.0, CEILING_Y / 2.0, CORRIDOR_WIDTH + 0.8, CEILING_Y + 1.0, 0.4, WALL_MATERIAL)
+	_leg_box(2, 27.6, 0.0, CEILING_Y / 2.0, CORRIDOR_WIDTH + 0.8, CEILING_Y + 1.0, 0.4, WALL_MATERIAL)
+	_leg_box(0, 26.0, 0.0, CEILING_Y + 0.2, CORRIDOR_WIDTH + 0.8, 0.4, 53.2, WALL_MATERIAL)
+	_leg_box(1, 13.6, 0.0, CEILING_Y + 0.2, CORRIDOR_WIDTH + 0.8, 0.4, 32.4, WALL_MATERIAL)
+	_leg_box(2, 12.8, 0.0, CEILING_Y + 0.2, CORRIDOR_WIDTH + 0.8, 0.4, 30.0, WALL_MATERIAL)
+
+	# Dark chamber opening with the exit marker at the end of leg 2.
+	var dark := StandardMaterial3D.new()
+	dark.albedo_color = Color(0.02, 0.015, 0.01)
+	dark.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_leg_box(2, 27.3, 0.0, 1.4, 3.0, 2.8, 0.2, dark, false)
+
+	var sign_material := StandardMaterial3D.new()
+	sign_material.albedo_color = Color(0.1, 0.85, 0.3)
+	sign_material.emission_enabled = true
+	sign_material.emission = Color(0.1, 0.85, 0.3)
+	sign_material.emission_energy_multiplier = 2.0
+	_leg_box(2, 27.15, -0.95, 2.4, 0.9, 0.4, 0.12, sign_material, false)
+
+
+func _split_at_corners(a: float, b: float) -> Array:
+	var pieces: Array = []
+	var bounds := [a, b]
+	var starts := [a]
+	for corner in CORNER_DS:
+		if corner > a and corner < b:
+			starts.append(corner)
+	starts.append(b)
+	for i in range(starts.size() - 1):
+		if starts[i + 1] - starts[i] > 0.05:
+			pieces.append([starts[i], starts[i + 1]])
+	return pieces
+
+
+func _build_wall(leg: int, v_side: float, u_from: float, u_to: float) -> void:
+	var cuts: Array = []
+	for data in PENDULUM_DS:
+		if _leg_for(data[0]) == leg:
+			var pu := _leg_u(data[0], leg)
+			if pu + SLOT_HALF > u_from and pu - SLOT_HALF < u_to:
+				cuts.append(pu)
+	cuts.sort()
+
+	var start := u_from
+	for pu in cuts:
+		if pu - SLOT_HALF > start:
+			_emit_wall_piece(leg, v_side, start, pu - SLOT_HALF)
+		_build_pocket(leg, v_side, pu)
+		start = maxf(start, pu + SLOT_HALF)
+	if u_to > start:
+		_emit_wall_piece(leg, v_side, start, u_to)
+
+
+func _emit_wall_piece(leg: int, v_side: float, u_from: float, u_to: float) -> void:
+	_leg_box(leg, (u_from + u_to) / 2.0, v_side, CEILING_Y / 2.0,
+			0.4, CEILING_Y + 1.0, u_to - u_from, WALL_MATERIAL)
+
+
+# A recessed pocket the blade swings into: back panel, side returns,
+# floor and ceiling piece.
+func _build_pocket(leg: int, v_side: float, pu: float) -> void:
+	var sign := signf(v_side)
+	_leg_box(leg, pu, sign * 3.8, CEILING_Y / 2.0, 0.4, CEILING_Y + 1.0, 1.8, WALL_MATERIAL)
+	for du in [-0.9, 0.9]:
+		_leg_box(leg, pu + du, sign * 3.0, CEILING_Y / 2.0, 1.6, CEILING_Y + 1.0, 0.4, WALL_MATERIAL)
+	_leg_box(leg, pu, sign * 3.0, -0.2, 1.6, 0.4, 1.8, FLOOR_MATERIAL)
+	_leg_box(leg, pu, sign * 3.0, CEILING_Y + 0.2, 1.6, 0.4, 1.8, WALL_MATERIAL)
+
+
+func _build_hazards() -> void:
+	for data in PENDULUM_DS:
+		var leg := _leg_for(data[0])
+		var pendulum: Node3D = PendulumScript.new()
+		pendulum.phase_offset = data[1]
+		pendulum.position = _pos(leg, _leg_u(data[0], leg), 0.0, CEILING_Y - 0.1)
+		pendulum.rotation.y = LEGS[leg]["yaw"]
+		add_child(pendulum)
+		pendulum.player_hit.connect(_on_trap_hit)
+
+	for row_d in CRACK_D_ROWS:
+		var leg := _leg_for(row_d)
+		for v in [-1.1, 1.1]:
+			var tile: StaticBody3D = CrackTileScript.new()
+			tile.position = _pos(leg, _leg_u(row_d, leg), v, -0.2)
+			add_child(tile)
+
+
 func _start_ambient_pad() -> void:
 	var pad := AudioStreamPlayer.new()
 	pad.stream = AMBIENT_PAD
@@ -102,20 +272,22 @@ func _build_environment() -> void:
 	world_env.environment = env
 	add_child(world_env)
 
-	# Torches along the walls.
 	var torch_glow := StandardMaterial3D.new()
 	torch_glow.albedo_color = Color(1.0, 0.55, 0.15)
 	torch_glow.emission_enabled = true
 	torch_glow.emission = Color(1.0, 0.5, 0.12)
 	torch_glow.emission_energy_multiplier = 2.5
-	var z := 2.0
+
+	var d := 2.0
 	var side := 1.0
-	while z > -96.0:
+	while d < 104.0:
+		var leg := _leg_for(d)
+		var u := _leg_u(d, leg)
 		var light := OmniLight3D.new()
 		light.light_color = Color(1.0, 0.62, 0.28)
 		light.light_energy = 2.2
 		light.omni_range = 9.0
-		light.position = Vector3(side * (WALL_X - 0.5), 3.0, z)
+		light.position = _pos(leg, u, side * 1.8, 3.0)
 		add_child(light)
 
 		var head := MeshInstance3D.new()
@@ -123,83 +295,8 @@ func _build_environment() -> void:
 		flame.size = Vector3(0.18, 0.3, 0.18)
 		flame.material = torch_glow
 		head.mesh = flame
-		head.position = Vector3(side * (WALL_X - 0.15), 2.9, z)
+		head.position = _pos(leg, u, side * 2.1, 2.9)
 		add_child(head)
 
 		side = -side
-		z -= 8.0
-
-
-func _build_geometry() -> void:
-	for segment in FLOOR_SEGMENTS:
-		var length: float = segment[0] - segment[1]
-		_add_box(Vector3(CORRIDOR_WIDTH, 0.4, length),
-				Vector3(0.0, -0.2, (segment[0] + segment[1]) / 2.0), FLOOR_MATERIAL)
-
-	var hall_length := 6.0 - (-98.0)
-	var hall_center := (6.0 + -98.0) / 2.0
-	for side in [-1.0, 1.0]:
-		_add_box(Vector3(0.4, CEILING_Y + 1.0, hall_length),
-				Vector3(side * WALL_X, CEILING_Y / 2.0, hall_center), WALL_MATERIAL)
-	_add_box(Vector3(CORRIDOR_WIDTH + 0.8, 0.4, hall_length),
-			Vector3(0.0, CEILING_Y, hall_center), WALL_MATERIAL)
-	_add_box(Vector3(CORRIDOR_WIDTH + 0.8, CEILING_Y + 1.0, 0.4),
-			Vector3(0.0, CEILING_Y / 2.0, 6.2), WALL_MATERIAL)
-	_add_box(Vector3(CORRIDOR_WIDTH + 0.8, CEILING_Y + 1.0, 0.4),
-			Vector3(0.0, CEILING_Y / 2.0, -98.2), WALL_MATERIAL)
-
-	# Dark chamber opening with the exit marker, like level 1.
-	var dark := StandardMaterial3D.new()
-	dark.albedo_color = Color(0.02, 0.015, 0.01)
-	dark.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	_add_visual_box(Vector3(3.0, 2.8, 0.2), Vector3(0.0, 1.4, -97.9), dark)
-
-	var sign_material := StandardMaterial3D.new()
-	sign_material.albedo_color = Color(0.1, 0.85, 0.3)
-	sign_material.emission_enabled = true
-	sign_material.emission = Color(0.1, 0.85, 0.3)
-	sign_material.emission_energy_multiplier = 2.0
-	_add_visual_box(Vector3(0.9, 0.4, 0.12), Vector3(0.95, 2.4, -97.75), sign_material)
-
-
-func _build_hazards() -> void:
-	for data in PENDULUMS:
-		var pendulum: Node3D = PendulumScript.new()
-		pendulum.phase_offset = data[1]
-		pendulum.position = Vector3(0.0, CEILING_Y - 0.1, data[0])
-		add_child(pendulum)
-		pendulum.player_hit.connect(_on_trap_hit)
-
-	for row_z in CRACK_ROWS:
-		for x in [-1.1, 1.1]:
-			var tile: StaticBody3D = CrackTileScript.new()
-			tile.position = Vector3(x, -0.2, row_z)
-			add_child(tile)
-
-
-func _add_box(size: Vector3, pos: Vector3, material: Material) -> void:
-	var body := StaticBody3D.new()
-	var collision := CollisionShape3D.new()
-	var shape := BoxShape3D.new()
-	shape.size = size
-	collision.shape = shape
-	body.add_child(collision)
-	body.position = pos
-	add_child(body)
-	_attach_mesh(body, size, material)
-
-
-func _add_visual_box(size: Vector3, pos: Vector3, material: Material) -> void:
-	var holder := Node3D.new()
-	holder.position = pos
-	add_child(holder)
-	_attach_mesh(holder, size, material)
-
-
-func _attach_mesh(parent: Node3D, size: Vector3, material: Material) -> void:
-	var mesh := MeshInstance3D.new()
-	var box := BoxMesh.new()
-	box.size = size
-	box.material = material
-	mesh.mesh = box
-	parent.add_child(mesh)
+		d += 8.0
