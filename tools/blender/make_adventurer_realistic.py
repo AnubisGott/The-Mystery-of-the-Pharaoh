@@ -87,16 +87,22 @@ CLIP_MAP = {
 CLOTHES = [
     os.path.join(ASSETS, "mhclo", "namuhekam_male_polo_shirt", "namuhekam_male_polo_shirt.mhclo"),
     os.path.join(ASSETS, "mhclo", "cortu_cargo_pants", "cortu_cargo_pants.mhclo"),
-    os.path.join(ASSETS, "mhclo", "culturalibre_male_boots", "culturalibre_male_boots.mhclo"),
+    # Tall boots (not the ankle pair) so the pants tuck into them cleanly.
+    os.path.join(ASSETS, "mhclo", "culturalibre_hero_boots_1", "culturalibre_hero_boots_1.mhclo"),
 ]
 
 # Flat desert-palette materials, matching the stylized look of the game
 # (and exporting deterministically, unlike procedural MakeSkin shaders).
 # Assigned by matching substrings against object names.
+PANTS_COLOR = (0.45, 0.38, 0.24)       # brown-khaki; backpack matches it
 MATERIAL_COLORS = [
     ("polo", (0.76, 0.65, 0.44)),      # khaki shirt
-    ("cargo", (0.45, 0.38, 0.24)),     # brown-khaki pants
+    ("cargo", PANTS_COLOR),            # pants
     ("boot", (0.24, 0.15, 0.09)),      # dark leather boots
+    ("belt", (0.30, 0.19, 0.10)),      # brown leather belt
+    ("buckle", (0.62, 0.52, 0.24)),    # brass buckle
+    ("backpack", PANTS_COLOR),         # backpack matches the pants
+    ("strap", (0.30, 0.19, 0.10)),     # brown leather straps
     ("hatband", (0.19, 0.11, 0.06)),   # dark band
     ("hat", (0.38, 0.23, 0.11)),       # brown fedora
     ("Human", (0.85, 0.62, 0.45)),     # skin
@@ -165,6 +171,25 @@ def build_human():
         obj.select_set(True)
     bpy.context.view_layer.objects.active = rig
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+
+    # Tuck: shirt hem cut at the waist, pant legs cut to tuck into the
+    # boots; a belt (added in main) covers the junction. Transforms are
+    # identity here, so world Z == local Z.
+    boot_top = max((m.matrix_world @ v.co).z for m in meshes
+            if "boot" in m.name.lower() for v in m.data.vertices)
+    # Cut the shirt below the waist bone (not at the pants line): it then
+    # keeps overlapping the pants, so when it rides up during a stride it
+    # never exposes the midriff. The belt covers the overlap.
+    waist_z = (rig.matrix_world @ rig.data.bones["pelvis"].head_local).z
+    for m in meshes:
+        n = m.name.lower()
+        if "polo" in n:
+            trim_below(m, waist_z)
+        elif "cargo" in n:
+            trim_below(m, boot_top - 0.06)
+        elif "boot" in n:
+            offset_along_normals(m, 0.006)
+    print("boot_top:", round(boot_top, 3), "waist_z:", round(waist_z, 3))
     return basemesh, rig, meshes
 
 
@@ -190,6 +215,92 @@ def add_fedora(rig, basemesh, meshes) -> None:
         mod.object = rig
         obj.parent = rig
         meshes.append(obj)
+
+
+def _skin_prop(obj, rig, bone, meshes) -> None:
+    # Rigidly skin a procedural prop to one bone (like the fedora).
+    bpy.ops.object.select_all(action="DESELECT")
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    bpy.ops.object.shade_auto_smooth(angle=1.0)
+    group = obj.vertex_groups.new(name=bone)
+    group.add(list(range(len(obj.data.vertices))), 1.0, "REPLACE")
+    mod = obj.modifiers.new("skin", "ARMATURE")
+    mod.object = rig
+    obj.parent = rig
+    meshes.append(obj)
+
+
+def _bevel(obj, width) -> None:
+    bpy.context.view_layer.objects.active = obj
+    mod = obj.modifiers.new("bev", "BEVEL")
+    mod.width = width
+    mod.segments = 2
+    bpy.ops.object.modifier_apply(modifier="bev")
+
+
+def trim_below(mesh_obj, z_cut) -> None:
+    # Delete vertices below a world Z, so a garment ends higher (shirt
+    # tucked at the waist; pant legs cut to tuck into the boots). The open
+    # bottom is hidden inside the pants / boots.
+    import bmesh
+    bm = bmesh.new()
+    bm.from_mesh(mesh_obj.data)
+    victims = [v for v in bm.verts if (mesh_obj.matrix_world @ v.co).z < z_cut]
+    bmesh.ops.delete(bm, geom=victims, context="VERTS")
+    bm.to_mesh(mesh_obj.data)
+    bm.free()
+    mesh_obj.data.update()
+
+
+def offset_along_normals(mesh_obj, dist) -> None:
+    me = mesh_obj.data
+    for v in me.vertices:
+        v.co = v.co + v.normal * dist
+    me.update()
+
+
+def add_belt(rig, meshes) -> None:
+    # Brown leather belt (torus) with a small buckle, at the waist.
+    belt_z = (rig.matrix_world @ rig.data.bones["pelvis"].head_local).z + 0.05
+    bpy.ops.mesh.primitive_torus_add(major_radius=0.15, minor_radius=0.042,
+            location=(0.0, 0.0, belt_z), major_segments=28, minor_segments=8)
+    belt = bpy.context.active_object
+    belt.name = "Belt"
+    belt.scale = (1.02, 0.82, 1.0)  # oval to match the torso cross-section
+    _skin_prop(belt, rig, "pelvis", meshes)
+    # Buckle at the front (the character faces -Y).
+    bpy.ops.mesh.primitive_cube_add(size=1, location=(0.0, -0.135, belt_z))
+    buckle = bpy.context.active_object
+    buckle.name = "Buckle"
+    buckle.scale = (0.07, 0.02, 0.05)
+    _skin_prop(buckle, rig, "pelvis", meshes)
+
+
+def add_backpack(rig, meshes) -> None:
+    # Rucksack on the upper back (character faces -Y, so +Y is behind),
+    # matching the pants colour, with two front shoulder straps.
+    z = (rig.matrix_world @ rig.data.bones["spine_02"].head_local).z + 0.05
+    bpy.ops.mesh.primitive_cube_add(size=1, location=(0.0, 0.18, z))
+    body = bpy.context.active_object
+    body.name = "Backpack"
+    body.scale = (0.30, 0.17, 0.40)
+    _bevel(body, 0.035)
+    _skin_prop(body, rig, "spine_02", meshes)
+    bpy.ops.mesh.primitive_cube_add(size=1, location=(0.0, 0.195, z + 0.17))
+    lid = bpy.context.active_object
+    lid.name = "BackpackLid"
+    lid.scale = (0.31, 0.16, 0.11)
+    _bevel(lid, 0.025)
+    _skin_prop(lid, rig, "spine_02", meshes)
+    for side, tag in ((-1.0, "L"), (1.0, "R")):
+        bpy.ops.mesh.primitive_cube_add(size=1, location=(0.10 * side, -0.11, z + 0.02))
+        strap = bpy.context.active_object
+        strap.name = "Strap" + tag
+        strap.scale = (0.05, 0.05, 0.36)
+        strap.rotation_euler = (0.1, 0.0, 0.0)
+        _skin_prop(strap, rig, "spine_03", meshes)
 
 
 def apply_flat_materials(meshes) -> None:
@@ -421,6 +532,8 @@ def main() -> None:
 
     basemesh, rig, meshes = build_human()
     add_fedora(rig, basemesh, meshes)
+    add_belt(rig, meshes)
+    add_backpack(rig, meshes)
     apply_flat_materials(meshes)
     src = import_ual()
     rig.animation_data_create()
