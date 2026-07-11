@@ -27,6 +27,7 @@ script = ExtResource("1")
 walk_stride_speed = 1.8
 run_stride_speed = 6.5
 crouch_stride_speed = 1.2
+visual_lift = 0.05
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 shape = SubResource("CapsuleShape3D_player")

@@ -300,30 +300,32 @@ def add_backpack(rig, meshes) -> None:
     # shoulder straps that sit on the OUTSIDE of the chest (front surface
     # is near y=-0.14, so straps go slightly beyond that) and over the
     # shoulders. Body/pockets/flap skin to spine_02, straps to spine_03.
-    z = (rig.matrix_world @ rig.data.bones["spine_02"].head_local).z + 0.06
-    by = 0.19  # behind the back
+    z = (rig.matrix_world @ rig.data.bones["spine_02"].head_local).z + 0.05
+    shoulder_z = (rig.matrix_world @ rig.data.bones["clavicle_l"].head_local).z
+    by = 0.17  # behind the back
 
-    _prop_box("Backpack", (0.30, 0.18, 0.40), (0.0, by, z), rig, "spine_02", meshes, bevel=0.06)
-    _prop_box("BackpackFlap", (0.31, 0.09, 0.24), (0.0, by + 0.06, z + 0.08),
-            rig, "spine_02", meshes, bevel=0.05)
+    _prop_box("Backpack", (0.25, 0.15, 0.34), (0.0, by, z), rig, "spine_02", meshes, bevel=0.05)
+    _prop_box("BackpackFlap", (0.26, 0.08, 0.20), (0.0, by + 0.045, z + 0.08),
+            rig, "spine_02", meshes, bevel=0.04)
     for s in (-1.0, 1.0):
-        _prop_box("BackpackPocket", (0.09, 0.14, 0.19), (0.17 * s, by, z - 0.05),
-                rig, "spine_02", meshes, bevel=0.04)
-    _prop_box("Buckle", (0.05, 0.02, 0.04), (0.0, by + 0.11, z + 0.02), rig, "spine_02", meshes)
+        _prop_box("BackpackPocket", (0.08, 0.12, 0.17), (0.145 * s, by, z - 0.04),
+                rig, "spine_02", meshes, bevel=0.035)
+    _prop_box("Buckle", (0.045, 0.02, 0.035), (0.0, by + 0.085, z + 0.02), rig, "spine_02", meshes)
 
     # Rolled bedroll strapped across the top.
-    bpy.ops.mesh.primitive_cylinder_add(radius=0.065, depth=0.34, vertices=18,
-            location=(0.0, by, z + 0.24), rotation=(0.0, math.pi / 2.0, 0.0))
+    bpy.ops.mesh.primitive_cylinder_add(radius=0.05, depth=0.28, vertices=18,
+            location=(0.0, by, z + 0.20), rotation=(0.0, math.pi / 2.0, 0.0))
     roll = bpy.context.active_object
     roll.name = "Bedroll"
     _skin_prop(roll, rig, "spine_02", meshes)
 
-    # Shoulder straps: over each shoulder, then down the front of the chest.
+    # Thin shoulder straps: arch over each shoulder (at clavicle height),
+    # then down the front of the chest to the belt.
     for s, tag in ((-1.0, "L"), (1.0, "R")):
-        _prop_box("StrapTop" + tag, (0.06, 0.36, 0.05), (0.11 * s, 0.03, z + 0.21),
-                rig, "spine_03", meshes, bevel=0.01)
-        _prop_box("Strap" + tag, (0.06, 0.04, 0.34), (0.10 * s, -0.15, z),
-                rig, "spine_03", meshes, bevel=0.01, rot=(0.12, 0.0, 0.0))
+        _prop_box("StrapOver" + tag, (0.045, 0.40, 0.03), (0.11 * s, 0.02, shoulder_z),
+                rig, "spine_03", meshes, bevel=0.008)
+        _prop_box("Strap" + tag, (0.045, 0.035, 0.42), (0.10 * s, -0.135, z + 0.03),
+                rig, "spine_03", meshes, bevel=0.008, rot=(0.08, 0.0, 0.0))
 
 
 def apply_flat_materials(meshes) -> None:

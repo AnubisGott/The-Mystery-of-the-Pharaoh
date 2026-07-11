@@ -10,6 +10,10 @@ signal respawned
 # Horizontal look limit around the spawn direction; 0 or less means
 # free 360-degree rotation (used indoors where the corridor turns).
 @export var yaw_limit_degrees: float = 45.0
+# Raises the visual model without moving the capsule/camera. Level 1's
+# path surface sits 5 cm above the sand collision the capsule rests on,
+# so the model needs lifting to stand on the path instead of in it.
+@export var visual_lift: float = 0.0
 
 const STAND_HEIGHT: float = 1.8
 const DUCK_HEIGHT: float = 1.3
@@ -54,6 +58,7 @@ func _ready() -> void:
 	add_to_group("player")
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	$CameraPivot/CameraArm.add_excluded_object(get_rid())
+	visual.position.y = -STAND_HEIGHT / 2.0 + visual_lift
 	for clip in LOOPED_CLIPS:
 		_anim.get_animation(clip).loop_mode = Animation.LOOP_LINEAR
 	_anim.play("Idle")
@@ -192,10 +197,10 @@ func _set_ducking(ducking: bool) -> void:
 	# The visual's origin is at the feet: keep it on the capsule bottom.
 	# The crouch pose itself comes from the Crouch_* animation clips.
 	if ducking:
-		visual.position.y = -DUCK_HEIGHT / 2.0
+		visual.position.y = -DUCK_HEIGHT / 2.0 + visual_lift
 		position.y -= (STAND_HEIGHT - DUCK_HEIGHT) / 2.0
 	else:
-		visual.position.y = -STAND_HEIGHT / 2.0
+		visual.position.y = -STAND_HEIGHT / 2.0 + visual_lift
 		position.y += (STAND_HEIGHT - DUCK_HEIGHT) / 2.0
 
 
