@@ -3,6 +3,11 @@ extends Node3D
 const SANDSTONE_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_sphinx.tres")
 const LEVEL_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel01.mp3")
 const PYRAMID_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_pyramid.tres")
+const IntroTitle := preload("res://ui/intro_title.gd")
+
+# How long the intro freezes mid-shot to stamp the level name on the
+# frame, at the standard 4 s duration (it scales with the duration).
+const INTRO_HOLD: float = 1.4
 
 const PATH_HALF_WIDTH: float = 1.5
 # The curve starts 20 m behind the player spawn (z=29) so the path
@@ -132,9 +137,19 @@ func _play_intro(duration: float = 4.0) -> void:
 	add_child(spear)
 	var cam := Camera3D.new()
 	add_child(cam)
+	var title := IntroTitle.new()
+	title.setup("Level 1", "The Path of the Sphinx")
+	title.visible = false
+	add_child(title)
 
+	var hold := INTRO_HOLD * duration / 4.0
+	var tree := get_tree()
 	var elapsed := 0.0
+	var held := 0.0
 	while elapsed < duration and not _intro_skip:
+		# The level can be torn down mid-intro (scene change); bail out.
+		if not is_inside_tree():
+			return
 		var t := elapsed / duration
 		# The spear crosses the path in slow motion, grazing duck height.
 		spear.global_position = feet + Vector3(lerpf(-8.0, 8.0, t), 1.45, 0.0)
@@ -144,9 +159,18 @@ func _play_intro(duration: float = 4.0) -> void:
 				3.4 - 1.2 * sin(PI * t), 1.5, 2.4 - 0.9 * sin(PI * t))
 		cam.look_at(feet + Vector3(0, 1.25, 0), Vector3.UP)
 		cam.make_current()
-		await get_tree().process_frame
-		elapsed += get_process_delta_time()
+		await tree.process_frame
+		var dt := get_process_delta_time()
+		# Freeze the frame mid-shot and stamp the level name on it.
+		if t >= 0.5 and held < hold:
+			held += dt
+			title.visible = true
+			title.set_opacity(minf(held / 0.25, 1.0))
+		else:
+			title.visible = false
+			elapsed += dt
 
+	title.queue_free()
 	spear.queue_free()
 	var player_cam: Camera3D = player.get_node("CameraPivot/CameraArm/Camera3D")
 	player_cam.make_current()

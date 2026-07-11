@@ -12,6 +12,11 @@ const FLOOR_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_py
 const PendulumScript := preload("res://hazards/pendulum.gd")
 const CrackTileScript := preload("res://hazards/crack_tile.gd")
 const Torch := preload("res://levels/torch.gd")
+const IntroTitle := preload("res://ui/intro_title.gd")
+
+# How long the intro freezes mid-shot to stamp the level name on the
+# frame, at the standard 4 s duration (it scales with the duration).
+const INTRO_HOLD: float = 1.4
 
 const CORRIDOR_WIDTH: float = 4.4
 const WALL_V: float = 2.4
@@ -123,7 +128,8 @@ func _play_intro(duration: float = 4.0) -> void:
 	var pause_menu: Node = get_node_or_null("PauseMenu")
 	if pause_menu:
 		pause_menu.set_process_unhandled_input(false)
-	for pendulum in get_tree().get_nodes_in_group("pendulums"):
+	var pendulums := get_tree().get_nodes_in_group("pendulums")
+	for pendulum in pendulums:
 		pendulum.time_scale = 0.25
 
 	var d: float = PENDULUM_DS[0][0]
@@ -133,19 +139,44 @@ func _play_intro(duration: float = 4.0) -> void:
 	var arc := to_global(_pos(leg, u, 0.0, 2.5))
 	var cam := Camera3D.new()
 	add_child(cam)
+	var title := IntroTitle.new()
+	title.setup("Level 2", "The Pendulum's Journey")
+	title.visible = false
+	add_child(title)
 
+	var hold := INTRO_HOLD * duration / 4.0
+	var tree := get_tree()
 	var elapsed := 0.0
+	var held := 0.0
 	while elapsed < duration and not _intro_skip:
+		# The level can be torn down mid-intro (scene change); bail out.
+		if not is_inside_tree():
+			return
 		var t := elapsed / duration
 		# One smooth zoom in and back out over the whole sequence.
 		cam.fov = 66.0 - 22.0 * sin(PI * t)
 		cam.global_position = to_global(_pos(leg, u - 6.5 + 1.6 * sin(PI * t), 1.0, 2.0))
 		cam.look_at(arc, Vector3.UP)
 		cam.make_current()
-		await get_tree().process_frame
-		elapsed += get_process_delta_time()
+		await tree.process_frame
+		var dt := get_process_delta_time()
+		# Freeze the frame mid-shot — pendulums included — and stamp the
+		# level name on it.
+		if t >= 0.5 and held < hold:
+			held += dt
+			title.visible = true
+			title.set_opacity(minf(held / 0.25, 1.0))
+			for pendulum in pendulums:
+				pendulum.time_scale = 0.0
+		else:
+			if title.visible:
+				title.visible = false
+				for pendulum in pendulums:
+					pendulum.time_scale = 0.25
+			elapsed += dt
 
-	for pendulum in get_tree().get_nodes_in_group("pendulums"):
+	title.queue_free()
+	for pendulum in pendulums:
 		pendulum.time_scale = 1.0
 	var player_cam: Camera3D = player.get_node("CameraPivot/CameraArm/Camera3D")
 	player_cam.make_current()
