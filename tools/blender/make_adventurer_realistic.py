@@ -25,6 +25,7 @@
 #     transforms are applied before the bake.
 #   * export_apply must stay off, or the armature modifier is baked into
 #     the vertices and the pose is applied twice at runtime.
+import math
 import os
 import sys
 
@@ -102,6 +103,7 @@ MATERIAL_COLORS = [
     ("belt", (0.30, 0.19, 0.10)),      # brown leather belt
     ("buckle", (0.62, 0.52, 0.24)),    # brass buckle
     ("backpack", PANTS_COLOR),         # backpack matches the pants
+    ("bedroll", (0.58, 0.48, 0.32)),   # tan rolled bedroll on top
     ("strap", (0.30, 0.19, 0.10)),     # brown leather straps
     ("hatband", (0.19, 0.11, 0.06)),   # dark band
     ("hat", (0.38, 0.23, 0.11)),       # brown fedora
@@ -278,29 +280,50 @@ def add_belt(rig, meshes) -> None:
     _skin_prop(buckle, rig, "pelvis", meshes)
 
 
+def _prop_box(name, dims, loc, rig, bone, meshes, bevel=0.0, rot=(0.0, 0.0, 0.0)) -> None:
+    bpy.ops.mesh.primitive_cube_add(size=1, location=loc, rotation=rot)
+    obj = bpy.context.active_object
+    obj.name = name
+    obj.scale = dims
+    bpy.ops.object.select_all(action="DESELECT")
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.transform_apply(scale=True)  # bake scale first so bevels are even
+    if bevel > 0.0:
+        _bevel(obj, bevel)
+    _skin_prop(obj, rig, bone, meshes)
+
+
 def add_backpack(rig, meshes) -> None:
-    # Rucksack on the upper back (character faces -Y, so +Y is behind),
-    # matching the pants colour, with two front shoulder straps.
-    z = (rig.matrix_world @ rig.data.bones["spine_02"].head_local).z + 0.05
-    bpy.ops.mesh.primitive_cube_add(size=1, location=(0.0, 0.18, z))
-    body = bpy.context.active_object
-    body.name = "Backpack"
-    body.scale = (0.30, 0.17, 0.40)
-    _bevel(body, 0.035)
-    _skin_prop(body, rig, "spine_02", meshes)
-    bpy.ops.mesh.primitive_cube_add(size=1, location=(0.0, 0.195, z + 0.17))
-    lid = bpy.context.active_object
-    lid.name = "BackpackLid"
-    lid.scale = (0.31, 0.16, 0.11)
-    _bevel(lid, 0.025)
-    _skin_prop(lid, rig, "spine_02", meshes)
-    for side, tag in ((-1.0, "L"), (1.0, "R")):
-        bpy.ops.mesh.primitive_cube_add(size=1, location=(0.10 * side, -0.11, z + 0.02))
-        strap = bpy.context.active_object
-        strap.name = "Strap" + tag
-        strap.scale = (0.05, 0.05, 0.36)
-        strap.rotation_euler = (0.1, 0.0, 0.0)
-        _skin_prop(strap, rig, "spine_03", meshes)
+    # Rucksack on the upper back (character faces -Y, so +Y is behind).
+    # Rounded body + top flap/buckle + rolled bedroll + side pockets, plus
+    # shoulder straps that sit on the OUTSIDE of the chest (front surface
+    # is near y=-0.14, so straps go slightly beyond that) and over the
+    # shoulders. Body/pockets/flap skin to spine_02, straps to spine_03.
+    z = (rig.matrix_world @ rig.data.bones["spine_02"].head_local).z + 0.06
+    by = 0.19  # behind the back
+
+    _prop_box("Backpack", (0.30, 0.18, 0.40), (0.0, by, z), rig, "spine_02", meshes, bevel=0.06)
+    _prop_box("BackpackFlap", (0.31, 0.09, 0.24), (0.0, by + 0.06, z + 0.08),
+            rig, "spine_02", meshes, bevel=0.05)
+    for s in (-1.0, 1.0):
+        _prop_box("BackpackPocket", (0.09, 0.14, 0.19), (0.17 * s, by, z - 0.05),
+                rig, "spine_02", meshes, bevel=0.04)
+    _prop_box("Buckle", (0.05, 0.02, 0.04), (0.0, by + 0.11, z + 0.02), rig, "spine_02", meshes)
+
+    # Rolled bedroll strapped across the top.
+    bpy.ops.mesh.primitive_cylinder_add(radius=0.065, depth=0.34, vertices=18,
+            location=(0.0, by, z + 0.24), rotation=(0.0, math.pi / 2.0, 0.0))
+    roll = bpy.context.active_object
+    roll.name = "Bedroll"
+    _skin_prop(roll, rig, "spine_02", meshes)
+
+    # Shoulder straps: over each shoulder, then down the front of the chest.
+    for s, tag in ((-1.0, "L"), (1.0, "R")):
+        _prop_box("StrapTop" + tag, (0.06, 0.36, 0.05), (0.11 * s, 0.03, z + 0.21),
+                rig, "spine_03", meshes, bevel=0.01)
+        _prop_box("Strap" + tag, (0.06, 0.04, 0.34), (0.10 * s, -0.15, z),
+                rig, "spine_03", meshes, bevel=0.01, rot=(0.12, 0.0, 0.0))
 
 
 def apply_flat_materials(meshes) -> None:
