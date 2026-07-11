@@ -20,6 +20,10 @@ var _current_test := ""
 
 
 func _ready() -> void:
+	# The headless window defaults to 100x100; pin it to the size the
+	# spear pixel constants were tuned for (spears scale from it).
+	get_window().size = Vector2i(1152, 648)
+
 	# Deterministic world: no timer-driven spears during tests.
 	level._spear_timer.stop()
 	level._practice_timer.stop()

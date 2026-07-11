@@ -17,7 +17,11 @@ const LOW_ANKLE_HEIGHT: float = 0.12
 const HIGH_HAT_HEIGHT: float = 1.80
 const OFFSCREEN_MARGIN: float = 120.0
 
-# Drawn spear extent around its origin (see spear_2d.gd _draw).
+# Drawn spear extent around its origin (see spear_2d.gd _draw), in pixels
+# at the 648-tall baseline window the spears were tuned for. Spears are
+# scaled with the window height so they keep their size relative to the
+# 3D character at any resolution.
+const BASE_VIEW_HEIGHT: float = 648.0
 const SPEAR_TIP: float = 92.0
 const SPEAR_TAIL: float = 80.0
 const CHARACTER_HALF_WIDTH: float = 35.0
@@ -41,16 +45,18 @@ func reset_ramp() -> void:
 
 func spawn_spear(is_high: bool, from_left: bool) -> void:
 	var view_size := get_viewport().get_visible_rect().size
+	var s := view_size.y / BASE_VIEW_HEIGHT
 	var spear := Spear2D.new()
 	spear.is_high = is_high
 	spear.direction = 1.0 if from_left else -1.0
-	# Ramp the speed up over the first RAMP_COUNT spears.
+	# Ramp the speed up over the first RAMP_COUNT spears. Speed is in
+	# pixels, so it scales with the window like the spear itself.
 	var t := clampf(float(_spawn_count) / float(RAMP_COUNT - 1), 0.0, 1.0)
-	spear.speed = lerpf(SPEAR_SPEED_FIRST, SPEAR_SPEED, t)
+	spear.speed = lerpf(SPEAR_SPEED_FIRST, SPEAR_SPEED, t) * s
 	_spawn_count += 1
-	spear.scale.x = spear.direction
+	spear.scale = Vector2(spear.direction * s, s)
 	spear.position = Vector2(
-		-OFFSCREEN_MARGIN if from_left else view_size.x + OFFSCREEN_MARGIN,
+		-OFFSCREEN_MARGIN * s if from_left else view_size.x + OFFSCREEN_MARGIN * s,
 		_lane_screen_y(is_high)
 	)
 	add_child(spear)
@@ -76,11 +82,12 @@ func _physics_process(_delta: float) -> void:
 		if spear == null:
 			continue
 
-		var lead := spear.position.x + spear.direction * SPEAR_TIP
-		var tail := spear.position.x - spear.direction * SPEAR_TAIL
-		if maxf(lead, tail) < center_x - CHARACTER_HALF_WIDTH:
+		var s := absf(spear.scale.y)
+		var lead := spear.position.x + spear.direction * SPEAR_TIP * s
+		var tail := spear.position.x - spear.direction * SPEAR_TAIL * s
+		if maxf(lead, tail) < center_x - CHARACTER_HALF_WIDTH * s:
 			continue
-		if minf(lead, tail) > center_x + CHARACTER_HALF_WIDTH:
+		if minf(lead, tail) > center_x + CHARACTER_HALF_WIDTH * s:
 			continue
 
 		var dodged: bool = player.is_ducking() if spear.is_high else not player.is_on_floor()

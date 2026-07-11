@@ -25,14 +25,17 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	position.x += direction * speed * delta
 
+	# The layer scales the whole spear (and its speed) with the window
+	# height; keep the trigger and cleanup distances in the same units.
+	var s := absf(scale.y)
 	var width := get_viewport_rect().size.x
-	if not _whoosh_played and absf(position.x - width * 0.5) < WHOOSH_TRIGGER_DISTANCE:
+	if not _whoosh_played and absf(position.x - width * 0.5) < WHOOSH_TRIGGER_DISTANCE * s:
 		_whoosh_played = true
 		_whoosh_player.stream = WHOOSH_STREAMS[randi() % WHOOSH_STREAMS.size()]
 		_whoosh_player.pitch_scale = randf_range(0.9, 1.15)
 		_whoosh_player.play()
 
-	if position.x < -150.0 or position.x > width + 150.0:
+	if position.x < -150.0 * s or position.x > width + 150.0 * s:
 		queue_free()
 
 
