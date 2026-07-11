@@ -195,6 +195,10 @@ func test_no_jump_while_ducking() -> void:
 
 func test_camera_steady_during_jump_and_duck() -> void:
 	var pivot: Node3D = player.get_node("CameraPivot")
+	# Give the grounded camera height a moment to converge after the
+	# spawn drop; only then must it hold still through jumps and ducks.
+	for i in 30:
+		await get_tree().physics_frame
 	var base_y: float = pivot.global_position.y
 
 	Input.action_press("jump")
@@ -780,23 +784,22 @@ func test_stairs_boulder_hit_kills_and_other_lane_misses() -> void:
 	await get_tree().physics_frame
 
 
-func test_stairs_hole_fall_resets() -> void:
+func test_stairs_camera_follows_the_climb() -> void:
 	var stairs := await _spawn_stairs()
 	var stairs_player: CharacterBody3D = stairs.get_node("Player")
 
-	# Drop the player into the first hole; below the ramp line is death,
-	# and death resets to the start platform.
-	var hole_z: float = stairs.HOLES[0] - 0.75
+	# Halfway up the stairs the camera must ride at head height with the
+	# player, not stay pinned at the valley height (it used to end up
+	# under the stairs after ~30 m of climbing).
 	stairs_player.global_position = stairs.to_global(
-			Vector3(0, stairs._ramp_y(hole_z) - 1.5, hole_z))
-	var reset := false
-	for i in 240:
+			Vector3(0, stairs._ramp_y(-42.0) + 1.0, -42.0))
+	for i in 40:
 		await get_tree().physics_frame
-		var lp: Vector3 = stairs.to_local(stairs_player.global_position)
-		if not stairs_player.is_dying() and lp.z > 2.0 and stairs_player.is_on_floor():
-			reset = true
-			break
-	_check(reset, "hole fall did not reset the player to the start")
+	var pivot: Node3D = stairs_player.get_node("CameraPivot")
+	var pivot_above_feet: float = pivot.global_position.y \
+			- (stairs_player.global_position.y - 0.9)
+	_check(absf(pivot_above_feet - 1.55) < 0.3,
+			"camera pivot not at head height on the stairs: %f" % pivot_above_feet)
 
 	stairs.queue_free()
 	await get_tree().physics_frame

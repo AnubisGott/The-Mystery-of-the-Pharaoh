@@ -39,6 +39,8 @@ const LOOPED_CLIPS: Array[String] = [
 @export var run_stride_speed: float = 5.5
 @export var crouch_stride_speed: float = 2.0
 
+var _camera_base_y: float = 0.0
+
 @onready var camera_pivot: Node3D = $CameraPivot
 @onready var collision_shape: CollisionShape3D = $CollisionShape3D
 @onready var visual: Node3D = $Visual
@@ -74,6 +76,7 @@ func _ready() -> void:
 	for clip in LOOPED_CLIPS:
 		_anim.get_animation(clip).loop_mode = Animation.LOOP_LINEAR
 	_anim.play("Idle")
+	_camera_base_y = _camera_target_y()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -106,7 +109,7 @@ func _physics_process(delta: float) -> void:
 		if not is_on_floor():
 			velocity.y -= _gravity * delta
 		move_and_slide()
-		camera_pivot.global_position.y = CAMERA_HEIGHT
+		camera_pivot.global_position.y = _camera_base_y
 		return
 
 	if Input.is_action_pressed("duck") != _is_ducking:
@@ -134,10 +137,22 @@ func _physics_process(delta: float) -> void:
 		_anim.play("Jump_Start", 0.1)
 
 	move_and_slide()
-	camera_pivot.global_position.y = CAMERA_HEIGHT
+	# The camera floats at a fixed height above the feet. Following them
+	# only while grounded (smoothed) keeps it steady through jumps and
+	# ducks, yet lets it climb stairs and slopes with the player.
+	if is_on_floor():
+		_camera_base_y = lerpf(_camera_base_y, _camera_target_y(), minf(delta * 10.0, 1.0))
+	camera_pivot.global_position.y = _camera_base_y
 	_update_animation()
 	_update_footsteps(delta)
 	_check_fall_whistle()
+
+
+# Feet height plus the camera offset; exact in every duck state because
+# _set_ducking shifts the body in the same frame the capsule resizes.
+func _camera_target_y() -> float:
+	var capsule: CapsuleShape3D = collision_shape.shape
+	return global_position.y - capsule.height * 0.5 + CAMERA_HEIGHT
 
 
 func is_ducking() -> bool:
@@ -197,6 +212,8 @@ func reset_to_start(spawn: Transform3D) -> void:
 	_pitch = 0.0
 	_whistle_played = false
 	camera_pivot.rotation.x = 0.0
+	# Teleports must not be smoothed across.
+	_camera_base_y = _camera_target_y()
 	respawned.emit()
 
 

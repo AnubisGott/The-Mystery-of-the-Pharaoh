@@ -2,8 +2,8 @@ extends Node3D
 
 # Level 3: Up the Stairs. One long torch-lit staircase inside the
 # pyramid. Boulders roll down it in three lanes — rarely at first, then
-# more and more often the higher the player climbs — and a few missing
-# steps (holes) must be jumped. The exit is at the top.
+# more and more often the higher the player climbs. The exit is at
+# the top.
 
 const LEVEL_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel03.mp3")
 const WALL_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_sphinx.tres")
@@ -17,9 +17,7 @@ const IntroTitle := preload("res://ui/intro_title.gd")
 const INTRO_HOLD: float = 1.4
 
 # The staircase frame: a flat start platform, stairs rising toward -Z,
-# and a flat top platform with the exit. The slope is gentle enough
-# (~19 degrees) that the ascending hole jumps work when walking AND
-# sprinting — steeper slopes outrun the jump arc.
+# and a flat top platform with the exit.
 const SLOPE: float = 0.35
 const STAIRS_START_Z: float = -2.0
 const STAIRS_END_Z: float = -82.0
@@ -28,12 +26,6 @@ const STEP_RISE: float = STEP_RUN * SLOPE
 const CORRIDOR_WIDTH: float = 4.4
 const WALL_HEIGHT: float = 4.5
 const TOP_Y: float = (STAIRS_START_Z - STAIRS_END_Z) * SLOPE
-
-# Missing steps: each hole starts at this z (upper edge) and is
-# HOLE_LEN long. Narrower than a boulder's diameter, so boulders
-# bridge them and roll on.
-const HOLES: Array[float] = [-22.0, -40.0, -58.0, -70.0]
-const HOLE_LEN: float = 1.5
 
 const LANES: Array[float] = [-1.4, 0.0, 1.4]
 const BOULDER_SPEED: float = 7.0
@@ -77,7 +69,7 @@ func _ready() -> void:
 
 
 func _physics_process(_delta: float) -> void:
-	# Falling through a hole: below the ramp line means death.
+	# Safety net: below the ramp line means death.
 	var lp := to_local(player.global_position)
 	if lp.y < _ramp_y(lp.z) - 3.5 and not player.is_dying():
 		if GameManager.god_mode:
@@ -99,13 +91,6 @@ func _ramp_y(z: float) -> float:
 	return clampf((STAIRS_START_Z - z) * SLOPE, 0.0, TOP_Y)
 
 
-func _in_hole(z: float) -> bool:
-	for hole in HOLES:
-		if z <= hole and z >= hole - HOLE_LEN:
-			return true
-	return false
-
-
 func _build_geometry() -> void:
 	var pitch := atan(SLOPE)
 
@@ -114,21 +99,12 @@ func _build_geometry() -> void:
 	_add_box(Vector3(0, TOP_Y - 0.2, STAIRS_END_Z - 4.0),
 			Vector3(CORRIDOR_WIDTH, 0.4, 8.0), FLOOR_MATERIAL)
 
-	# The walkable surface is an invisible ramp through the step noses,
-	# split into segments that leave the holes open.
-	var edges: Array[float] = [STAIRS_START_Z]
-	for hole in HOLES:
-		edges.append(hole)
-		edges.append(hole - HOLE_LEN)
-	edges.append(STAIRS_END_Z)
+	# The walkable surface is one invisible ramp through the step noses.
 	var normal := Vector3(0, cos(pitch), sin(pitch))
-	for i in range(0, edges.size(), 2):
-		var z_a: float = edges[i]
-		var z_b: float = edges[i + 1]
-		var mid := Vector3(0, (_ramp_y(z_a) + _ramp_y(z_b)) * 0.5, (z_a + z_b) * 0.5)
-		var length := (z_a - z_b) / cos(pitch)
-		_add_box(mid - normal * 0.2, Vector3(CORRIDOR_WIDTH, 0.4, length),
-				FLOOR_MATERIAL, pitch, true, false)
+	var ramp_mid := Vector3(0, TOP_Y * 0.5, (STAIRS_START_Z + STAIRS_END_Z) * 0.5)
+	var ramp_len := (STAIRS_START_Z - STAIRS_END_Z) / cos(pitch)
+	_add_box(ramp_mid - normal * 0.2, Vector3(CORRIDOR_WIDTH, 0.4, ramp_len),
+			FLOOR_MATERIAL, pitch, true, false)
 
 	# The visible steps; their top front edges lie on the ramp line.
 	var step_mesh := BoxMesh.new()
@@ -136,12 +112,10 @@ func _build_geometry() -> void:
 	step_mesh.material = FLOOR_MATERIAL
 	var steps := int((STAIRS_START_Z - STAIRS_END_Z) / STEP_RUN)
 	for i in steps:
-		var z_center := STAIRS_START_Z - (i + 0.5) * STEP_RUN
-		if _in_hole(z_center):
-			continue
 		var step := MeshInstance3D.new()
 		step.mesh = step_mesh
-		step.position = Vector3(0, (i + 0.5) * STEP_RISE, z_center)
+		step.position = Vector3(0, (i + 0.5) * STEP_RISE,
+				STAIRS_START_Z - (i + 0.5) * STEP_RUN)
 		add_child(step)
 
 	# Walls and ceilings: flat pieces over the platforms, pitched slabs
