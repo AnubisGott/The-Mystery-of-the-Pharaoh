@@ -53,35 +53,8 @@ Mouse = look around
 Esc = pause
 
 
-A Windows EXE in the build folder
+Windows EXE in the build folder
 
 
 todo-list:
-
-- add intro sequence for every level
-
-- eine Lampe hängt in der Luft in Level 2
-- wenn er in die Tiefe fällt ein Todesschrei "The sound of something falling and hitting the ground.mp3"
-- benutze HeartMula AI Music Generator um Sound Effekte zu erzeugen
-
-
- Dressing the character… (1h 38m 59s · ↓ 212.1k tokens)
-√ Prototype MPFB human + game_engine rig headless
-√ Retarget Quaternius UAL clips onto MPFB rig
-■ Dress the MakeHuman character as archaeologist
-□ Write make_adventurer_realistic.py + export models GLB
-□ Wire Level 1 to the new character, keep Level 2 on KayKit
-
-KayKit (blöde Proportionen)
-Quaternius (besser) UAL = Universal Animation Library
-Mixamo (noch nicht ausprobiert)
-
-
-1. √ Prototype MPFB human + game_engine rig headless
-2. √ Retarget Quaternius UAL clips onto MPFB rig
-3. ■ Dress the MakeHuman character as archaeologist
-4. □ Write make_adventurer_realistic.py + export models GLB
-5. □ Wire Level 1 to the new character, keep Level 2 on KayKit
-
-for step 1 Prototype MPFB human + game_engine rig headless: is it possible to download a free human from the internet?
 
