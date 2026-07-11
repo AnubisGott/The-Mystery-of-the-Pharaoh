@@ -270,6 +270,12 @@ func _build_jetty_and_boat() -> void:
 	boat.rotation.y = 0.1
 	add_child(boat)
 
+	# The finish line sits at the jetty's end beside the boat. Anchored
+	# here in code: the jetty is laid out relative to the last croc, so
+	# a fixed end zone drifts off into open water whenever the croc
+	# layout is retuned (which is exactly what happened).
+	get_node("EndZone").position = Vector3(0, 1.2, jetty_to + 1.2)
+
 
 func _add_box(center: Vector3, size: Vector3, material: Material,
 		visual: bool = true, with_collision: bool = true) -> void:

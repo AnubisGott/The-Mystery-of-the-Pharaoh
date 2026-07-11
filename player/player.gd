@@ -16,6 +16,9 @@ signal respawned
 # path surface sits 5 cm above the sand collision the capsule rests on,
 # so the model needs lifting to stand on the path instead of in it.
 @export var visual_lift: float = 0.0
+# Levels where falling is routine (the crocodile crossing) turn the
+# falling sounds off.
+@export var fall_sounds_enabled: bool = true
 
 const STAND_HEIGHT: float = 1.8
 const DUCK_HEIGHT: float = 1.3
@@ -189,8 +192,10 @@ func die_and_reset(spawn: Transform3D, hit_high: bool = true, animate: bool = tr
 		tween.tween_interval(clampf(_anim.get_animation(clip).length / speed + 0.35, 0.8, 2.2))
 	else:
 		# Falling into a pit: the falling/impact cry, keep the airborne
-		# flail, then a short beat before respawning.
-		(_fall_player if _fall_player else _hit_player).play()
+		# flail, then a short beat before respawning. Levels with their
+		# own fall audio (the splash) silence it.
+		if fall_sounds_enabled:
+			(_fall_player if _fall_player else _hit_player).play()
 		tween.tween_interval(0.4)
 	tween.tween_callback(_finish_death.bind(spawn))
 
@@ -220,7 +225,7 @@ func reset_to_start(spawn: Transform3D) -> void:
 # The instant the body drops below the floor into a pit, sound the
 # falling-bomb whistle once; re-armed when the feet are back on solid ground.
 func _check_fall_whistle() -> void:
-	if _whistle_player == null:
+	if _whistle_player == null or not fall_sounds_enabled:
 		return
 	if is_on_floor():
 		_whistle_played = false
