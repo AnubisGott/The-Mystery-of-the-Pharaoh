@@ -60,7 +60,13 @@ func interact() -> void:
 	var tween := create_tween()
 	tween.tween_property(_drum, "rotation:y", _drum.rotation.y + TAU / 4.0, 0.6) \
 			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
-	tween.tween_callback(func() -> void: _spinning = false)
+	tween.tween_callback(_on_spin_finished)
+
+
+# The dial only counts once its quarter-turn has visibly completed —
+# the finale must not fire while the wheel is still spinning.
+func _on_spin_finished() -> void:
+	_spinning = false
 	if not was_turned:
 		was_turned = true
 		turned.emit()

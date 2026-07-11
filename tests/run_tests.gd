@@ -707,6 +707,9 @@ func test_display_settings_cycle_and_persist() -> void:
 	# (display changes are no-ops in headless runs, only state changes).
 	var orig_fullscreen: bool = GameManager.fullscreen
 	var orig_size: Vector2i = GameManager.window_size
+	# The saved settings may say fullscreen (the size label then reads
+	# "Desktop"); the cycling checks below need windowed mode.
+	GameManager.set_fullscreen(false)
 
 	var sizes: Array[Vector2i] = GameManager.available_window_sizes()
 	_check(not sizes.is_empty(), "no window size presets available")
@@ -725,7 +728,7 @@ func test_display_settings_cycle_and_persist() -> void:
 			"size label does not show the current size")
 
 	display_button.pressed.emit()
-	_check(GameManager.fullscreen != orig_fullscreen, "display button did not toggle fullscreen")
+	_check(GameManager.fullscreen, "display button did not toggle fullscreen")
 	_check(size_button.disabled == GameManager.fullscreen,
 			"size button enabled state does not follow fullscreen")
 
@@ -836,7 +839,7 @@ func test_stairs_difficulty_ramps_with_height() -> void:
 			"easy interval wrong")
 	_check(is_equal_approx(stairs._spawn_interval(1.0), stairs.INTERVAL_HARD),
 			"hard interval wrong")
-	_check(stairs._spawn_interval(0.0) > stairs._spawn_interval(1.0) + 1.0,
+	_check(stairs._spawn_interval(0.0) > stairs._spawn_interval(1.0) + 0.5,
 			"boulder interval does not ramp up the stairs")
 
 	var stairs_player: CharacterBody3D = stairs.get_node("Player")
@@ -936,17 +939,22 @@ func test_burial_bowls_open_the_door() -> void:
 
 func test_burial_dials_open_the_floor() -> void:
 	var chamber := await _spawn_burial()
+	var chamber_player: CharacterBody3D = chamber.get_node("Player")
 	for dial in chamber._dials:
 		_check(not chamber.floor_open, "floor opened before all dials were turned")
 		dial.interact()
 		await get_tree().physics_frame
 
-	for i in 220:
+	for i in 150:
 		await get_tree().physics_frame
 	_check(chamber.floor_open, "all dials turned but the floor stayed shut")
-	_check(absf(chamber._pit_slabs[0].position.x) > 8.0, "pit slab did not slide away")
+	_check(chamber._pit_slabs[0].position.y < -8.0, "pit trapdoor did not drop away")
 	for dial in chamber._dials:
 		_check(dial.position.y < -5.0, "dial socket did not fall into the pit")
+	# Whoever still stands beside the pit is dragged in: the antechamber
+	# test player is being pulled toward the pit right now.
+	_check(chamber._pulling or chamber.to_local(chamber_player.global_position).y < -1.0,
+			"the player is not being pulled into the pit")
 
 	var end_zone: Area3D = chamber.get_node("EndZone")
 	_check(chamber.to_local(end_zone.global_position).y < -8.0,
@@ -1006,6 +1014,29 @@ func test_slide_obstacle_kills() -> void:
 			died = true
 			break
 	_check(died, "sliding into the block did not kill")
+	slide.queue_free()
+	await get_tree().physics_frame
+
+
+func test_slide_jump_stays_low() -> void:
+	var slide := await _spawn_slide()
+	var slide_player: CharacterBody3D = slide.get_node("Player")
+	# Ride onto the chute, then hold jump: the hop over the chute line
+	# must stay a hop, not a flight to the ceiling.
+	for i in 60:
+		await get_tree().physics_frame
+	Input.action_press("jump")
+	var max_clearance := 0.0
+	for i in 120:
+		await get_tree().physics_frame
+		var lp: Vector3 = slide.to_local(slide_player.global_position)
+		if lp.z < -3.0:
+			max_clearance = maxf(max_clearance,
+					lp.y - 0.9 - slide._ramp_y(lp.z))
+	Input.action_release("jump")
+	_check(max_clearance < 2.0,
+			"slide jump flies too high above the chute: %f" % max_clearance)
+	_check(max_clearance > 0.3, "slide jump never left the chute")
 	slide.queue_free()
 	await get_tree().physics_frame
 
@@ -1080,8 +1111,13 @@ func test_croc_water_kills_and_resets() -> void:
 func test_croc_gaps_widen_along_the_river() -> void:
 	var crocs := await _spawn_crocs()
 	var positions: Array[Vector3] = crocs._croc_positions
-	var first_gap: float = positions[0].z - positions[1].z
-	var last_gap: float = positions[positions.size() - 2].z - positions[positions.size() - 1].z
+	# The starter raft has pairs sharing a row; compare row distances.
+	var rows: Array[float] = []
+	for p in positions:
+		if rows.is_empty() or absf(p.z - rows.back()) > 0.01:
+			rows.append(p.z)
+	var first_gap: float = rows[0] - rows[1]
+	var last_gap: float = rows[rows.size() - 2] - rows[rows.size() - 1]
 	_check(last_gap > first_gap + 1.0,
 			"croc gaps do not widen: %f vs %f" % [first_gap, last_gap])
 	var end_zone: Area3D = crocs.get_node("EndZone")

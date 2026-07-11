@@ -6,7 +6,7 @@
 [ext_resource type="PackedScene" path="res://ui/pause_menu.tscn" id="4"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_end"]
-size = Vector3(13, 2, 4.2)
+size = Vector3(13, 3, 4.2)
 
 [node name="BurialChamber" type="Node3D"]
 script = ExtResource("1")

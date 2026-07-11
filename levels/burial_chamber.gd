@@ -38,6 +38,7 @@ var _bowls: Array[Node3D] = []
 var _dials: Array[Node3D] = []
 var _pit_slabs: Array[AnimatableBody3D] = []
 var _turned_count: int = 0
+var _pulling: bool = false
 var _intro_running: bool = false
 var _intro_skip: bool = false
 var _intro_can_skip: bool = false
@@ -57,8 +58,28 @@ func _ready() -> void:
 		_play_intro()
 
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	if _intro_running:
+		return
+	if _pulling:
+		# Walk the player into the open pit, wherever they stand.
+		var target := to_global(Vector3(0, 0, (PIT_FROM_Z + PIT_TO_Z) / 2.0))
+		var direction := target - player.global_position
+		direction.y = 0.0
+		var v := player.velocity
+		if direction.length() > 0.4:
+			var flat := direction.normalized() * 4.5
+			v.x = flat.x
+			v.z = flat.z
+		else:
+			v.x = 0.0
+			v.z = 0.0
+		if not player.is_on_floor():
+			v.y -= 9.8 * delta
+		player.velocity = v
+		player.move_and_slide()
+		if to_local(player.global_position).y < -2.0:
+			_pulling = false
 		return
 	var best: Node3D = null
 	var best_distance := INTERACT_RANGE
@@ -131,7 +152,7 @@ func _build_rooms() -> void:
 	_add_box(Vector3(0, 2.75, -22.2), Vector3(14.8, 5.5, 0.4), WALL_MATERIAL)
 	_add_box(Vector3(0, 5.7, -15), Vector3(14.8, 0.4, 14.8), WALL_MATERIAL)
 
-	# Chamber floor: entry strip, the openable pit strip, back section.
+	# Chamber floor: entry strip, the droppable pit strip, back section.
 	_add_box(Vector3(0, -0.2, -9.0), Vector3(14, 0.4, 2.0), FLOOR_MATERIAL)
 	_add_box(Vector3(0, -0.2, -18.25), Vector3(14, 0.4, 7.5), FLOOR_MATERIAL)
 	for side: float in [-1.0, 1.0]:
@@ -151,7 +172,7 @@ func _build_rooms() -> void:
 		add_child(slab)
 		_pit_slabs.append(slab)
 
-	# The pit below the openable strip.
+	# The pit shaft below the droppable strip.
 	var pit_mid_z := (PIT_FROM_Z + PIT_TO_Z) / 2.0
 	_add_box(Vector3(-7.0, -6.2, pit_mid_z), Vector3(0.4, 12, 4.5), WALL_MATERIAL)
 	_add_box(Vector3(7.0, -6.2, pit_mid_z), Vector3(0.4, 12, 4.5), WALL_MATERIAL)
@@ -177,7 +198,8 @@ func _build_furniture() -> void:
 		bowl.lit_changed.connect(_on_bowl_lit)
 		_bowls.append(bowl)
 
-	# Dais and the upright sarcophagus with the death mask.
+	# Dais and the upright sarcophagus with the death mask; they stand
+	# clear of the pit and stay through the finale.
 	_add_box(Vector3(0, 0.25, -18.5), Vector3(4, 0.5, 2.6), FLOOR_MATERIAL)
 	var gold := StandardMaterial3D.new()
 	gold.albedo_color = Color(0.85, 0.66, 0.22)
@@ -320,20 +342,37 @@ func _open_floor() -> void:
 	if floor_open:
 		return
 	floor_open = true
-	# A moment of silence, then the floor slides away under the player —
-	# and the dial sockets, standing on those slabs, tumble into the pit.
+	# A short beat, then the pit strip drops straight down like a
+	# trapdoor. Dropping (instead of sliding sideways) matters: a
+	# sideways-moving slab CARRIES whoever stands on it — that was the
+	# "player gets beamed to the side" bug.
 	var tween := create_tween()
-	tween.tween_interval(0.8)
-	tween.tween_property(_pit_slabs[0], "position:x", -10.6, 1.4) \
+	tween.tween_interval(0.4)
+	tween.tween_property(_pit_slabs[0], "position:y", -14.2, 0.8) \
 			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tween.parallel().tween_property(_pit_slabs[1], "position:x", 10.6, 1.4) \
+	tween.parallel().tween_property(_pit_slabs[1], "position:y", -14.2, 0.8) \
 			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	# Once the trapdoor is gone, whoever still stands beside the pit is
+	# dragged in — the fall comes no matter where the player was.
+	tween.tween_callback(_start_pull)
+
+	# The dial sockets ride the trapdoor down, toppling as they go;
+	# Anubis and the sarcophagus stand clear of the pit and stay.
+	var fall := create_tween()
+	fall.set_parallel(true)
 	for i in _dials.size():
 		var dial: Node3D = _dials[i]
-		tween.parallel().tween_property(dial, "position:y", dial.position.y - 12.0, 1.3) \
-				.set_delay(0.5).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-		tween.parallel().tween_property(dial, "rotation:x", 0.9 - 0.4 * i, 1.3) \
-				.set_delay(0.5)
+		fall.tween_property(dial, "position:y", dial.position.y - 14.0, 0.8) \
+				.set_delay(0.45 + 0.1 * i).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		fall.tween_property(dial, "rotation:z", 0.5 - 1.0 * i, 0.8) \
+				.set_delay(0.45 + 0.1 * i)
+
+
+func _start_pull() -> void:
+	if to_local(player.global_position).y < -1.0:
+		return   # already falling
+	_pulling = true
+	player.set_physics_process(false)
 
 
 func _on_god_mode_changed(enabled: bool) -> void:

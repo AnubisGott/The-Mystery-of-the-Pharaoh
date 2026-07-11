@@ -50,7 +50,9 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_time += delta
-	# The boat rides a gentle swell; the camera drifts alongside.
+	# The boat steams down the Nile riding a gentle swell; the camera is
+	# aboard, so the banks and palms drift past.
+	_boat.position.z -= delta * 2.0
 	_boat.position.y = 0.1 + 0.08 * sin(_time * 0.7)
 	_boat.rotation.z = 0.012 * sin(_time * 0.55 + 1.0)
 
@@ -110,10 +112,11 @@ func _build_scene() -> void:
 	river.position = Vector3(0, -0.5, 0)
 	add_child(river)
 
-	# Distant banks with palms.
+	# Banks with palms along the journey ahead.
 	var sand := StandardMaterial3D.new()
 	sand.albedo_color = Color(0.8, 0.68, 0.48)
-	for data: Array in [[-40.0, -20.0], [45.0, 10.0], [-38.0, 35.0], [50.0, 60.0]]:
+	for data: Array in [[47.0, 20.0], [-40.0, -15.0], [45.0, -45.0],
+			[-38.0, -80.0], [50.0, -115.0], [-42.0, -150.0]]:
 		var bank := MeshInstance3D.new()
 		var bank_mesh := SphereMesh.new()
 		bank_mesh.radius = 22.0
@@ -177,11 +180,13 @@ func _build_scene() -> void:
 	smoke.position = Vector3(0, 6.4, -0.8)
 	_boat.add_child(smoke)
 
+	# The camera rides on the boat, so the shot stays framed while the
+	# world drifts by.
 	var cam := Camera3D.new()
 	cam.fov = 55.0
 	cam.position = Vector3(8.0, 3.0, -9.5)
-	add_child(cam)
-	cam.look_at(Vector3(0, 2.0, -1.5), Vector3.UP)
+	_boat.add_child(cam)
+	cam.look_at(_boat.to_global(Vector3(0, 2.0, -1.5)), Vector3.UP)
 	cam.current = true
 
 

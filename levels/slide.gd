@@ -26,15 +26,21 @@ const WATER_Y: float = -70.0
 const HOLES: Array[float] = [-30.0, -55.0, -80.0]
 const HOLE_LEN: float = 3.0
 const OBSTACLES: Array[Vector2] = [
-	Vector2(-0.9, -16.0), Vector2(1.4, -24.0), Vector2(-1.2, -38.0),
-	Vector2(0.0, -47.0), Vector2(-1.2, -63.0), Vector2(1.4, -71.0),
-	Vector2(0.0, -88.0), Vector2(-1.4, -95.0), Vector2(1.2, -102.0),
+	Vector2(-0.9, -16.0), Vector2(0.9, -20.0), Vector2(1.4, -24.0),
+	Vector2(-1.2, -38.0), Vector2(-0.4, -43.0), Vector2(0.0, -47.0),
+	Vector2(0.9, -52.0), Vector2(-1.2, -63.0), Vector2(0.2, -67.0),
+	Vector2(1.4, -71.0), Vector2(-0.8, -85.0), Vector2(0.0, -88.0),
+	Vector2(-1.4, -95.0), Vector2(0.6, -98.5), Vector2(1.2, -102.0),
 ]
 
 const SPEED_START: float = 8.0
 const SPEED_END: float = 12.5
 const STEER_SPEED: float = 4.5
-const JUMP_VELOCITY: float = 4.0
+# The chute drops away beneath a jump (~5.8 m/s at full speed), which
+# turns even small hops into huge flights. A tiny impulse plus heavy
+# slide gravity keeps the hop low (~1 m over the chute) and short.
+const JUMP_VELOCITY: float = 2.0
+const SLIDE_GRAVITY: float = 30.0
 
 @onready var player: CharacterBody3D = $Player
 @onready var god_label: Label = $ControlsHint/Root/GodLabel
@@ -76,6 +82,15 @@ func _physics_process(delta: float) -> void:
 		return
 
 	var lp := to_local(player.global_position)
+	# The bomb whistle for hole falls, like the Level-2 pits (the
+	# player's own whistle logic is off with its physics).
+	if player._whistle_player != null:
+		if player.is_on_floor():
+			player._whistle_played = false
+		elif not player._whistle_played and lp.z > SLIDE_END_Z + 2.0 \
+				and lp.y < _ramp_y(lp.z) - 1.2:
+			player._whistle_player.play()
+			player._whistle_played = true
 	# Fell into a hole (only while still over the chute; past its end
 	# the drop into the water is the intended exit).
 	if lp.z > SLIDE_END_Z + 2.0 and lp.y < _ramp_y(lp.z) - 5.0:
@@ -95,7 +110,7 @@ func _physics_process(delta: float) -> void:
 		if Input.is_action_pressed("jump"):
 			v.y = JUMP_VELOCITY
 	else:
-		v.y -= 9.8 * delta
+		v.y -= SLIDE_GRAVITY * delta
 	player.velocity = v
 	player.move_and_slide()
 

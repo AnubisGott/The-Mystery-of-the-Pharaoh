@@ -21,10 +21,11 @@ const WATER_Y: float = -0.4
 const KILL_CENTER_Y: float = 0.15
 const RIVER_HALF_WIDTH: float = 7.0
 
-# Crocs thin out along the river: the gap between them grows.
-const CROC_COUNT: int = 20
+# Crocs thin out along the river: the gap between them grows. The
+# quadratic ramp keeps the start dense and the finish sparse.
+const CROC_COUNT: int = 22
 const CROC_LENGTH: float = 2.0
-const GAP_NEAR: float = 1.6
+const GAP_NEAR: float = 1.2
 const GAP_FAR: float = 3.4
 
 @onready var player: CharacterBody3D = $Player
@@ -184,16 +185,13 @@ func _build_landscape() -> void:
 	_add_box(Vector3(0, 16.0, 13.0), Vector3(40.0, 4.0, 1.4), WALL_MATERIAL)
 	_add_box(Vector3(0, 19.5, 13.0), Vector3(28.0, 3.5, 1.2), WALL_MATERIAL)
 	_add_box(Vector3(0, 22.5, 13.0), Vector3(16.0, 2.8, 1.0), WALL_MATERIAL)
+	# The dark tunnel mouth doubles as a solid wall: the player cannot
+	# walk back into the pyramid, and the chase camera's spring arm
+	# collides with it instead of slipping behind the facade.
 	var dark := StandardMaterial3D.new()
 	dark.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	dark.albedo_color = Color(0.02, 0.015, 0.01)
-	var mouth := MeshInstance3D.new()
-	var mouth_mesh := BoxMesh.new()
-	mouth_mesh.size = Vector3(10.0, 7.0, 0.3)
-	mouth_mesh.material = dark
-	mouth.mesh = mouth_mesh
-	mouth.position = Vector3(0, 3.5, 13.2)
-	add_child(mouth)
+	_add_box(Vector3(0, 3.5, 13.0), Vector3(10.0, 7.0, 0.3), dark)
 
 	# The stone ledge the player starts on: it reaches through the
 	# pyramid mouth so there is no gap to the facade at all.
@@ -211,20 +209,28 @@ func _build_landscape() -> void:
 
 func _build_crocs() -> void:
 	var z := 5.0
-	for i in CROC_COUNT:
-		# The first three crocs float in a tight straight row, an easy
-		# warm-up right off the ledge; after that they scatter and the
-		# gaps open up.
-		var in_row := i < 3
-		var x := 0.0 if in_row else sin(float(i) * 1.7) * 1.3
+	# The warm-up raft off the ledge: three rows of crocs side by side,
+	# head to tail — nearly a walkway.
+	for row in 3:
+		for x_side: float in [-0.8, 0.8]:
+			var raft_croc: AnimatableBody3D = Crocodile.new()
+			raft_croc.surface_y = -0.15
+			raft_croc.position = Vector3(x_side, -0.15, z)
+			add_child(raft_croc)
+			_croc_positions.append(Vector3(x_side, -0.15, z))
+		z -= CROC_LENGTH + 0.4
+
+	# After the raft they scatter, and the gaps open up toward the end.
+	var scattered := CROC_COUNT - 6
+	for i in scattered:
+		var x := sin(float(i) * 1.7) * 1.3
 		var croc: AnimatableBody3D = Crocodile.new()
 		croc.surface_y = -0.15
 		croc.position = Vector3(x, -0.15, z)
-		croc.rotation.y = 0.0 if in_row else sin(float(i) * 2.3) * 0.25
+		croc.rotation.y = sin(float(i) * 2.3) * 0.25
 		add_child(croc)
 		_croc_positions.append(Vector3(x, -0.15, z))
-		var gap := 1.3 if in_row \
-				else lerpf(GAP_NEAR, GAP_FAR, float(i) / float(CROC_COUNT - 1))
+		var gap := lerpf(GAP_NEAR, GAP_FAR, pow(float(i) / float(scattered - 1), 2.0))
 		z -= CROC_LENGTH + gap
 
 

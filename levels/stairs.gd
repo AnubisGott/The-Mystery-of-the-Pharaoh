@@ -29,10 +29,13 @@ const TOP_Y: float = (STAIRS_START_Z - STAIRS_END_Z) * SLOPE
 
 const LANES: Array[float] = [-1.4, 0.0, 1.4]
 const BOULDER_SPEED: float = 7.5
-# The spawn interval ramps from easy to relentless with climb progress.
-const INTERVAL_EASY: float = 2.8
-const INTERVAL_HARD: float = 0.9
-const FIRST_BOULDER_DELAY: float = 1.5
+# The spawn interval ramps from busy to relentless with climb progress.
+const INTERVAL_EASY: float = 1.0
+const INTERVAL_HARD: float = 0.4
+# A wave is one boulder, sometimes two — never all three lanes at once,
+# so there is always a way through.
+const TWIN_CHANCE: float = 0.4
+const FIRST_BOULDER_DELAY: float = 0.8
 # Boulders spawn this far up-slope from the player (capped at the top),
 # so the first ones arrive within seconds instead of rolling the whole
 # staircase down first.
@@ -252,19 +255,25 @@ func _on_boulder_timer_timeout() -> void:
 	# The final stretch stays boulder-free so the arrival at the top is
 	# never cheap-shotted from point-blank range.
 	if _progress() < CALM_PROGRESS:
-		_spawn_boulder()
+		# One boulder, sometimes a twin in a DIFFERENT lane: a wave can
+		# never wall off all three lanes.
+		var lane := randi() % LANES.size()
+		_spawn_boulder(lane)
+		if randf() < TWIN_CHANCE:
+			_spawn_boulder((lane + 1 + randi() % 2) % LANES.size())
 	_boulder_timer.start(_spawn_interval(_progress()) * randf_range(0.85, 1.15))
 
 
-func _spawn_boulder() -> Node3D:
+func _spawn_boulder(lane: int = -1) -> Node3D:
+	if lane < 0:
+		lane = randi() % LANES.size()
 	var boulder: Node3D = Boulder.new()
 	boulder.direction = Vector3(0, -SLOPE, 1).normalized()
 	boulder.speed = BOULDER_SPEED
 	boulder.flatten_z = STAIRS_START_Z
 	boulder.despawn_z = 5.5
 	var z := maxf(STAIRS_END_Z, to_local(player.global_position).z - SPAWN_AHEAD_Z)
-	boulder.position = Vector3(LANES[randi() % LANES.size()],
-			_ramp_y(z) + Boulder.RADIUS, z)
+	boulder.position = Vector3(LANES[lane], _ramp_y(z) + Boulder.RADIUS, z)
 	add_child(boulder)
 	boulder.player_hit.connect(_on_boulder_hit)
 	return boulder
