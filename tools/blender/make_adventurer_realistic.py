@@ -197,8 +197,16 @@ def build_human():
 
 def add_fedora(rig, basemesh, meshes) -> None:
     # Procedural fedora skinned to the head bone (the character faces -Y).
-    # Placed relative to the actual mesh top, not the bone tail.
-    head_top = max(v.co.z for v in basemesh.data.vertices) - 0.015
+    # Placed relative to the actual mesh top and centered over the skull
+    # crown, NOT the body axis: the head sits ~7 cm forward (-Y) of the
+    # axis, and a hat centered on the axis hovers behind/above the head.
+    z_max = max(v.co.z for v in basemesh.data.vertices)
+    head_top = z_max - 0.015
+    crown = [v.co for v in basemesh.data.vertices if v.co.z > z_max - 0.03]
+    cx = sum(c.x for c in crown) / len(crown)
+    cy = sum(c.y for c in crown) / len(crown)
+    print("hat: head_top =", round(head_top, 4),
+            "center =", (round(cx, 4), round(cy, 4)))
     parts = [
         ("HatBrim", 0.175, 0.022, head_top + 0.011),
         ("HatCrown", 0.105, 0.095, head_top + 0.06),
@@ -206,7 +214,7 @@ def add_fedora(rig, basemesh, meshes) -> None:
     ]
     for name, radius, depth, z in parts:
         bpy.ops.mesh.primitive_cylinder_add(radius=radius, depth=depth,
-                vertices=24, location=(0.0, -0.012, z))
+                vertices=24, location=(cx, cy, z))
         obj = bpy.context.active_object
         obj.name = name
         bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
