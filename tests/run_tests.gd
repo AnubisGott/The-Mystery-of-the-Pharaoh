@@ -478,6 +478,7 @@ func test_footsteps_fire_while_walking() -> void:
 
 func test_movement_plays_matching_clips() -> void:
 	var anim: AnimationPlayer = player.get_node("Visual/AnimationPlayer")
+	player.sprint_allowed = true  # Level 1 disables sprint; test the clip mapping
 
 	Input.action_press("move_forward")
 	for i in 10:
@@ -579,6 +580,7 @@ func _free_hall(hall: Node3D) -> void:
 
 
 func test_sprint_is_faster() -> void:
+	player.sprint_allowed = true
 	Input.action_press("move_forward")
 	for i in 15:
 		await get_tree().physics_frame
@@ -588,11 +590,19 @@ func test_sprint_is_faster() -> void:
 	for i in 15:
 		await get_tree().physics_frame
 	var sprint_speed := Vector2(player.velocity.x, player.velocity.z).length()
+
+	# With sprinting disabled (Level 1's default), Shift must not speed up.
+	player.sprint_allowed = false
+	for i in 15:
+		await get_tree().physics_frame
+	var blocked_speed := Vector2(player.velocity.x, player.velocity.z).length()
 	Input.action_release("sprint")
 	Input.action_release("move_forward")
+	player.sprint_allowed = true
 
 	_check(absf(walk_speed - 5.0) < 0.5, "walk speed off: %f" % walk_speed)
 	_check(sprint_speed > 6.5, "sprint not faster: %f" % sprint_speed)
+	_check(absf(blocked_speed - 5.0) < 0.5, "sprint not blocked when disallowed: %f" % blocked_speed)
 
 
 func test_menu_has_level_entries() -> void:

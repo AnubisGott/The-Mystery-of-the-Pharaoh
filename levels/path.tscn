@@ -178,7 +178,6 @@ grow_horizontal = 0
 grow_vertical = 2
 text = "W A S D - Move
 Mouse - Look
-Shift - Sprint
 Space - Jump low spears
 Ctrl - Duck high spears
 M - Music on/off

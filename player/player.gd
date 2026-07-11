@@ -4,6 +4,8 @@ signal respawned
 
 @export var move_speed: float = 5.0
 @export var sprint_speed: float = 7.5
+# Sprinting is disabled outdoors (Level 1) and enabled in the pyramid.
+@export var sprint_allowed: bool = true
 @export var duck_speed: float = 2.5
 @export var jump_velocity: float = 3.8
 @export var mouse_sensitivity: float = 0.0025
@@ -117,7 +119,7 @@ func _physics_process(delta: float) -> void:
 	var speed := move_speed
 	if _is_ducking:
 		speed = duck_speed
-	elif Input.is_action_pressed("sprint"):
+	elif sprint_allowed and Input.is_action_pressed("sprint"):
 		speed = sprint_speed
 	var input_vector := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	var direction := (global_transform.basis * Vector3(input_vector.x, 0.0, input_vector.y)).normalized()

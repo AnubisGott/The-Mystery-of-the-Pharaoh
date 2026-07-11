@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://player/player.gd" id="1"]
 [ext_resource type="PackedScene" path="res://models/adventurer_realistic.glb" id="2"]
@@ -7,6 +7,8 @@
 [ext_resource type="AudioStream" path="res://sounds/footstep_sand_3.wav" id="5"]
 [ext_resource type="AudioStream" path="res://sounds/footstep_sand_4.wav" id="6"]
 [ext_resource type="AudioStream" path="res://soundAndMusic/sounds/Dying Sound Hit By Spear.mp3" id="7"]
+[ext_resource type="AudioStream" path="res://soundAndMusic/sounds/The Sound Of Something Falling And Hitting The Ground.mp3" id="8"]
+[ext_resource type="AudioStream" path="res://sounds/bomb_whistle.wav" id="9"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
 radius = 0.35
@@ -28,6 +30,7 @@ walk_stride_speed = 1.8
 run_stride_speed = 6.5
 crouch_stride_speed = 1.2
 visual_lift = 0.05
+sprint_allowed = false
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 shape = SubResource("CapsuleShape3D_player")
@@ -53,3 +56,11 @@ volume_db = -14.0
 [node name="HitPlayer" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("7")
 volume_db = -4.0
+
+[node name="FallPlayer" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("8")
+volume_db = -3.0
+
+[node name="WhistlePlayer" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("9")
+volume_db = -18.0
