@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://ui/pause_menu.gd" id="1"]
+[ext_resource type="PackedScene" path="res://ui/options_panel.tscn" id="2"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 bg_color = Color(0.09, 0.07, 0.04, 0.88)
@@ -60,6 +61,11 @@ custom_minimum_size = Vector2(260, 40)
 layout_mode = 2
 text = "Resume"
 
+[node name="OptionsButton" type="Button" parent="Root/Center/Panel/Items"]
+custom_minimum_size = Vector2(260, 40)
+layout_mode = 2
+text = "Options"
+
 [node name="ResetButton" type="Button" parent="Root/Center/Panel/Items"]
 custom_minimum_size = Vector2(260, 40)
 layout_mode = 2
@@ -74,3 +80,7 @@ text = "Main Menu"
 custom_minimum_size = Vector2(260, 40)
 layout_mode = 2
 text = "Quit Game"
+
+[node name="OptionsItems" parent="Root/Center/Panel" instance=ExtResource("2")]
+visible = false
+layout_mode = 2

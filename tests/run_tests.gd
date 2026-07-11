@@ -429,8 +429,16 @@ func test_escape_opens_pause_menu() -> void:
 	for button in menu.get_node("Root/Center/Panel/Items").get_children():
 		if button is Button:
 			labels.append(button.text)
-	for expected in ["Resume", "Reset Level", "Main Menu", "Quit Game"]:
+	for expected in ["Resume", "Options", "Reset Level", "Main Menu", "Quit Game"]:
 		_check(labels.has(expected), "pause menu misses entry: %s" % expected)
+
+	# Options are reachable from the pause menu too.
+	menu.get_node("Root/Center/Panel/Items/OptionsButton").pressed.emit()
+	_check(menu.get_node("Root/Center/Panel/OptionsItems").visible,
+			"pause options panel did not open")
+	menu.get_node("Root/Center/Panel/OptionsItems/BackButton").pressed.emit()
+	_check(menu.get_node("Root/Center/Panel/Items").visible,
+			"pause options back did not return")
 
 	# ESC again resumes; so does the Resume button.
 	_press_key(KEY_ESCAPE)
