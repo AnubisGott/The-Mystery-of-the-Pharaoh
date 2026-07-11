@@ -7,7 +7,7 @@ const Spear2D := preload("res://hazards/spear_2d.gd")
 const SPEAR_SPEED: float = 900.0
 # The first spears fly slowly and each one is a little faster, reaching
 # the full speed on the RAMP_COUNT-th spear, so the player can ease in.
-const SPEAR_SPEED_FIRST: float = 430.0
+const SPEAR_SPEED_FIRST: float = 620.0
 const RAMP_COUNT: int = 8
 # World-space heights above the character's feet; projected to screen
 # at spawn time so the lanes track the character at any camera pitch.

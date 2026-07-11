@@ -52,6 +52,17 @@ const CRACK_D_ROWS := [
 	27.0, 29.0, 92.0, 94.0, 98.0, 104.0, 106.0, 110.0, 119.0, 121.0,
 	144.0, 146.0, 151.0, 153.0, 155.0,
 ]
+# Wall runs as (leg, side sign, u_from, u_to); the u-ranges close the outer
+# corner and leave the inner corner open. Used to build the walls and to
+# keep torches from being placed where there is no wall behind them.
+const WALL_SPECS := [
+	[0, 1, -0.2, 39.4], [0, -1, -0.2, 34.8],
+	[1, 1, -2.6, 52.4], [1, -1, 2.0, 47.8],
+	[2, 1, -2.6, 24.8], [2, -1, 2.0, 29.4],
+	[3, 1, 2.0, 25.4], [3, -1, -2.6, 20.8],
+	[4, 1, -2.6, 30.4], [4, -1, 2.0, 30.4],
+]
+
 # Pendulums as (d, phase offset), phase-locked to a shared clock.
 const PENDULUM_DS := [
 	[55.0, 0.0],
@@ -174,18 +185,9 @@ func _build_geometry() -> void:
 	for corner_leg in [1, 2, 3, 4]:
 		_leg_box(corner_leg, 0.0, 0.0, -0.2, CORRIDOR_WIDTH, 0.4, CORRIDOR_WIDTH, FLOOR_MATERIAL)
 
-	# Walls per leg and side, with pockets cut out around pendulums. The
-	# u-ranges close the outer corner and leave the inner corner open.
-	_build_wall(0, WALL_V, -0.2, 39.4)
-	_build_wall(0, -WALL_V, -0.2, 34.8)
-	_build_wall(1, WALL_V, -2.6, 52.4)
-	_build_wall(1, -WALL_V, 2.0, 47.8)
-	_build_wall(2, WALL_V, -2.6, 24.8)
-	_build_wall(2, -WALL_V, 2.0, 29.4)
-	_build_wall(3, WALL_V, 2.0, 25.4)
-	_build_wall(3, -WALL_V, -2.6, 20.8)
-	_build_wall(4, WALL_V, -2.6, 30.4)
-	_build_wall(4, -WALL_V, 2.0, 30.4)
+	# Walls per leg and side, with pockets cut out around pendulums.
+	for spec in WALL_SPECS:
+		_build_wall(spec[0], spec[1] * WALL_V, spec[2], spec[3])
 
 	# Back wall, end wall, ceilings.
 	_leg_box(0, -0.4, 0.0, CEILING_Y / 2.0, CORRIDOR_WIDTH + 0.8, CEILING_Y + 1.0, 0.4, WALL_MATERIAL)
@@ -314,20 +316,49 @@ func _build_environment() -> void:
 	while d < END_D:
 		var leg := _leg_for(d)
 		var u := _leg_u(d, leg)
-		var light := OmniLight3D.new()
-		light.light_color = Color(1.0, 0.62, 0.28)
-		light.light_energy = 2.2
-		light.omni_range = 9.0
-		light.position = _pos(leg, u, side * 1.8, 3.0)
-		add_child(light)
+		# Only mount a torch where a wall actually backs it: prefer the
+		# alternating side, fall back to the other, else skip (corner gap
+		# or pendulum pocket).
+		var wall_side := _torch_side(leg, u, side)
+		if wall_side != 0.0:
+			var light := OmniLight3D.new()
+			light.light_color = Color(1.0, 0.62, 0.28)
+			light.light_energy = 2.2
+			light.omni_range = 9.0
+			light.position = _pos(leg, u, wall_side * 1.8, 3.0)
+			add_child(light)
 
-		var head := MeshInstance3D.new()
-		var flame := BoxMesh.new()
-		flame.size = Vector3(0.18, 0.3, 0.18)
-		flame.material = torch_glow
-		head.mesh = flame
-		head.position = _pos(leg, u, side * 2.1, 2.9)
-		add_child(head)
+			var head := MeshInstance3D.new()
+			var flame := BoxMesh.new()
+			flame.size = Vector3(0.18, 0.3, 0.18)
+			flame.material = torch_glow
+			head.mesh = flame
+			head.position = _pos(leg, u, wall_side * 2.1, 2.9)
+			add_child(head)
 
 		side = -side
 		d += 8.0
+
+
+# A torch at (leg, u) needs a wall behind it: return a wall-backed side
+# (preferring `preferred`), or 0.0 if neither side has one there.
+func _torch_side(leg: int, u: float, preferred: float) -> float:
+	for s in [preferred, -preferred]:
+		if _wall_covers(leg, int(s), u) and not _near_pocket(leg, u):
+			return s
+	return 0.0
+
+
+func _wall_covers(leg: int, sign: int, u: float) -> bool:
+	# Keep the flame (~0.18 wide) clear of the wall ends.
+	for spec in WALL_SPECS:
+		if spec[0] == leg and spec[1] == sign:
+			return u > spec[2] + 0.3 and u < spec[3] - 0.3
+	return false
+
+
+func _near_pocket(leg: int, u: float) -> bool:
+	for data in PENDULUM_DS:
+		if _leg_for(data[0]) == leg and absf(u - _leg_u(data[0], leg)) < SLOT_HALF + 0.2:
+			return true
+	return false

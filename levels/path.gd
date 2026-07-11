@@ -27,9 +27,9 @@ const SPEAR_MAX_INTERVAL: float = 3.0
 # Practice near the start: spears alternate low (jump) and high (duck)
 # in a fixed rhythm. Random spears only begin past the practice zone.
 const PRACTICE_INTERVAL: float = 2.4
-# A longer, gentler lead-in before the very first spear so the player can
-# settle in; regular practice spacing takes over afterwards.
-const INITIAL_SPEAR_DELAY: float = 5.0
+# A gentler lead-in before the very first spear so the player can settle
+# in; regular practice spacing takes over afterwards.
+const INITIAL_SPEAR_DELAY: float = 2.0
 const RANDOM_SPEARS_START_Z: float = 18.0
 
 @onready var player: CharacterBody3D = $Player
