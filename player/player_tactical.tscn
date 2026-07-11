@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://player/player.gd" id="1"]
 [ext_resource type="PackedScene" path="res://models/adventurer_tactical.glb" id="2"]
@@ -8,6 +8,7 @@
 [ext_resource type="AudioStream" path="res://sounds/footstep_sand_4.wav" id="6"]
 [ext_resource type="AudioStream" path="res://soundAndMusic/sounds/Dying Sound Hit By Spear.mp3" id="7"]
 [ext_resource type="AudioStream" path="res://soundAndMusic/sounds/The Sound Of Something Falling And Hitting The Ground.mp3" id="8"]
+[ext_resource type="AudioStream" path="res://sounds/bomb_whistle.wav" id="9"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
 radius = 0.35
@@ -56,4 +57,8 @@ volume_db = -4.0
 
 [node name="FallPlayer" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("8")
+volume_db = -3.0
+
+[node name="WhistlePlayer" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("9")
 volume_db = -3.0

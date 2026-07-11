@@ -74,6 +74,10 @@ func _ready() -> void:
 	add_child(_practice_timer)
 	_practice_timer.start()
 
+	# Every death restarts the level, so restart the spear sequence too:
+	# the long lead-in and the slow first spear come back each time.
+	player.respawned.connect(_on_player_respawned)
+
 
 func _build_curve() -> Curve3D:
 	var curve := Curve3D.new()
@@ -133,6 +137,15 @@ func _on_practice_timer_timeout() -> void:
 
 func _on_god_mode_changed(enabled: bool) -> void:
 	god_label.visible = enabled
+
+
+func _on_player_respawned() -> void:
+	spear_layer._clear_spears()
+	spear_layer.reset_ramp()
+	_practice_high = false
+	_practice_timer.wait_time = INITIAL_SPEAR_DELAY
+	_practice_timer.start()
+	_restart_spear_timer()
 
 
 func _on_player_hit(hit_high: bool) -> void:

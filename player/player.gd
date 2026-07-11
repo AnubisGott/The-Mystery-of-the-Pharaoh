@@ -17,9 +17,13 @@ signal respawned
 
 const STAND_HEIGHT: float = 1.8
 const DUCK_HEIGHT: float = 1.3
-# Keeps the view steady while the body jumps or ducks, so screen-space
-# overlays (the 2D spears) visibly fly straight.
-const CAMERA_HEIGHT: float = 2.3
+# Fixed pivot height (independent of the body jumping/ducking) so the
+# screen-space 2D spears visibly fly straight. Framed around the
+# character's torso so the whole body, boots included, stays in view.
+const CAMERA_HEIGHT: float = 1.55
+# The body dips below this only when dropping into a pit (a jump goes up,
+# never below the standing torso), so it cleanly marks the start of a fall.
+const FALL_WHISTLE_Y: float = 0.5
 
 # The GLB imports every clip as one-shot; these cycle while they play.
 const LOOPED_CLIPS: Array[String] = [
@@ -42,12 +46,15 @@ const LOOPED_CLIPS: Array[String] = [
 # Optional: a distinct cry for falling deaths (present on the Level-2
 # player). Falls back to the spear-hit sound where it is absent.
 @onready var _fall_player: AudioStreamPlayer = get_node_or_null("FallPlayer")
+# Optional: a bomb-drop whistle the instant the player pitches into a pit.
+@onready var _whistle_player: AudioStreamPlayer = get_node_or_null("WhistlePlayer")
 
 var _pitch: float = 0.0
 var _yaw: float = 0.0
 var _is_ducking: bool = false
 var _is_dying: bool = false
 var _was_airborne: bool = false
+var _whistle_played: bool = false
 var _walk_phase: float = 0.0
 var _last_step_index: int = 0
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
@@ -132,6 +139,7 @@ func _physics_process(delta: float) -> void:
 	camera_pivot.global_position.y = CAMERA_HEIGHT
 	_update_animation()
 	_update_footsteps(delta)
+	_check_fall_whistle()
 
 
 func is_ducking() -> bool:
@@ -189,8 +197,21 @@ func reset_to_start(spawn: Transform3D) -> void:
 	velocity = Vector3.ZERO
 	_yaw = 0.0
 	_pitch = 0.0
+	_whistle_played = false
 	camera_pivot.rotation.x = 0.0
 	respawned.emit()
+
+
+# The instant the body drops below the floor into a pit, sound the
+# falling-bomb whistle once; re-armed when the feet are back on solid ground.
+func _check_fall_whistle() -> void:
+	if _whistle_player == null:
+		return
+	if is_on_floor():
+		_whistle_played = false
+	elif not _whistle_played and global_position.y < FALL_WHISTLE_Y:
+		_whistle_player.play()
+		_whistle_played = true
 
 
 func _set_ducking(ducking: bool) -> void:

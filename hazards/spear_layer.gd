@@ -34,6 +34,11 @@ func has_active_spears() -> bool:
 	return false
 
 
+# Restart the difficulty ramp so the next attempt eases in from slow again.
+func reset_ramp() -> void:
+	_spawn_count = 0
+
+
 func spawn_spear(is_high: bool, from_left: bool) -> void:
 	var view_size := get_viewport().get_visible_rect().size
 	var spear := Spear2D.new()
