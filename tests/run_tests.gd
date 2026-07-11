@@ -619,6 +619,39 @@ func test_menu_has_level_entries() -> void:
 	await get_tree().physics_frame
 
 
+func test_display_settings_cycle_and_persist() -> void:
+	# Remember the player's settings; the test restores them at the end
+	# (display changes are no-ops in headless runs, only state changes).
+	var orig_fullscreen: bool = GameManager.fullscreen
+	var orig_size: Vector2i = GameManager.window_size
+
+	var sizes: Array[Vector2i] = GameManager.available_window_sizes()
+	_check(not sizes.is_empty(), "no window size presets available")
+
+	var menu: Control = load("res://ui/main_menu.tscn").instantiate()
+	add_child(menu)
+	await get_tree().physics_frame
+
+	var display_button: Button = menu.get_node("Center/Panel/MenuItems/DisplayButton")
+	var size_button: Button = menu.get_node("Center/Panel/MenuItems/SizeButton")
+
+	size_button.pressed.emit()
+	_check(sizes.size() == 1 or GameManager.window_size != orig_size,
+			"size button did not cycle the window size")
+	_check(size_button.text.contains("%d x %d" % [GameManager.window_size.x, GameManager.window_size.y]),
+			"size label does not show the current size")
+
+	display_button.pressed.emit()
+	_check(GameManager.fullscreen != orig_fullscreen, "display button did not toggle fullscreen")
+	_check(size_button.disabled == GameManager.fullscreen,
+			"size button enabled state does not follow fullscreen")
+
+	GameManager.set_fullscreen(orig_fullscreen)
+	GameManager.set_window_size(orig_size)
+	menu.queue_free()
+	await get_tree().physics_frame
+
+
 func test_level_chain_scenes_exist() -> void:
 	for scene_path in GameManager.LEVEL_SCENES:
 		_check(ResourceLoader.exists(scene_path), "missing level scene: %s" % scene_path)

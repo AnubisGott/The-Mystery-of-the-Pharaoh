@@ -6,6 +6,8 @@ const MENU_MUSIC: AudioStream = preload("res://soundAndMusic/music/Aztekenheraus
 @onready var level2_button: Button = $Center/Panel/MenuItems/Level2Button
 @onready var quit_button: Button = $Center/Panel/MenuItems/QuitButton
 @onready var music_button: Button = $Center/Panel/MenuItems/MusicButton
+@onready var display_button: Button = $Center/Panel/MenuItems/DisplayButton
+@onready var size_button: Button = $Center/Panel/MenuItems/SizeButton
 
 
 func _ready() -> void:
@@ -16,11 +18,15 @@ func _ready() -> void:
 	level2_button.pressed.connect(_on_level_pressed.bind(1))
 	quit_button.pressed.connect(_on_quit_pressed)
 	music_button.pressed.connect(_on_music_pressed)
+	display_button.pressed.connect(_on_display_pressed)
+	size_button.pressed.connect(_on_size_pressed)
 	GameManager.music_enabled_changed.connect(_on_music_enabled_changed)
+	GameManager.display_changed.connect(_update_display_labels)
 	level1_button.grab_focus()
 
 	GameManager.play_music(MENU_MUSIC)
 	_update_music_label()
+	_update_display_labels()
 
 
 func _on_level_pressed(index: int) -> void:
@@ -41,3 +47,25 @@ func _on_music_enabled_changed(_enabled: bool) -> void:
 
 func _update_music_label() -> void:
 	music_button.text = "Music: On (M)" if GameManager.music_enabled else "Music: Off (M)"
+
+
+func _on_display_pressed() -> void:
+	GameManager.set_fullscreen(not GameManager.fullscreen)
+
+
+# Cycle through the window sizes that fit this screen.
+func _on_size_pressed() -> void:
+	var sizes: Array[Vector2i] = GameManager.available_window_sizes()
+	var index: int = sizes.find(GameManager.window_size)
+	GameManager.set_window_size(sizes[(index + 1) % sizes.size()])
+
+
+func _update_display_labels() -> void:
+	if GameManager.fullscreen:
+		display_button.text = "Display: Fullscreen (F11)"
+		size_button.text = "Size: Desktop"
+		size_button.disabled = true
+	else:
+		display_button.text = "Display: Windowed (F11)"
+		size_button.text = "Size: %d x %d" % [GameManager.window_size.x, GameManager.window_size.y]
+		size_button.disabled = false
