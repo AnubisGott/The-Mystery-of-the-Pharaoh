@@ -11,6 +11,10 @@ const LEVEL_SCENES: Array[String] = [
 	"res://levels/path.tscn",
 	"res://levels/pendulum_hall.tscn",
 	"res://levels/stairs.tscn",
+	"res://levels/burial_chamber.tscn",
+	"res://levels/slide.tscn",
+	"res://levels/crocodiles.tscn",
+	"res://levels/nile_credits.tscn",
 ]
 
 const SETTINGS_PATH: String = "user://settings.cfg"

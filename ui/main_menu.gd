@@ -2,9 +2,15 @@ extends Control
 
 const MENU_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel01.mp3")
 
-@onready var level1_button: Button = $Center/Panel/MenuItems/Level1Button
-@onready var level2_button: Button = $Center/Panel/MenuItems/Level2Button
-@onready var level3_button: Button = $Center/Panel/MenuItems/Level3Button
+@onready var level_buttons: Array[Button] = [
+	$Center/Panel/MenuItems/Level1Button,
+	$Center/Panel/MenuItems/Level2Button,
+	$Center/Panel/MenuItems/Level3Button,
+	$Center/Panel/MenuItems/Level4Button,
+	$Center/Panel/MenuItems/Level5Button,
+	$Center/Panel/MenuItems/Level6Button,
+	$Center/Panel/MenuItems/Level7Button,
+]
 @onready var quit_button: Button = $Center/Panel/MenuItems/QuitButton
 @onready var music_button: Button = $Center/Panel/MenuItems/MusicButton
 @onready var display_button: Button = $Center/Panel/MenuItems/DisplayButton
@@ -15,16 +21,15 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	get_tree().paused = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	level1_button.pressed.connect(_on_level_pressed.bind(0))
-	level2_button.pressed.connect(_on_level_pressed.bind(1))
-	level3_button.pressed.connect(_on_level_pressed.bind(2))
+	for i in level_buttons.size():
+		level_buttons[i].pressed.connect(_on_level_pressed.bind(i))
 	quit_button.pressed.connect(_on_quit_pressed)
 	music_button.pressed.connect(_on_music_pressed)
 	display_button.pressed.connect(_on_display_pressed)
 	size_button.pressed.connect(_on_size_pressed)
 	GameManager.music_enabled_changed.connect(_on_music_enabled_changed)
 	GameManager.display_changed.connect(_update_display_labels)
-	level1_button.grab_focus()
+	level_buttons[0].grab_focus()
 
 	GameManager.play_music(MENU_MUSIC)
 	_update_music_label()

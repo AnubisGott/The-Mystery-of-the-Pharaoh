@@ -666,12 +666,13 @@ func test_menu_has_level_entries() -> void:
 	add_child(menu)
 	await get_tree().physics_frame
 
-	var level1: Button = menu.get_node("Center/Panel/MenuItems/Level1Button")
-	var level2: Button = menu.get_node("Center/Panel/MenuItems/Level2Button")
-	var level3: Button = menu.get_node("Center/Panel/MenuItems/Level3Button")
-	_check(level1.text.contains("Sphinx"), "level 1 entry missing its name")
-	_check(level2.text.contains("Pendulum"), "level 2 entry missing its name")
-	_check(level3.text.contains("Stairs"), "level 3 entry missing its name")
+	var expected_names: Array[String] = ["Sphinx", "Pendulum", "Stairs",
+			"Burial", "Slide", "Crocodiles", "Journey"]
+	for i in expected_names.size():
+		var button: Button = menu.get_node(
+				"Center/Panel/MenuItems/Level%dButton" % (i + 1))
+		_check(button.text.contains(expected_names[i]),
+				"level %d entry missing its name" % (i + 1))
 
 	menu.queue_free()
 	await get_tree().physics_frame
@@ -850,7 +851,230 @@ func test_level3_intro_hands_off_to_gameplay() -> void:
 func test_level_chain_scenes_exist() -> void:
 	for scene_path in GameManager.LEVEL_SCENES:
 		_check(ResourceLoader.exists(scene_path), "missing level scene: %s" % scene_path)
-	_check(GameManager.LEVEL_SCENES.size() >= 2, "expected at least two levels")
+	_check(GameManager.LEVEL_SCENES.size() == 7, "expected the full seven levels")
+
+
+# ---------------------------------------------------- burial chamber tests
+
+func _spawn_burial() -> Node3D:
+	var chamber: Node3D = load("res://levels/burial_chamber.tscn").instantiate()
+	chamber.position = Vector3(900.0, 0.0, 0.0)
+	add_child(chamber)
+	var chamber_player: CharacterBody3D = chamber.get_node("Player")
+	for i in 60:
+		await get_tree().physics_frame
+		if chamber_player.is_on_floor():
+			break
+	return chamber
+
+
+func test_interact_action_is_f_and_e() -> void:
+	var keys: Array[int] = []
+	for event in InputMap.action_get_events("interact"):
+		if event is InputEventKey:
+			keys.append(event.physical_keycode)
+	_check(keys.has(KEY_F), "interact not bound to F")
+	_check(keys.has(KEY_E), "interact not bound to E")
+
+
+func test_burial_bowls_open_the_door() -> void:
+	var chamber := await _spawn_burial()
+	_check(not chamber.door_open, "door open before the bowls are lit")
+
+	chamber._bowls[0].interact()
+	await get_tree().physics_frame
+	_check(not chamber.door_open, "door opened after only one bowl")
+
+	chamber._bowls[1].interact()
+	for i in 150:
+		await get_tree().physics_frame
+	_check(chamber.door_open, "both bowls lit but the door stayed shut")
+	_check(chamber._door.position.y < 0.0, "door slab did not sink away")
+
+	chamber.queue_free()
+	await get_tree().physics_frame
+
+
+func test_burial_dials_open_the_floor() -> void:
+	var chamber := await _spawn_burial()
+	for dial in chamber._dials:
+		_check(not chamber.floor_open, "floor opened before all dials were turned")
+		dial.interact()
+		await get_tree().physics_frame
+
+	for i in 160:
+		await get_tree().physics_frame
+	_check(chamber.floor_open, "all dials turned but the floor stayed shut")
+	_check(absf(chamber._pit_slabs[0].position.x) > 8.0, "pit slab did not slide away")
+
+	var end_zone: Area3D = chamber.get_node("EndZone")
+	_check(chamber.to_local(end_zone.global_position).y < -8.0,
+			"end zone not down in the pit")
+
+	chamber.queue_free()
+	await get_tree().physics_frame
+
+
+func test_level4_intro_hands_off_to_gameplay() -> void:
+	var chamber := await _spawn_burial()
+	await chamber._play_intro(0.3)
+	var chamber_player: CharacterBody3D = chamber.get_node("Player")
+	_check(chamber_player.is_physics_processing(), "chamber player still frozen after intro")
+	_check(get_viewport().get_camera_3d() == chamber_player.get_node("CameraPivot/CameraArm/Camera3D"),
+			"chamber player camera not current after intro")
+	chamber.queue_free()
+	await get_tree().physics_frame
+
+
+# -------------------------------------------------------------- slide tests
+
+func _spawn_slide() -> Node3D:
+	var slide: Node3D = load("res://levels/slide.tscn").instantiate()
+	slide.position = Vector3(1200.0, 0.0, 0.0)
+	add_child(slide)
+	var slide_player: CharacterBody3D = slide.get_node("Player")
+	for i in 60:
+		await get_tree().physics_frame
+		if slide_player.is_on_floor():
+			break
+	return slide
+
+
+func test_slide_carries_the_player_down() -> void:
+	var slide := await _spawn_slide()
+	var slide_player: CharacterBody3D = slide.get_node("Player")
+	for i in 60:
+		await get_tree().physics_frame
+	var lp: Vector3 = slide.to_local(slide_player.global_position)
+	_check(lp.z < -1.0, "slide did not carry the player: z=%f" % lp.z)
+	_check(lp.y < 0.5, "player did not descend the chute: y=%f" % lp.y)
+	slide.queue_free()
+	await get_tree().physics_frame
+
+
+func test_slide_obstacle_kills() -> void:
+	var slide := await _spawn_slide()
+	var slide_player: CharacterBody3D = slide.get_node("Player")
+	# Drop the player right before the first block (it sits at x=-0.9, z=-16).
+	slide_player.global_position = slide.to_global(
+			Vector3(-0.9, slide._ramp_y(-13.0) + 1.0, -13.0))
+	var died := false
+	for i in 120:
+		await get_tree().physics_frame
+		if slide_player.is_dying():
+			died = true
+			break
+	_check(died, "sliding into the block did not kill")
+	slide.queue_free()
+	await get_tree().physics_frame
+
+
+func test_slide_ends_in_water() -> void:
+	var slide := await _spawn_slide()
+	var end_zone: Area3D = slide.get_node("EndZone")
+	var lp: Vector3 = slide.to_local(end_zone.global_position)
+	_check(lp.y < slide.END_Y - 4.0, "water end zone not below the chute exit")
+	_check(lp.z < slide.SLIDE_END_Z, "water end zone not past the chute exit")
+	slide.queue_free()
+	await get_tree().physics_frame
+
+
+func test_level5_intro_hands_off_to_gameplay() -> void:
+	var slide := await _spawn_slide()
+	slide._sliding = false
+	await slide._play_intro(0.3)
+	_check(slide._sliding, "sliding not enabled after intro")
+	var slide_player: CharacterBody3D = slide.get_node("Player")
+	_check(get_viewport().get_camera_3d() == slide_player.get_node("CameraPivot/CameraArm/Camera3D"),
+			"slide player camera not current after intro")
+	slide.queue_free()
+	await get_tree().physics_frame
+
+
+# --------------------------------------------------------- crocodile tests
+
+func _spawn_crocs() -> Node3D:
+	var crocs: Node3D = load("res://levels/crocodiles.tscn").instantiate()
+	crocs.position = Vector3(1500.0, 0.0, 0.0)
+	add_child(crocs)
+	var crocs_player: CharacterBody3D = crocs.get_node("Player")
+	for i in 60:
+		await get_tree().physics_frame
+		if crocs_player.is_on_floor():
+			break
+	return crocs
+
+
+func test_croc_backs_hold_the_player() -> void:
+	var crocs := await _spawn_crocs()
+	var crocs_player: CharacterBody3D = crocs.get_node("Player")
+	# Freeze every croc surfaced, then stand on the first one.
+	for croc in get_tree().get_nodes_in_group("crocodiles"):
+		croc.frozen = true
+	crocs_player.global_position = crocs.to_global(
+			crocs._croc_positions[0] + Vector3(0, 1.2, 0))
+	for i in 40:
+		await get_tree().physics_frame
+	_check(not crocs_player.is_dying(), "standing on a surfaced croc killed the player")
+	_check(crocs_player.is_on_floor(), "player does not stand on the croc's back")
+	crocs.queue_free()
+	await get_tree().physics_frame
+
+
+func test_croc_water_kills_and_resets() -> void:
+	var crocs := await _spawn_crocs()
+	var crocs_player: CharacterBody3D = crocs.get_node("Player")
+	crocs_player.global_position = crocs.to_global(Vector3(3.0, -0.2, -30.0))
+	var died := false
+	for i in 90:
+		await get_tree().physics_frame
+		if crocs_player.is_dying():
+			died = true
+			break
+	_check(died, "falling into the Nile did not kill")
+	crocs.queue_free()
+	await get_tree().physics_frame
+
+
+func test_croc_gaps_widen_along_the_river() -> void:
+	var crocs := await _spawn_crocs()
+	var positions: Array[Vector3] = crocs._croc_positions
+	var first_gap: float = positions[0].z - positions[1].z
+	var last_gap: float = positions[positions.size() - 2].z - positions[positions.size() - 1].z
+	_check(last_gap > first_gap + 1.0,
+			"croc gaps do not widen: %f vs %f" % [first_gap, last_gap])
+	var end_zone: Area3D = crocs.get_node("EndZone")
+	_check(crocs.to_local(end_zone.global_position).z < positions[positions.size() - 1].z,
+			"boat end zone not past the last crocodile")
+	crocs.queue_free()
+	await get_tree().physics_frame
+
+
+func test_level6_intro_hands_off_to_gameplay() -> void:
+	var crocs := await _spawn_crocs()
+	await crocs._play_intro(0.3)
+	var crocs_player: CharacterBody3D = crocs.get_node("Player")
+	_check(crocs_player.is_physics_processing(), "crocs player still frozen after intro")
+	_check(get_viewport().get_camera_3d() == crocs_player.get_node("CameraPivot/CameraArm/Camera3D"),
+			"crocs player camera not current after intro")
+	crocs.queue_free()
+	await get_tree().physics_frame
+
+
+func test_credits_scene_has_rolling_credits() -> void:
+	var credits: Node3D = load("res://levels/nile_credits.tscn").instantiate()
+	credits.position = Vector3(1800.0, 0.0, 0.0)
+	add_child(credits)
+	await get_tree().physics_frame
+	_check(credits.has_node("Boat"), "credits scene misses the steamboat")
+	_check(credits._scroll != null and credits._scroll.get_child_count() > 5,
+			"credits scroll has no entries")
+	var y_before: float = credits._scroll.position.y
+	for i in 30:
+		await get_tree().physics_frame
+	_check(credits._scroll.position.y < y_before, "credits do not scroll upward")
+	credits.queue_free()
+	await get_tree().physics_frame
 
 
 func test_pendulum_kills_and_god_mode_spares() -> void:
