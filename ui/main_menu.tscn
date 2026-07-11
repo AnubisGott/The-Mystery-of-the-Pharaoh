@@ -45,34 +45,39 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
 [node name="MenuItems" type="VBoxContainer" parent="Center/Panel"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 8
 
 [node name="Level1Button" type="Button" parent="Center/Panel/MenuItems"]
-custom_minimum_size = Vector2(300, 40)
+custom_minimum_size = Vector2(300, 36)
 layout_mode = 2
 text = "Level 1 - The Path of the Sphinx"
 
 [node name="Level2Button" type="Button" parent="Center/Panel/MenuItems"]
-custom_minimum_size = Vector2(300, 40)
+custom_minimum_size = Vector2(300, 36)
 layout_mode = 2
 text = "Level 2 - The Pendulum's Journey"
 
+[node name="Level3Button" type="Button" parent="Center/Panel/MenuItems"]
+custom_minimum_size = Vector2(300, 36)
+layout_mode = 2
+text = "Level 3 - Up the Stairs"
+
 [node name="QuitButton" type="Button" parent="Center/Panel/MenuItems"]
-custom_minimum_size = Vector2(260, 40)
+custom_minimum_size = Vector2(260, 36)
 layout_mode = 2
 text = "Quit"
 
 [node name="MusicButton" type="Button" parent="Center/Panel/MenuItems"]
-custom_minimum_size = Vector2(260, 40)
+custom_minimum_size = Vector2(260, 36)
 layout_mode = 2
 text = "Music: On (M)"
 
 [node name="DisplayButton" type="Button" parent="Center/Panel/MenuItems"]
-custom_minimum_size = Vector2(260, 40)
+custom_minimum_size = Vector2(260, 36)
 layout_mode = 2
 text = "Display: Windowed (F11)"
 
 [node name="SizeButton" type="Button" parent="Center/Panel/MenuItems"]
-custom_minimum_size = Vector2(260, 40)
+custom_minimum_size = Vector2(260, 36)
 layout_mode = 2
 text = "Size: 1152 x 648"

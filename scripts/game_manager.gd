@@ -10,6 +10,7 @@ const WIN_SCREEN_SCENE: String = "res://ui/win_screen.tscn"
 const LEVEL_SCENES: Array[String] = [
 	"res://levels/path.tscn",
 	"res://levels/pendulum_hall.tscn",
+	"res://levels/stairs.tscn",
 ]
 
 const SETTINGS_PATH: String = "user://settings.cfg"

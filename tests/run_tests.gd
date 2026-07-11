@@ -664,8 +664,10 @@ func test_menu_has_level_entries() -> void:
 
 	var level1: Button = menu.get_node("Center/Panel/MenuItems/Level1Button")
 	var level2: Button = menu.get_node("Center/Panel/MenuItems/Level2Button")
+	var level3: Button = menu.get_node("Center/Panel/MenuItems/Level3Button")
 	_check(level1.text.contains("Sphinx"), "level 1 entry missing its name")
 	_check(level2.text.contains("Pendulum"), "level 2 entry missing its name")
+	_check(level3.text.contains("Stairs"), "level 3 entry missing its name")
 
 	menu.queue_free()
 	await get_tree().physics_frame
@@ -732,6 +734,114 @@ func test_level2_intro_slows_and_restores_pendulums() -> void:
 	_check(get_viewport().get_camera_3d() == hall_player.get_node("CameraPivot/CameraArm/Camera3D"),
 			"hall player camera not current after intro")
 	await _free_hall(hall)
+
+
+# ------------------------------------------------------------ stairs tests
+
+func _spawn_stairs() -> Node3D:
+	var stairs: Node3D = load("res://levels/stairs.tscn").instantiate()
+	stairs.position = Vector3(600.0, 0.0, 0.0)
+	add_child(stairs)
+	var stairs_player: CharacterBody3D = stairs.get_node("Player")
+	for i in 60:
+		await get_tree().physics_frame
+		if stairs_player.is_on_floor():
+			break
+	return stairs
+
+
+func test_stairs_boulder_hit_kills_and_other_lane_misses() -> void:
+	var stairs := await _spawn_stairs()
+	var stairs_player: CharacterBody3D = stairs.get_node("Player")
+
+	# A boulder rolling down another lane passes without harm.
+	var missing: Node3D = stairs._spawn_boulder()
+	missing.position = Vector3(1.4, 0.75, 0.0)
+	missing.direction = Vector3(0, 0, 1)
+	for i in 60:
+		await get_tree().physics_frame
+		if not is_instance_valid(missing) or missing.position.z > 4.5:
+			break
+	_check(not stairs_player.is_dying(), "boulder in another lane hit the player")
+
+	# One in the player's lane kills.
+	var boulder: Node3D = stairs._spawn_boulder()
+	boulder.position = Vector3(0.0, 0.75, 0.0)
+	boulder.direction = Vector3(0, 0, 1)
+	var died := false
+	for i in 90:
+		await get_tree().physics_frame
+		if stairs_player.is_dying():
+			died = true
+			break
+	_check(died, "boulder in the player's lane did not kill")
+
+	stairs.queue_free()
+	await get_tree().physics_frame
+
+
+func test_stairs_hole_fall_resets() -> void:
+	var stairs := await _spawn_stairs()
+	var stairs_player: CharacterBody3D = stairs.get_node("Player")
+
+	# Drop the player into the first hole; below the ramp line is death,
+	# and death resets to the start platform.
+	var hole_z: float = stairs.HOLES[0] - 0.75
+	stairs_player.global_position = stairs.to_global(
+			Vector3(0, stairs._ramp_y(hole_z) - 1.5, hole_z))
+	var reset := false
+	for i in 240:
+		await get_tree().physics_frame
+		var lp: Vector3 = stairs.to_local(stairs_player.global_position)
+		if not stairs_player.is_dying() and lp.z > 2.0 and stairs_player.is_on_floor():
+			reset = true
+			break
+	_check(reset, "hole fall did not reset the player to the start")
+
+	stairs.queue_free()
+	await get_tree().physics_frame
+
+
+func test_stairs_difficulty_ramps_with_height() -> void:
+	var stairs := await _spawn_stairs()
+	_check(is_equal_approx(stairs._spawn_interval(0.0), stairs.INTERVAL_EASY),
+			"easy interval wrong")
+	_check(is_equal_approx(stairs._spawn_interval(1.0), stairs.INTERVAL_HARD),
+			"hard interval wrong")
+	_check(stairs._spawn_interval(0.0) > stairs._spawn_interval(1.0) + 1.0,
+			"boulder interval does not ramp up the stairs")
+
+	var stairs_player: CharacterBody3D = stairs.get_node("Player")
+	_check(stairs._progress() < 0.05, "progress not zero at the bottom")
+	stairs_player.global_position = stairs.to_global(
+			Vector3(0, stairs._ramp_y(-42.0) + 1.0, -42.0))
+	_check(absf(stairs._progress() - 0.5) < 0.05, "progress wrong mid-climb")
+
+	stairs.queue_free()
+	await get_tree().physics_frame
+
+
+func test_stairs_win_zone_at_top() -> void:
+	var stairs := await _spawn_stairs()
+	var win: Area3D = stairs.get_node("WinZone")
+	var lp: Vector3 = stairs.to_local(win.global_position)
+	_check(lp.y > stairs.TOP_Y and lp.y < stairs.TOP_Y + 3.0,
+			"win zone not on the top platform")
+	_check(lp.z < stairs.STAIRS_END_Z, "win zone not past the stairs")
+	stairs.queue_free()
+	await get_tree().physics_frame
+
+
+func test_level3_intro_hands_off_to_gameplay() -> void:
+	var stairs := await _spawn_stairs()
+	await stairs._play_intro(0.3)
+	var stairs_player: CharacterBody3D = stairs.get_node("Player")
+	_check(stairs_player.is_physics_processing(), "stairs player still frozen after intro")
+	_check(get_viewport().get_camera_3d() == stairs_player.get_node("CameraPivot/CameraArm/Camera3D"),
+			"stairs player camera not current after intro")
+	_check(not stairs._boulder_timer.is_stopped(), "boulder timer not started after intro")
+	stairs.queue_free()
+	await get_tree().physics_frame
 
 
 func test_level_chain_scenes_exist() -> void:

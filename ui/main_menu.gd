@@ -4,6 +4,7 @@ const MENU_MUSIC: AudioStream = preload("res://soundAndMusic/music/Aztekenheraus
 
 @onready var level1_button: Button = $Center/Panel/MenuItems/Level1Button
 @onready var level2_button: Button = $Center/Panel/MenuItems/Level2Button
+@onready var level3_button: Button = $Center/Panel/MenuItems/Level3Button
 @onready var quit_button: Button = $Center/Panel/MenuItems/QuitButton
 @onready var music_button: Button = $Center/Panel/MenuItems/MusicButton
 @onready var display_button: Button = $Center/Panel/MenuItems/DisplayButton
@@ -16,6 +17,7 @@ func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	level1_button.pressed.connect(_on_level_pressed.bind(0))
 	level2_button.pressed.connect(_on_level_pressed.bind(1))
+	level3_button.pressed.connect(_on_level_pressed.bind(2))
 	quit_button.pressed.connect(_on_quit_pressed)
 	music_button.pressed.connect(_on_music_pressed)
 	display_button.pressed.connect(_on_display_pressed)
