@@ -77,11 +77,7 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("pause"):
-		_toggle_pause()
-		get_viewport().set_input_as_handled()
-		return
-
+	# ESC/pausing is handled by the level's PauseMenu.
 	if get_tree().paused:
 		return
 
@@ -283,7 +279,3 @@ func _update_footsteps(delta: float) -> void:
 		_last_step_index = 0
 
 
-func _toggle_pause() -> void:
-	var should_pause := not get_tree().paused
-	get_tree().paused = should_pause
-	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if should_pause else Input.MOUSE_MODE_CAPTURED

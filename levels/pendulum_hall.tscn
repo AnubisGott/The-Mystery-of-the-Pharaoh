@@ -1,8 +1,9 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://levels/pendulum_hall.gd" id="1"]
 [ext_resource type="PackedScene" path="res://player/player_realistic.tscn" id="2"]
 [ext_resource type="Script" path="res://exit/win_zone.gd" id="3"]
+[ext_resource type="PackedScene" path="res://ui/pause_menu.tscn" id="4"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_win"]
 size = Vector3(4.4, 3.5, 1)
@@ -22,6 +23,8 @@ script = ExtResource("3")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="WinZone"]
 shape = SubResource("BoxShape3D_win")
+
+[node name="PauseMenu" parent="." instance=ExtResource("4")]
 
 [node name="ControlsHint" type="CanvasLayer" parent="."]
 
@@ -52,7 +55,7 @@ Mouse - Look
 Shift - Sprint
 Space - Jump
 M - Music on/off
-Esc - Pause"
+Esc - Menu"
 horizontal_alignment = 2
 
 [node name="GodLabel" type="Label" parent="ControlsHint/Root"]

@@ -1,9 +1,10 @@
-[gd_scene load_steps=24 format=3]
+[gd_scene load_steps=25 format=3]
 
 [ext_resource type="PackedScene" path="res://player/player_realistic.tscn" id="1"]
 [ext_resource type="Script" path="res://exit/win_zone.gd" id="2"]
 [ext_resource type="Script" path="res://levels/path.gd" id="3"]
 [ext_resource type="Script" path="res://hazards/spear_layer.gd" id="4"]
+[ext_resource type="PackedScene" path="res://ui/pause_menu.tscn" id="16"]
 [ext_resource type="Texture2D" path="res://textures/aerial_sand_diff_1k.jpg" id="5"]
 [ext_resource type="Texture2D" path="res://textures/aerial_sand_nor_gl_1k.jpg" id="6"]
 [ext_resource type="Texture2D" path="res://textures/aerial_sand_rough_1k.jpg" id="7"]
@@ -152,6 +153,8 @@ shape = SubResource("BoxShape3D_start_wall")
 [node name="SpearLayer" type="CanvasLayer" parent="."]
 script = ExtResource("4")
 
+[node name="PauseMenu" parent="." instance=ExtResource("16")]
+
 [node name="ControlsHint" type="CanvasLayer" parent="."]
 
 [node name="Root" type="Control" parent="ControlsHint"]
@@ -181,7 +184,7 @@ Mouse - Look
 Space - Jump low spears
 Ctrl - Duck high spears
 M - Music on/off
-Esc - Pause"
+Esc - Menu"
 horizontal_alignment = 2
 
 [node name="GodLabel" type="Label" parent="ControlsHint/Root"]

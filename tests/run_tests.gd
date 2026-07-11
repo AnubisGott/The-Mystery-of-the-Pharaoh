@@ -413,6 +413,34 @@ func test_god_mode_shortcut_toggles() -> void:
 	_check(not GameManager.god_mode, "Ctrl+Shift+G must not toggle god mode")
 
 
+func test_escape_opens_pause_menu() -> void:
+	var menu: CanvasLayer = level.get_node("PauseMenu")
+	_check(not menu.visible, "pause menu visible before ESC")
+
+	_press_key(KEY_ESCAPE)
+	await _await_input_dispatch()
+	_check(menu.visible, "ESC did not open the pause menu")
+	_check(get_tree().paused, "ESC did not pause the game")
+	var labels: Array[String] = []
+	for button in menu.get_node("Root/Center/Panel/Items").get_children():
+		if button is Button:
+			labels.append(button.text)
+	for expected in ["Resume", "Reset Level", "Main Menu", "Quit Game"]:
+		_check(labels.has(expected), "pause menu misses entry: %s" % expected)
+
+	# ESC again resumes; so does the Resume button.
+	_press_key(KEY_ESCAPE)
+	await _await_input_dispatch()
+	_check(not menu.visible, "ESC did not close the pause menu")
+	_check(not get_tree().paused, "ESC did not unpause the game")
+
+	menu.open()
+	_check(get_tree().paused, "open() did not pause")
+	menu.get_node("Root/Center/Panel/Items/ResumeButton").pressed.emit()
+	_check(not get_tree().paused, "Resume did not unpause")
+	_check(not menu.visible, "Resume did not hide the menu")
+
+
 func test_god_mode_prevents_reset() -> void:
 	await _place_on_path(10.0)
 	GameManager.god_mode = true
