@@ -25,7 +25,7 @@ stream_3/stream = ExtResource("6")
 collision_mask = 3
 script = ExtResource("1")
 walk_stride_speed = 1.8
-run_stride_speed = 3.6
+run_stride_speed = 6.5
 crouch_stride_speed = 1.2
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]

@@ -66,13 +66,13 @@ BONE_MAP = [
 ]
 
 # canonical clip name (same as the other characters) -> UAL action name.
-# Level 2 uses a real walk cycle for walking and a jog for running (the
-# archaeologist still uses jog/sprint); pacing is tuned via the stride
-# speeds in player_tactical.tscn.
+# Both MPFB characters use Walk_Loop + Sprint_Loop; the pack's jog clip is
+# avoided (its cross-body shoulder roll looked bad). Pacing is tuned via
+# the stride speeds in player_tactical.tscn.
 CLIP_MAP = {
     "Idle": "Idle_Loop",
     "Walking_A": "Walk_Loop",
-    "Running_A": "Jog_Fwd_Loop",
+    "Running_A": "Sprint_Loop",
     "Jump_Start": "Jump_Start",
     "Jump_Idle": "Jump_Loop",
     "Jump_Land": "Jump_Land",

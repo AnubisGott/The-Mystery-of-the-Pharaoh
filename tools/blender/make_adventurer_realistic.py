@@ -69,7 +69,7 @@ BONE_MAP = [
 # canonical clip name (same as the KayKit adventurer) -> UAL action name
 CLIP_MAP = {
     "Idle": "Idle_Loop",
-    "Walking_A": "Jog_Fwd_Loop",
+    "Walking_A": "Walk_Loop",
     "Running_A": "Sprint_Loop",
     "Jump_Start": "Jump_Start",
     "Jump_Idle": "Jump_Loop",
