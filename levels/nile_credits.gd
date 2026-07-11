@@ -4,7 +4,7 @@ extends Node3D
 # while the credits roll over the scene. Any key skips; when the scroll
 # ends, the game returns to the main menu.
 
-const LEVEL_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel01.mp3")
+const LEVEL_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel07.mp3")
 const CHARACTER: PackedScene = preload("res://models/adventurer_realistic.glb")
 
 const SCROLL_TIME: float = 38.0

@@ -5,7 +5,7 @@ extends Node3D
 # every croc sinks now and then, and they thin out along the way. At
 # the jetty a Nile steamboat waits — reach it and the level ends.
 
-const LEVEL_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel01.mp3")
+const LEVEL_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel06.mp3")
 const WALL_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_sphinx.tres")
 const FLOOR_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_pyramid.tres")
 const SAND_TEXTURE: Texture2D = preload("res://textures/aerial_sand_diff_1k.jpg")
