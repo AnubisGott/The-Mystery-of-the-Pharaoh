@@ -1,28 +1,22 @@
-# Generates sounds/splash_blub.wav: a water splash followed by three
-# sinking "blub" bubbles. Run from the project root:
+# Generates sounds/splash_blub.wav: three sinking "blub" bubbles.
+# (No splash noise burst - it read as a separate "klack" sound.)
+# Run from the project root:
 #   python tools/make_splash.py
 import math
-import random
 import struct
 import wave
 
 RATE = 22050
-DURATION = 1.15
+DURATION = 0.95
 OUT = "sounds/splash_blub.wav"
-
-random.seed(7)
 
 samples = []
 for i in range(int(RATE * DURATION)):
     t = i / RATE
     s = 0.0
 
-    # The initial splash: a short, decaying noise burst.
-    if t < 0.18:
-        s += random.uniform(-1.0, 1.0) * (1.0 - t / 0.18) ** 2 * 0.55
-
     # Three descending blubs, each a short warbling sine.
-    for k, t0 in enumerate((0.22, 0.48, 0.74)):
+    for k, t0 in enumerate((0.05, 0.32, 0.6)):
         if t0 <= t < t0 + 0.13:
             tt = t - t0
             freq = 270.0 - 70.0 * k - 260.0 * tt
