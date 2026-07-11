@@ -131,10 +131,6 @@ func _build_rooms() -> void:
 	_add_box(Vector3(0, 4.55, -8), Vector3(3.0, 1.9, 0.5), WALL_MATERIAL)
 
 	# The sinking door slab.
-	var gold_trim := StandardMaterial3D.new()
-	gold_trim.albedo_color = Color(0.8, 0.62, 0.25)
-	gold_trim.metallic = 0.5
-	gold_trim.roughness = 0.4
 	_door = AnimatableBody3D.new()
 	var door_collision := CollisionShape3D.new()
 	var door_shape := BoxShape3D.new()
@@ -147,9 +143,6 @@ func _build_rooms() -> void:
 	door_box.material = FLOOR_MATERIAL
 	door_mesh.mesh = door_box
 	_door.add_child(door_mesh)
-	var door_glyph := Glyphs.build(0, 0.8)
-	door_glyph.position = Vector3(0, 0.4, 0.25)
-	_door.add_child(door_glyph)
 	_door.position = Vector3(0, 1.8, -8)
 	add_child(_door)
 
