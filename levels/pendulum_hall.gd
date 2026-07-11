@@ -80,7 +80,12 @@ const PENDULUM_DS := [
 @onready var player: CharacterBody3D = $Player
 @onready var god_label: Label = $ControlsHint/Root/GodLabel
 
+# The pre-play cinematic; disabled for headless runs (tests).
+@export var intro_enabled: bool = true
+
 var _spawn_transform: Transform3D
+var _intro_running: bool = false
+var _intro_skip: bool = false
 
 
 func _ready() -> void:
@@ -96,6 +101,60 @@ func _ready() -> void:
 	# Every attempt is a fresh deal: fallen tiles come back and each
 	# pendulum rolls a new random speed.
 	player.respawned.connect(_on_player_respawned)
+
+	if intro_enabled and DisplayServer.get_name() != "headless":
+		_play_intro()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if _intro_running and event.is_pressed() \
+			and (event is InputEventKey or event is InputEventMouseButton):
+		_intro_skip = true
+
+
+# A ~4 s cinematic: the camera hovers before the first pendulum while
+# it swings in slow motion, zooming in and back out. Any key or click
+# skips it; the pendulums return to full speed afterwards.
+func _play_intro(duration: float = 4.0) -> void:
+	_intro_running = true
+	_intro_skip = false
+	player.set_physics_process(false)
+	player.set_process_unhandled_input(false)
+	var pause_menu: Node = get_node_or_null("PauseMenu")
+	if pause_menu:
+		pause_menu.set_process_unhandled_input(false)
+	for pendulum in get_tree().get_nodes_in_group("pendulums"):
+		pendulum.time_scale = 0.25
+
+	var d: float = PENDULUM_DS[0][0]
+	var leg := _leg_for(d)
+	var u := _leg_u(d, leg)
+	# Aim at the middle of the swing arc so arm and blade stay framed.
+	var arc := to_global(_pos(leg, u, 0.0, 2.5))
+	var cam := Camera3D.new()
+	add_child(cam)
+
+	var elapsed := 0.0
+	while elapsed < duration and not _intro_skip:
+		var t := elapsed / duration
+		# One smooth zoom in and back out over the whole sequence.
+		cam.fov = 66.0 - 22.0 * sin(PI * t)
+		cam.global_position = to_global(_pos(leg, u - 6.5 + 1.6 * sin(PI * t), 1.0, 2.0))
+		cam.look_at(arc, Vector3.UP)
+		cam.make_current()
+		await get_tree().process_frame
+		elapsed += get_process_delta_time()
+
+	for pendulum in get_tree().get_nodes_in_group("pendulums"):
+		pendulum.time_scale = 1.0
+	var player_cam: Camera3D = player.get_node("CameraPivot/CameraArm/Camera3D")
+	player_cam.make_current()
+	cam.queue_free()
+	if pause_menu:
+		pause_menu.set_process_unhandled_input(true)
+	player.set_process_unhandled_input(true)
+	player.set_physics_process(true)
+	_intro_running = false
 
 
 func _physics_process(_delta: float) -> void:

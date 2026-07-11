@@ -12,6 +12,8 @@ const ARM_LENGTH: float = 3.4
 
 var phase_offset: float = 0.0
 var period: float = 3.2
+# The level intro swings the pendulums in slow motion via this factor.
+var time_scale: float = 1.0
 
 var _time: float = 0.0
 var _arm: Node3D
@@ -60,7 +62,7 @@ func _add_mesh(parent: Node3D, size: Vector3, pos: Vector3, material: Material) 
 
 
 func _physics_process(delta: float) -> void:
-	_time += delta
+	_time += delta * time_scale
 	_arm.rotation.z = AMPLITUDE * sin(TAU * _time / period + phase_offset)
 
 

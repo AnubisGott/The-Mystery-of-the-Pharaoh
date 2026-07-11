@@ -704,6 +704,36 @@ func test_display_settings_cycle_and_persist() -> void:
 	await get_tree().physics_frame
 
 
+func test_level1_intro_hands_off_to_gameplay() -> void:
+	# The intro autoplay is gated off headless; drive it directly with a
+	# short duration and check that gameplay starts afterwards.
+	await level._play_intro(0.3)
+
+	_check(player.is_physics_processing(), "player still frozen after intro")
+	_check(get_viewport().get_camera_3d() == player.get_node("CameraPivot/CameraArm/Camera3D"),
+			"player camera not current after intro")
+	_check(not level._practice_timer.is_stopped(), "spear timers not started after intro")
+	_check(not level._intro_running, "intro still flagged as running")
+
+	# The suite runs without spear timers; stop them again.
+	level._spear_timer.stop()
+	level._practice_timer.stop()
+
+
+func test_level2_intro_slows_and_restores_pendulums() -> void:
+	var hall := await _spawn_hall()
+	await hall._play_intro(0.3)
+
+	for pendulum in get_tree().get_nodes_in_group("pendulums"):
+		_check(is_equal_approx(pendulum.time_scale, 1.0),
+				"pendulum speed not restored after intro")
+	var hall_player: CharacterBody3D = hall.get_node("Player")
+	_check(hall_player.is_physics_processing(), "hall player still frozen after intro")
+	_check(get_viewport().get_camera_3d() == hall_player.get_node("CameraPivot/CameraArm/Camera3D"),
+			"hall player camera not current after intro")
+	await _free_hall(hall)
+
+
 func test_level_chain_scenes_exist() -> void:
 	for scene_path in GameManager.LEVEL_SCENES:
 		_check(ResourceLoader.exists(scene_path), "missing level scene: %s" % scene_path)

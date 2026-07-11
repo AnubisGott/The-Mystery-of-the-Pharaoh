@@ -48,10 +48,15 @@ const RANDOM_SPEARS_START_Z: float = 18.0
 @onready var spear_layer: CanvasLayer = $SpearLayer
 @onready var god_label: Label = $ControlsHint/Root/GodLabel
 
+# The pre-play cinematic; disabled for headless runs (tests).
+@export var intro_enabled: bool = true
+
 var _spawn_transform: Transform3D
 var _spear_timer: Timer
 var _practice_timer: Timer
 var _practice_high: bool = false
+var _intro_running: bool = false
+var _intro_skip: bool = false
 
 
 func _ready() -> void:
@@ -79,17 +84,114 @@ func _ready() -> void:
 	_spear_timer.one_shot = true
 	_spear_timer.timeout.connect(_on_spear_timer_timeout)
 	add_child(_spear_timer)
-	_restart_spear_timer()
 
 	_practice_timer = Timer.new()
 	_practice_timer.wait_time = INITIAL_SPEAR_DELAY
 	_practice_timer.timeout.connect(_on_practice_timer_timeout)
 	add_child(_practice_timer)
-	_practice_timer.start()
 
 	# Every death restarts the level, so restart the spear sequence too:
 	# the long lead-in and the slow first spear come back each time.
 	player.respawned.connect(_on_player_respawned)
+
+	# A short cinematic before play; the spear timers start after it.
+	# Headless runs (tests) go straight to gameplay.
+	if intro_enabled and DisplayServer.get_name() != "headless":
+		_play_intro()
+	else:
+		_start_spear_timers()
+
+
+func _start_spear_timers() -> void:
+	_restart_spear_timer()
+	_practice_timer.start()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if _intro_running and event.is_pressed() \
+			and (event is InputEventKey or event is InputEventMouseButton):
+		_intro_skip = true
+
+
+# A ~4 s cinematic: a spear glides past in slow motion while the
+# adventurer ducks under it, the camera zooming in and back out.
+# Any key or click skips it; gameplay starts afterwards.
+func _play_intro(duration: float = 4.0) -> void:
+	_intro_running = true
+	_intro_skip = false
+	player.set_physics_process(false)
+	player.set_process_unhandled_input(false)
+	var pause_menu: Node = get_node_or_null("PauseMenu")
+	if pause_menu:
+		pause_menu.set_process_unhandled_input(false)
+	var anim: AnimationPlayer = player.get_node("Visual/AnimationPlayer")
+	anim.play("Crouch_Idle", 0.3)
+
+	var feet: Vector3 = player.global_position + Vector3.DOWN * 0.9
+	var spear := _build_intro_spear()
+	add_child(spear)
+	var cam := Camera3D.new()
+	add_child(cam)
+
+	var elapsed := 0.0
+	while elapsed < duration and not _intro_skip:
+		var t := elapsed / duration
+		# The spear crosses the path in slow motion, grazing duck height.
+		spear.global_position = feet + Vector3(lerpf(-8.0, 8.0, t), 1.45, 0.0)
+		# One smooth zoom in and back out over the whole sequence.
+		cam.fov = 70.0 - 28.0 * sin(PI * t)
+		cam.global_position = feet + Vector3(
+				3.4 - 1.2 * sin(PI * t), 1.5, 2.4 - 0.9 * sin(PI * t))
+		cam.look_at(feet + Vector3(0, 1.25, 0), Vector3.UP)
+		cam.make_current()
+		await get_tree().process_frame
+		elapsed += get_process_delta_time()
+
+	spear.queue_free()
+	var player_cam: Camera3D = player.get_node("CameraPivot/CameraArm/Camera3D")
+	player_cam.make_current()
+	cam.queue_free()
+	anim.play("Idle", 0.3)
+	if pause_menu:
+		pause_menu.set_process_unhandled_input(true)
+	player.set_process_unhandled_input(true)
+	player.set_physics_process(true)
+	_intro_running = false
+	_start_spear_timers()
+
+
+func _build_intro_spear() -> Node3D:
+	# A simple 3D spear for the cinematic: wooden shaft, steel tip,
+	# flying along +X (across the path).
+	var spear := Node3D.new()
+	var wood := StandardMaterial3D.new()
+	wood.albedo_color = Color(0.45, 0.3, 0.16)
+	var steel := StandardMaterial3D.new()
+	steel.albedo_color = Color(0.75, 0.75, 0.78)
+	steel.metallic = 0.8
+	steel.roughness = 0.35
+
+	var shaft := MeshInstance3D.new()
+	var shaft_mesh := CylinderMesh.new()
+	shaft_mesh.top_radius = 0.022
+	shaft_mesh.bottom_radius = 0.022
+	shaft_mesh.height = 1.8
+	shaft_mesh.material = wood
+	shaft.mesh = shaft_mesh
+	shaft.rotation.z = PI / 2.0
+	spear.add_child(shaft)
+
+	var tip := MeshInstance3D.new()
+	var tip_mesh := CylinderMesh.new()
+	tip_mesh.top_radius = 0.0
+	tip_mesh.bottom_radius = 0.05
+	tip_mesh.height = 0.25
+	tip_mesh.material = steel
+	tip.mesh = tip_mesh
+	tip.rotation.z = -PI / 2.0
+	tip.position = Vector3(1.0, 0.0, 0.0)
+	spear.add_child(tip)
+	return spear
 
 
 func _build_curve() -> Curve3D:
