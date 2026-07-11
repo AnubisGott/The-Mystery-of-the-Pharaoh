@@ -4,9 +4,10 @@ const WHOOSH_STREAMS: Array[AudioStream] = [
 	preload("res://sounds/spear_whoosh_1.wav"),
 	preload("res://sounds/spear_whoosh_2.wav"),
 ]
-# Start the whoosh this far before screen center so its peak lands
-# as the spear passes the character (sound peaks at ~0.3 s, 900 px/s).
-const WHOOSH_TRIGGER_DISTANCE: float = 280.0
+# Start the whoosh this long before the spear reaches screen center so
+# its peak (the sound peaks ~0.3 s in) lands as the spear passes the
+# character — independent of spear speed and window size.
+const WHOOSH_LEAD_TIME: float = 0.31
 
 var is_high: bool = false
 var direction: float = 1.0
@@ -25,11 +26,12 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	position.x += direction * speed * delta
 
-	# The layer scales the whole spear (and its speed) with the window
-	# height; keep the trigger and cleanup distances in the same units.
+	# The layer scales the whole spear with the window height; keep the
+	# cleanup distance in the same units. The whoosh triggers on time-
+	# to-center, so it works at any speed.
 	var s := absf(scale.y)
 	var width := get_viewport_rect().size.x
-	if not _whoosh_played and absf(position.x - width * 0.5) < WHOOSH_TRIGGER_DISTANCE * s:
+	if not _whoosh_played and absf(position.x - width * 0.5) < speed * WHOOSH_LEAD_TIME:
 		_whoosh_played = true
 		_whoosh_player.stream = WHOOSH_STREAMS[randi() % WHOOSH_STREAMS.size()]
 		_whoosh_player.pitch_scale = randf_range(0.9, 1.15)

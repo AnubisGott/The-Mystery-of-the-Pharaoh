@@ -453,13 +453,33 @@ func _await_input_dispatch() -> void:
 func test_spear_whoosh_triggers_near_center() -> void:
 	layer.spawn_spear(false, true)
 	var spear := _last_spear()
-	spear.position.x = _center_x() - Spear2D.WHOOSH_TRIGGER_DISTANCE - 120.0
+	var trigger: float = spear.speed * Spear2D.WHOOSH_LEAD_TIME
+	spear.position.x = _center_x() - trigger - 120.0
 	spear._physics_process(1.0 / 60.0)
 	_check(not spear._whoosh_played, "whoosh played too far from center")
 
-	spear.position.x = _center_x() - Spear2D.WHOOSH_TRIGGER_DISTANCE + 60.0
+	spear.position.x = _center_x() - trigger + 60.0
 	spear._physics_process(1.0 / 60.0)
 	_check(spear._whoosh_played, "whoosh not triggered near screen center")
+
+
+func test_spear_flight_time_resolution_independent() -> void:
+	layer.spawn_spear(false, true)
+	var base := _last_spear()
+	var base_time: float = (_center_x() - base.position.x) / base.speed
+
+	# Twice as wide, same height: the reaction time must not grow.
+	get_window().size = Vector2i(2304, 648)
+	await get_tree().process_frame
+	layer.reset_ramp()
+	layer.spawn_spear(false, true)
+	var wide := _last_spear()
+	var wide_time: float = (get_viewport().get_visible_rect().size.x * 0.5 - wide.position.x) / wide.speed
+
+	get_window().size = Vector2i(1152, 648)
+	await get_tree().process_frame
+	_check(absf(base_time - wide_time) < 0.02,
+			"flight time differs: %.3f s vs %.3f s" % [base_time, wide_time])
 
 
 func test_footsteps_fire_while_walking() -> void:

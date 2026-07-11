@@ -18,9 +18,12 @@ const HIGH_HAT_HEIGHT: float = 1.80
 const OFFSCREEN_MARGIN: float = 120.0
 
 # Drawn spear extent around its origin (see spear_2d.gd _draw), in pixels
-# at the 648-tall baseline window the spears were tuned for. Spears are
+# at the 1152x648 baseline window the spears were tuned for. Spears are
 # scaled with the window height so they keep their size relative to the
-# 3D character at any resolution.
+# 3D character at any resolution, and their speed is derived from the
+# baseline flight time so the reaction window does not depend on the
+# window shape (a 21:9 screen is much wider relative to its height).
+const BASE_VIEW_WIDTH: float = 1152.0
 const BASE_VIEW_HEIGHT: float = 648.0
 const SPEAR_TIP: float = 92.0
 const SPEAR_TAIL: float = 80.0
@@ -49,10 +52,14 @@ func spawn_spear(is_high: bool, from_left: bool) -> void:
 	var spear := Spear2D.new()
 	spear.is_high = is_high
 	spear.direction = 1.0 if from_left else -1.0
-	# Ramp the speed up over the first RAMP_COUNT spears. Speed is in
-	# pixels, so it scales with the window like the spear itself.
+	# Ramp the speed up over the first RAMP_COUNT spears. The px/s value
+	# is what the spear would fly at the baseline window; convert it to
+	# the time it needs from the edge to the center there, then pick the
+	# actual speed so this window is crossed in exactly that time.
 	var t := clampf(float(_spawn_count) / float(RAMP_COUNT - 1), 0.0, 1.0)
-	spear.speed = lerpf(SPEAR_SPEED_FIRST, SPEAR_SPEED, t) * s
+	var base_speed := lerpf(SPEAR_SPEED_FIRST, SPEAR_SPEED, t)
+	var flight_time := (BASE_VIEW_WIDTH * 0.5 + OFFSCREEN_MARGIN) / base_speed
+	spear.speed = (view_size.x * 0.5 + OFFSCREEN_MARGIN * s) / flight_time
 	_spawn_count += 1
 	spear.scale = Vector2(spear.direction * s, s)
 	spear.position = Vector2(
