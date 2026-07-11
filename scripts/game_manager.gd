@@ -40,6 +40,8 @@ var music_enabled: bool = true
 
 var fullscreen: bool = false
 var window_size: Vector2i = Vector2i(1152, 648)
+# Master loudness, 0..1, applied to the Master audio bus.
+var volume: float = 1.0
 
 var _music_player: AudioStreamPlayer
 
@@ -48,6 +50,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_load_settings()
 	_apply_display()
+	_apply_volume()
 	_music_player = AudioStreamPlayer.new()
 	_music_player.volume_db = -6.0
 	add_child(_music_player)
@@ -76,6 +79,16 @@ func _unhandled_input(event: InputEvent) -> void:
 			and event.physical_keycode == KEY_G and event.alt_pressed and event.shift_pressed:
 		god_mode = not god_mode
 		god_mode_changed.emit(god_mode)
+
+
+func set_volume(value: float) -> void:
+	volume = clampf(value, 0.0, 1.0)
+	_apply_volume()
+	_save_settings()
+
+
+func _apply_volume() -> void:
+	AudioServer.set_bus_volume_db(0, linear_to_db(maxf(volume, 0.001)))
 
 
 func set_fullscreen(enabled: bool) -> void:
@@ -130,6 +143,8 @@ func _save_settings() -> void:
 	config.load(SETTINGS_PATH)
 	config.set_value("display", "fullscreen", fullscreen)
 	config.set_value("display", "window_size", window_size)
+	config.set_value("audio", "volume", volume)
+	config.set_value("audio", "music", music_enabled)
 	config.save(SETTINGS_PATH)
 
 
@@ -139,6 +154,8 @@ func _load_settings() -> void:
 		return
 	fullscreen = config.get_value("display", "fullscreen", fullscreen)
 	window_size = config.get_value("display", "window_size", window_size)
+	volume = config.get_value("audio", "volume", volume)
+	music_enabled = config.get_value("audio", "music", music_enabled)
 
 
 # Starts the track from the beginning (if music is enabled). The player
@@ -162,6 +179,7 @@ func set_music_enabled(enabled: bool) -> void:
 		_music_player.play()
 	elif not enabled:
 		_music_player.stop()
+	_save_settings()
 
 
 func start_game() -> void:

@@ -564,7 +564,7 @@ func test_menu_music_plays_and_toggles() -> void:
 	await get_tree().physics_frame
 
 	var music: AudioStreamPlayer = GameManager._music_player
-	var toggle: Button = menu.get_node("Center/Panel/MenuItems/MusicButton")
+	var toggle: Button = menu.get_node("Center/Panel/OptionsItems/MusicButton")
 	_check(music.playing, "menu music not playing on start")
 	_check(music.stream.loop, "menu music does not loop")
 	_check(toggle.text == "Music: On (M)", "toggle label wrong while on")
@@ -674,6 +674,22 @@ func test_menu_has_level_entries() -> void:
 		_check(button.text.contains(expected_names[i]),
 				"level %d entry missing its name" % (i + 1))
 
+	# The Options button swaps to the options panel and back.
+	menu.get_node("Center/Panel/MenuItems/OptionsButton").pressed.emit()
+	_check(menu.get_node("Center/Panel/OptionsItems").visible, "options panel did not open")
+	_check(not menu.get_node("Center/Panel/MenuItems").visible, "menu stayed visible under options")
+	_check(menu.get_node("Center/Panel/OptionsItems/VolumeSlider") != null, "volume slider missing")
+	menu.get_node("Center/Panel/OptionsItems/BackButton").pressed.emit()
+	_check(menu.get_node("Center/Panel/MenuItems").visible, "back did not return to the menu")
+
+	# The volume slider drives the master bus (and is restored after).
+	var orig_volume: float = GameManager.volume
+	menu.get_node("Center/Panel/OptionsItems/VolumeSlider").value = 50.0
+	_check(absf(GameManager.volume - 0.5) < 0.01, "slider did not set the volume")
+	_check(absf(AudioServer.get_bus_volume_db(0) - linear_to_db(0.5)) < 0.1,
+			"master bus not at half loudness")
+	GameManager.set_volume(orig_volume)
+
 	menu.queue_free()
 	await get_tree().physics_frame
 
@@ -691,8 +707,8 @@ func test_display_settings_cycle_and_persist() -> void:
 	add_child(menu)
 	await get_tree().physics_frame
 
-	var display_button: Button = menu.get_node("Center/Panel/MenuItems/DisplayButton")
-	var size_button: Button = menu.get_node("Center/Panel/MenuItems/SizeButton")
+	var display_button: Button = menu.get_node("Center/Panel/OptionsItems/DisplayButton")
+	var size_button: Button = menu.get_node("Center/Panel/OptionsItems/SizeButton")
 
 	size_button.pressed.emit()
 	_check(sizes.size() == 1 or GameManager.window_size != orig_size,

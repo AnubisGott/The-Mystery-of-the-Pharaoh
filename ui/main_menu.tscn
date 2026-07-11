@@ -82,22 +82,54 @@ custom_minimum_size = Vector2(300, 32)
 layout_mode = 2
 text = "Level 7 - The Journey Home"
 
+[node name="OptionsButton" type="Button" parent="Center/Panel/MenuItems"]
+custom_minimum_size = Vector2(260, 32)
+layout_mode = 2
+text = "Options"
+
 [node name="QuitButton" type="Button" parent="Center/Panel/MenuItems"]
 custom_minimum_size = Vector2(260, 32)
 layout_mode = 2
 text = "Quit"
 
-[node name="MusicButton" type="Button" parent="Center/Panel/MenuItems"]
-custom_minimum_size = Vector2(260, 32)
+[node name="OptionsItems" type="VBoxContainer" parent="Center/Panel"]
+visible = false
 layout_mode = 2
-text = "Music: On (M)"
+theme_override_constants/separation = 8
 
-[node name="DisplayButton" type="Button" parent="Center/Panel/MenuItems"]
-custom_minimum_size = Vector2(260, 32)
+[node name="OptionsTitle" type="Label" parent="Center/Panel/OptionsItems"]
+layout_mode = 2
+text = "Options"
+horizontal_alignment = 1
+
+[node name="DisplayButton" type="Button" parent="Center/Panel/OptionsItems"]
+custom_minimum_size = Vector2(280, 34)
 layout_mode = 2
 text = "Display: Windowed (F11)"
 
-[node name="SizeButton" type="Button" parent="Center/Panel/MenuItems"]
-custom_minimum_size = Vector2(260, 32)
+[node name="SizeButton" type="Button" parent="Center/Panel/OptionsItems"]
+custom_minimum_size = Vector2(280, 34)
 layout_mode = 2
 text = "Size: 1152 x 648"
+
+[node name="MusicButton" type="Button" parent="Center/Panel/OptionsItems"]
+custom_minimum_size = Vector2(280, 34)
+layout_mode = 2
+text = "Music: On (M)"
+
+[node name="VolumeLabel" type="Label" parent="Center/Panel/OptionsItems"]
+layout_mode = 2
+text = "Volume"
+horizontal_alignment = 1
+
+[node name="VolumeSlider" type="HSlider" parent="Center/Panel/OptionsItems"]
+custom_minimum_size = Vector2(280, 24)
+layout_mode = 2
+max_value = 100.0
+step = 5.0
+value = 100.0
+
+[node name="BackButton" type="Button" parent="Center/Panel/OptionsItems"]
+custom_minimum_size = Vector2(280, 34)
+layout_mode = 2
+text = "Back"
