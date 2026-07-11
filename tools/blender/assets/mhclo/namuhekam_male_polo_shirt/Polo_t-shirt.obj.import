@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://b7ob0rn4ovago"
+path="res://.godot/imported/Polo_t-shirt.obj-c36978d781a2cd8d5d4dde16f04b4f77.mesh"
+
+[deps]
+
+files=["res://.godot/imported/Polo_t-shirt.obj-c36978d781a2cd8d5d4dde16f04b4f77.mesh"]
+
+source_file="res://tools/blender/assets/mhclo/namuhekam_male_polo_shirt/Polo_t-shirt.obj"
+dest_files=["res://.godot/imported/Polo_t-shirt.obj-c36978d781a2cd8d5d4dde16f04b4f77.mesh", "res://.godot/imported/Polo_t-shirt.obj-c36978d781a2cd8d5d4dde16f04b4f77.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

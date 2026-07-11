@@ -22,10 +22,12 @@ const LOOPED_CLIPS: Array[String] = [
 	"Idle", "Walking_A", "Running_A", "Jump_Idle", "Crouch_Idle", "Crouch_Walk",
 ]
 # Ground speed at which each cycle plays at 1x; faster movement speeds the
-# clip up proportionally so the stride roughly tracks the floor.
-const WALK_STRIDE_SPEED: float = 3.0
-const RUN_STRIDE_SPEED: float = 5.5
-const CROUCH_STRIDE_SPEED: float = 2.0
+# clip up proportionally so the stride roughly tracks the floor. Exported
+# because each character's clips have their own natural pace (KayKit vs
+# the MakeHuman/Quaternius variant).
+@export var walk_stride_speed: float = 3.0
+@export var run_stride_speed: float = 5.5
+@export var crouch_stride_speed: float = 2.0
 
 @onready var camera_pivot: Node3D = $CameraPivot
 @onready var collision_shape: CollisionShape3D = $CollisionShape3D
@@ -147,11 +149,14 @@ func die_and_reset(spawn: Transform3D, hit_high: bool = true, animate: bool = tr
 
 	var tween := create_tween()
 	if animate:
-		# Death_B is a 2.1s clip; play it faster so both deaths restart
-		# at a similar pace, with a short beat on the ground.
-		_anim.speed_scale = 1.5 if hit_high else 1.0
-		_anim.play("Death_B" if hit_high else "Death_A", 0.1)
-		tween.tween_interval(1.5 if hit_high else 1.1)
+		# The forward slam is longer, play it faster so both deaths
+		# restart at a similar pace. The wait derives from the clip
+		# length (they differ per character), plus a beat on the ground.
+		var clip := "Death_B" if hit_high else "Death_A"
+		var speed := 1.5 if hit_high else 1.0
+		_anim.speed_scale = speed
+		_anim.play(clip, 0.1)
+		tween.tween_interval(clampf(_anim.get_animation(clip).length / speed + 0.35, 0.8, 2.2))
 	else:
 		# Falling into a pit: keep the airborne flail, just a short beat.
 		tween.tween_interval(0.4)
@@ -211,15 +216,15 @@ func _update_animation() -> void:
 		target = "Jump_Idle"
 	elif _is_ducking and ground_speed > 0.2:
 		target = "Crouch_Walk"
-		time_scale = ground_speed / CROUCH_STRIDE_SPEED
+		time_scale = ground_speed / crouch_stride_speed
 	elif _is_ducking:
 		target = "Crouch_Idle"
 	elif ground_speed > move_speed + 0.2:
 		target = "Running_A"
-		time_scale = ground_speed / RUN_STRIDE_SPEED
+		time_scale = ground_speed / run_stride_speed
 	elif ground_speed > 0.2:
 		target = "Walking_A"
-		time_scale = ground_speed / WALK_STRIDE_SPEED
+		time_scale = ground_speed / walk_stride_speed
 	elif just_landed:
 		target = "Jump_Land"
 	elif _anim.current_animation == "Jump_Land":

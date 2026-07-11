@@ -1,0 +1,454 @@
+# Builds the realistic Level-1 adventurer: an MPFB/MakeHuman body dressed
+# in CC0 MakeHuman community clothes, with the Quaternius Universal
+# Animation Library (CC0) retargeted onto its game_engine rig. Exports a
+# GLB whose animation clips use the same canonical names as the KayKit
+# character (models/adventurer.glb), so player.gd drives both.
+#
+# Run headless (requires the MPFB extension to be installed in Blender):
+#   blender --background --python tools/blender/make_adventurer_realistic.py -- models/adventurer_realistic.glb
+#
+# Inputs (committed under tools/blender/assets/):
+#   ual_animation_library.glb  - Quaternius UAL, Godot flavour (CC0)
+#   mhclo/...                  - MakeHuman community clothes (CC0)
+#
+# Hard-won pitfalls encoded below:
+#   * create_human must keep detailed helpers/vertex groups ON: the rig is
+#     fitted to the mesh via joint-cube helper geometry. Without it the
+#     skeleton silently lands ~0.86 below the flesh and every pose shears.
+#   * Never rely on depsgraph animation evaluation in background mode;
+#     the source clips are sampled straight from their fcurves.
+#   * The A-pose/T-pose difference is handled at calibration: minimal-arc
+#     alignment per bone, elbows straightened around their anatomical
+#     hinge axis (skew-plane arcs would twist the elbow), toes rigid.
+#   * Quaternion keys must stay on one hemisphere or interpolation breaks.
+#   * glTF ignores node transforms of skinned meshes: all object
+#     transforms are applied before the bake.
+#   * export_apply must stay off, or the armature modifier is baked into
+#     the vertices and the pose is applied twice at runtime.
+import os
+import sys
+
+import bpy
+from mathutils import Matrix, Quaternion, Vector
+
+ASSETS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+UAL_GLB = os.path.join(ASSETS, "ual_animation_library.glb")
+
+from bl_ext.blender_org.mpfb.services.exportservice import ExportService
+from bl_ext.blender_org.mpfb.services.humanservice import HumanService
+from bl_ext.blender_org.mpfb.services.targetservice import TargetService
+
+# (source UAL bone, target game_engine bone, copy world location) in
+# hierarchy order. Fingers stay at their rest pose.
+BONE_MAP = [
+    ("root", "Root", True),
+    ("DEF-hips", "pelvis", True),
+    ("DEF-spine.001", "spine_01", False),
+    ("DEF-spine.002", "spine_02", False),
+    ("DEF-spine.003", "spine_03", False),
+    ("DEF-neck", "neck_01", False),
+    ("DEF-head", "head", False),
+    ("DEF-shoulder.L", "clavicle_l", False),
+    ("DEF-upper_arm.L", "upperarm_l", False),
+    ("DEF-forearm.L", "lowerarm_l", False),
+    ("DEF-hand.L", "hand_l", False),
+    ("DEF-shoulder.R", "clavicle_r", False),
+    ("DEF-upper_arm.R", "upperarm_r", False),
+    ("DEF-forearm.R", "lowerarm_r", False),
+    ("DEF-hand.R", "hand_r", False),
+    ("DEF-thigh.L", "thigh_l", False),
+    ("DEF-shin.L", "calf_l", False),
+    ("DEF-foot.L", "foot_l", False),
+    ("DEF-toe.L", "ball_l", False),
+    ("DEF-thigh.R", "thigh_r", False),
+    ("DEF-shin.R", "calf_r", False),
+    ("DEF-foot.R", "foot_r", False),
+    ("DEF-toe.R", "ball_r", False),
+]
+
+# canonical clip name (same as the KayKit adventurer) -> UAL action name
+CLIP_MAP = {
+    "Idle": "Idle_Loop",
+    "Walking_A": "Jog_Fwd_Loop",
+    "Running_A": "Sprint_Loop",
+    "Jump_Start": "Jump_Start",
+    "Jump_Idle": "Jump_Loop",
+    "Jump_Land": "Jump_Land",
+    "Crouch_Idle": "Crouch_Idle_Loop",
+    "Crouch_Walk": "Crouch_Fwd_Loop",
+    "Death_B": "Death01",
+    "Hit_A": "Hit_Chest",
+    "T-Pose": "A_TPose",
+}
+
+# Archaeologist outfit: MakeHuman community assets (all CC0). No hat
+# asset: its delete-group hides the head vertices, which the helper bake
+# makes permanent — the fedora is built procedurally instead.
+CLOTHES = [
+    os.path.join(ASSETS, "mhclo", "namuhekam_male_polo_shirt", "namuhekam_male_polo_shirt.mhclo"),
+    os.path.join(ASSETS, "mhclo", "cortu_cargo_pants", "cortu_cargo_pants.mhclo"),
+    os.path.join(ASSETS, "mhclo", "culturalibre_male_boots", "culturalibre_male_boots.mhclo"),
+]
+
+# Flat desert-palette materials, matching the stylized look of the game
+# (and exporting deterministically, unlike procedural MakeSkin shaders).
+# Assigned by matching substrings against object names.
+MATERIAL_COLORS = [
+    ("polo", (0.76, 0.65, 0.44)),      # khaki shirt
+    ("cargo", (0.45, 0.38, 0.24)),     # brown-khaki pants
+    ("boot", (0.24, 0.15, 0.09)),      # dark leather boots
+    ("hatband", (0.19, 0.11, 0.06)),   # dark band
+    ("hat", (0.38, 0.23, 0.11)),       # brown fedora
+    ("Human", (0.85, 0.62, 0.45)),     # skin
+]
+
+
+def clear_scene() -> None:
+    bpy.ops.object.select_all(action="SELECT")
+    bpy.ops.object.delete()
+
+
+def build_human():
+    macro = {
+        "gender": 1.0, "age": 0.5, "muscle": 0.65, "weight": 0.55,
+        "height": 0.52, "proportions": 0.7, "cupsize": 0.5, "firmness": 0.5,
+        "race": {"asian": 0.0, "caucasian": 1.0, "african": 0.0},
+    }
+    # Helpers must be on: the rig and the clothes are fitted via the
+    # helper/joint-cube geometry. They are baked away again below.
+    basemesh = HumanService.create_human(
+            mask_helpers=True, detailed_helpers=True,
+            extra_vertex_groups=True, feet_on_ground=True,
+            scale=0.1, macro_detail_dict=macro)
+    # Bake the macro shape keys BEFORE fitting the rig: the joint-cube
+    # fitting must see the final mesh shape, or the skeleton binds at the
+    # wrong height and every engine that honours inverse bind matrices
+    # (i.e. not Blender, but Godot) renders body parts offset.
+    TargetService.bake_targets(basemesh)
+    rig = HumanService.add_builtin_rig(basemesh, "game_engine", import_weights=True)
+    pelvis_z = (rig.matrix_world @ rig.data.bones["pelvis"].head_local.to_4d()).z
+    if pelvis_z < 0.5:
+        raise RuntimeError(f"rig not fitted to mesh (pelvis at z={pelvis_z:.2f})")
+
+    for mhclo in CLOTHES:
+        if os.path.exists(mhclo):
+            HumanService.add_mhclo_asset(mhclo, basemesh, asset_type="Clothes",
+                    subdiv_levels=0, material_type="MAKESKIN", set_up_rigging=True)
+            print("dressed:", os.path.basename(mhclo))
+        else:
+            print("MISSING clothes asset:", mhclo)
+
+    def zrange(label):
+        zs = [(basemesh.matrix_world @ v.co.to_4d()).z for v in basemesh.data.vertices]
+        print(f"BODY {label}: verts={len(zs)} z=[{min(zs):.2f}, {max(zs):.2f}]")
+
+    zrange("after dressing")
+    ExportService.bake_modifiers_remove_helpers(
+            basemesh, bake_masks=True, bake_subdiv=True,
+            remove_helpers=True, also_proxy=True)
+    zrange("after helper bake")
+
+    meshes = [o for o in bpy.data.objects if o.type == "MESH"]
+    for mesh in meshes:
+        # Exactly one armature modifier per mesh; duplicates double the pose.
+        mods = [m for m in mesh.modifiers if m.type == "ARMATURE"]
+        for extra in mods[1:]:
+            mesh.modifiers.remove(extra)
+
+    # glTF ignores the node transform of skinned meshes: everything must
+    # live at identity. Unparent (keeping transforms), then apply.
+    bpy.ops.object.select_all(action="DESELECT")
+    for obj in meshes + [rig]:
+        world = obj.matrix_world.copy()
+        obj.parent = None
+        obj.matrix_world = world
+        obj.select_set(True)
+    bpy.context.view_layer.objects.active = rig
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    return basemesh, rig, meshes
+
+
+def add_fedora(rig, basemesh, meshes) -> None:
+    # Procedural fedora skinned to the head bone (the character faces -Y).
+    # Placed relative to the actual mesh top, not the bone tail.
+    head_top = max(v.co.z for v in basemesh.data.vertices) - 0.015
+    parts = [
+        ("HatBrim", 0.175, 0.022, head_top + 0.011),
+        ("HatCrown", 0.105, 0.095, head_top + 0.06),
+        ("HatBand", 0.11, 0.028, head_top + 0.038),
+    ]
+    for name, radius, depth, z in parts:
+        bpy.ops.mesh.primitive_cylinder_add(radius=radius, depth=depth,
+                vertices=24, location=(0.0, -0.012, z))
+        obj = bpy.context.active_object
+        obj.name = name
+        bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+        bpy.ops.object.shade_auto_smooth(angle=1.0)
+        group = obj.vertex_groups.new(name="head")
+        group.add(list(range(len(obj.data.vertices))), 1.0, "REPLACE")
+        mod = obj.modifiers.new("skin", "ARMATURE")
+        mod.object = rig
+        obj.parent = rig
+        meshes.append(obj)
+
+
+def apply_flat_materials(meshes) -> None:
+    for mesh in meshes:
+        rgb = next((color for key, color in MATERIAL_COLORS
+                if key.lower() in mesh.name.lower()), (0.6, 0.6, 0.6))
+        mat = bpy.data.materials.new("flat_" + mesh.name)
+        mat.use_nodes = True
+        bsdf = mat.node_tree.nodes["Principled BSDF"]
+        linear = tuple(c ** 2.2 for c in rgb)
+        bsdf.inputs["Base Color"].default_value = (*linear, 1.0)
+        bsdf.inputs["Roughness"].default_value = 0.9
+        mat.diffuse_color = (*linear, 1.0)
+        mesh.data.materials.clear()
+        mesh.data.materials.append(mat)
+
+
+def import_ual():
+    before = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=UAL_GLB)
+    new = [o for o in bpy.data.objects if o not in before]
+    src = next(o for o in new if o.type == "ARMATURE")
+    for obj in new:
+        if obj.type == "MESH":
+            bpy.data.objects.remove(obj, do_unlink=True)
+    for track in src.animation_data.nla_tracks:
+        track.mute = True
+    # Prefix source action names so the baked clips can take the clean
+    # canonical names (Jump_Start/Jump_Land exist in both sets). Iterate
+    # a snapshot: renaming re-sorts the live collection.
+    for action in list(bpy.data.actions):
+        if not action.name.startswith("SRC_"):
+            action.name = "SRC_" + action.name
+    return src
+
+
+class Calibration:
+    pass
+
+
+def compute_calibration(src, dst):
+    cal = Calibration()
+    src_mw3 = src.matrix_world.to_3x3()
+    dst_mw3 = dst.matrix_world.to_3x3()
+
+    # The UAL rig's rest pose IS its T-pose; calibrate the source side
+    # from rest matrices.
+    src_rot_t = {}
+    for s_name, _d, _l in BONE_MAP:
+        src_rot_t[s_name] = (src_mw3 @ src.data.bones[s_name].matrix_local.to_3x3()).normalized()
+    src_hip_t = (src.matrix_world @ src.data.bones["DEF-hips"].matrix_local.translation.to_4d()).xyz.copy()
+
+    mapped = {d for _s, d, _l in BONE_MAP}
+    cal.rest_local = {}
+    cal.parents = {}
+    for _s, d_name, _l in BONE_MAP:
+        bone = dst.data.bones[d_name]
+        parent = bone.parent
+        while parent is not None and parent.name not in mapped:
+            parent = parent.parent
+        cal.parents[d_name] = parent.name if parent else None
+        if parent:
+            cal.rest_local[d_name] = parent.matrix_local.inverted() @ bone.matrix_local
+        else:
+            cal.rest_local[d_name] = bone.matrix_local.copy()
+
+    # Target calibration pose, pure math: per bone the minimal-arc world
+    # rotation aligning its direction with the source rest direction.
+    # Forearms straighten around the anatomical elbow hinge instead (the
+    # normal of the bent A-pose arm plane); toes follow the foot rigidly.
+    rigid = {"ball_l", "ball_r"}
+    hinge = {"lowerarm_l", "lowerarm_r"}
+    cal.r_off = {}
+    desired = {}
+    for s_name, d_name, _l in BONE_MAP:
+        parent = cal.parents[d_name]
+        pred = (desired[parent] @ cal.rest_local[d_name]) if parent \
+                else cal.rest_local[d_name]
+        cur_rot = (dst_mw3 @ pred.to_3x3()).normalized()
+        d_dir = (cur_rot @ Vector((0.0, 1.0, 0.0))).normalized()
+        s_dir = (src_rot_t[s_name] @ Vector((0.0, 1.0, 0.0))).normalized()
+        if d_name in rigid:
+            rot_world = cur_rot
+        elif d_name in hinge:
+            parent_rot = (dst_mw3 @ desired[parent].to_3x3()).normalized()
+            parent_dir = (parent_rot @ Vector((0.0, 1.0, 0.0))).normalized()
+            axis = parent_dir.cross(d_dir)
+            if axis.length < 1e-5:
+                axis = (cur_rot @ Vector((1.0, 0.0, 0.0))).normalized()
+            else:
+                axis.normalize()
+            dp = (d_dir - axis * d_dir.dot(axis)).normalized()
+            sp = (s_dir - axis * s_dir.dot(axis)).normalized()
+            angle = dp.angle(sp)
+            if axis.dot(dp.cross(sp)) < 0.0:
+                angle = -angle
+            rot_world = Matrix.Rotation(angle, 3, axis) @ cur_rot
+        else:
+            rot_world = d_dir.rotation_difference(s_dir).to_matrix() @ cur_rot
+        desired[d_name] = Matrix.LocRotScale(
+                pred.translation, (dst_mw3.inverted() @ rot_world).to_quaternion(), None)
+        cal.r_off[d_name] = src_rot_t[s_name].inverted() @ rot_world
+
+    # Affine hip mapping: scale by leg-length ratio, anchor rest to rest.
+    src_foot = (src.matrix_world @ src.data.bones["DEF-foot.L"].matrix_local.translation.to_4d()).xyz
+    dst_hip = (dst.matrix_world @ dst.data.bones["pelvis"].matrix_local.translation.to_4d()).xyz
+    dst_foot = (dst.matrix_world @ dst.data.bones["foot_l"].matrix_local.translation.to_4d()).xyz
+    cal.ratio = (dst_hip.z - dst_foot.z) / (src_hip_t.z - src_foot.z)
+    cal.l_off = dst_hip - src_hip_t * cal.ratio
+    print("retarget ratio:", round(cal.ratio, 4),
+            "offset:", tuple(round(c, 4) for c in cal.l_off))
+    return cal
+
+
+def action_fcurves(action):
+    for layer in action.layers:
+        for strip in layer.strips:
+            for bag in strip.channelbags:
+                yield from bag.fcurves
+
+
+def index_action_channels(action):
+    channels = {}
+    for fc in action_fcurves(action):
+        if not fc.data_path.startswith('pose.bones["'):
+            continue
+        bone = fc.data_path.split('"')[1]
+        prop = fc.data_path.rsplit(".", 1)[1]
+        channels.setdefault(bone, {}).setdefault(prop, {})[fc.array_index] = fc
+    return channels
+
+
+def sample_src_pose(src, channels, frame):
+    # Armature-space pose matrices straight from the action's fcurves —
+    # depsgraph animation evaluation is unreliable in background mode.
+    mats = {}
+    for s_name, _d, _l in BONE_MAP:
+        bone = src.data.bones[s_name]
+        parent = bone.parent
+        rest_local = (parent.matrix_local.inverted() @ bone.matrix_local) \
+                if parent else bone.matrix_local.copy()
+        ch = channels.get(s_name, {})
+
+        def ev(prop, idx, default):
+            fc = ch.get(prop, {}).get(idx)
+            return fc.evaluate(frame) if fc is not None else default
+
+        quat = Quaternion((ev("rotation_quaternion", 0, 1.0),
+                ev("rotation_quaternion", 1, 0.0),
+                ev("rotation_quaternion", 2, 0.0),
+                ev("rotation_quaternion", 3, 0.0))).normalized()
+        loc = Vector((ev("location", 0, 0.0), ev("location", 1, 0.0),
+                ev("location", 2, 0.0)))
+        local = rest_local @ Matrix.LocRotScale(loc, quat, None)
+        mats[s_name] = (mats[parent.name] @ local) if parent else local
+    return mats
+
+
+def retarget_clip(src, dst, src_action_name, new_name, cal):
+    new_act = bpy.data.actions.new(new_name)
+    dst.animation_data.action = new_act
+    action = bpy.data.actions["SRC_" + src_action_name]
+    channels = index_action_channels(action)
+
+    end = action.frame_range[1]
+    frames = [float(f) for f in range(int(end) + 1)]
+    if end - int(end) > 1e-3:
+        frames.append(end)
+
+    src_mw = src.matrix_world
+    dst_mw_inv = dst.matrix_world.inverted()
+    dst_rot_inv = dst_mw_inv.to_3x3()
+
+    prev_q = {}
+    for frame in frames:
+        src_pose = sample_src_pose(src, channels, frame)
+        desired = {}
+        for s_name, d_name, copy_loc in BONE_MAP:
+            m_src_world = src_mw @ src_pose[s_name]
+            rot_world = m_src_world.to_3x3().normalized() @ cal.r_off[d_name]
+            parent = cal.parents[d_name]
+            pred = (desired[parent] @ cal.rest_local[d_name]) if parent \
+                    else cal.rest_local[d_name]
+            if copy_loc:
+                pos = dst_mw_inv @ (m_src_world.translation * cal.ratio + cal.l_off)
+            else:
+                pos = pred.translation
+            m_arm = Matrix.LocRotScale(pos, (dst_rot_inv @ rot_world).to_quaternion(), None)
+            desired[d_name] = m_arm
+
+            basis = pred.inverted() @ m_arm
+            pb = dst.pose.bones[d_name]
+            loc, rot_q, _scale = basis.decompose()
+            # Keep quaternion keys on one hemisphere: q and -q encode the
+            # same rotation, but interpolating across the flip mangles
+            # every in-between frame.
+            if d_name in prev_q and rot_q.dot(prev_q[d_name]) < 0.0:
+                rot_q = -rot_q
+            prev_q[d_name] = rot_q
+            pb.rotation_mode = "QUATERNION"
+            pb.rotation_quaternion = rot_q
+            pb.keyframe_insert("rotation_quaternion", frame=frame)
+            if copy_loc:
+                pb.location = loc
+                pb.keyframe_insert("location", frame=frame)
+    return new_act
+
+
+def stash(arm, action):
+    track = arm.animation_data.nla_tracks.new()
+    track.name = action.name
+    track.mute = True
+    strip = track.strips.new(action.name, 0, action)
+    if action.slots:
+        strip.action_slot = action.slots[0]
+
+
+def clear_pose(arm):
+    for pb in arm.pose.bones:
+        pb.location = (0.0, 0.0, 0.0)
+        pb.rotation_mode = "QUATERNION"
+        pb.rotation_quaternion = (1.0, 0.0, 0.0, 0.0)
+        pb.scale = (1.0, 1.0, 1.0)
+
+
+def main() -> None:
+    out_path = sys.argv[sys.argv.index("--") + 1]
+    clear_scene()
+
+    basemesh, rig, meshes = build_human()
+    add_fedora(rig, basemesh, meshes)
+    apply_flat_materials(meshes)
+    src = import_ual()
+    rig.animation_data_create()
+
+    cal = compute_calibration(src, rig)
+    for new_name, src_name in CLIP_MAP.items():
+        act = retarget_clip(src, rig, src_name, new_name, cal)
+        stash(rig, act)
+        print("baked:", new_name, "frames:", tuple(act.frame_range))
+
+    # Backward death: the UAL ships only one death clip, reuse it.
+    death_a = bpy.data.actions["Death_B"].copy()
+    death_a.name = "Death_A"
+    stash(rig, death_a)
+
+    rig.animation_data.action = None
+    clear_pose(rig)
+    keep = set(CLIP_MAP.keys()) | {"Death_A"}
+    bpy.data.objects.remove(src, do_unlink=True)
+    for action in list(bpy.data.actions):
+        if action.name not in keep:
+            bpy.data.actions.remove(action, do_unlink=True)
+
+    # export_apply must stay off: with it, the exporter bakes the armature
+    # modifier into the vertices (pose applied twice at runtime).
+    bpy.ops.export_scene.gltf(filepath=out_path, export_format="GLB",
+            export_animation_mode="ACTIONS")
+    print("exported:", out_path)
+
+
+main()
