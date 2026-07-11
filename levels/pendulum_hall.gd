@@ -11,6 +11,7 @@ const WALL_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_sph
 const FLOOR_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_pyramid.tres")
 const PendulumScript := preload("res://hazards/pendulum.gd")
 const CrackTileScript := preload("res://hazards/crack_tile.gd")
+const Torch := preload("res://levels/torch.gd")
 
 const CORRIDOR_WIDTH: float = 4.4
 const WALL_V: float = 2.4
@@ -305,12 +306,6 @@ func _build_environment() -> void:
 	world_env.environment = env
 	add_child(world_env)
 
-	var torch_glow := StandardMaterial3D.new()
-	torch_glow.albedo_color = Color(1.0, 0.55, 0.15)
-	torch_glow.emission_enabled = true
-	torch_glow.emission = Color(1.0, 0.5, 0.12)
-	torch_glow.emission_energy_multiplier = 2.5
-
 	var d := 2.0
 	var side := 1.0
 	while d < END_D:
@@ -321,20 +316,10 @@ func _build_environment() -> void:
 		# or pendulum pocket).
 		var wall_side := _torch_side(leg, u, side)
 		if wall_side != 0.0:
-			var light := OmniLight3D.new()
-			light.light_color = Color(1.0, 0.62, 0.28)
-			light.light_energy = 2.2
-			light.omni_range = 9.0
-			light.position = _pos(leg, u, wall_side * 1.8, 3.0)
-			add_child(light)
-
-			var head := MeshInstance3D.new()
-			var flame := BoxMesh.new()
-			flame.size = Vector3(0.18, 0.3, 0.18)
-			flame.material = torch_glow
-			head.mesh = flame
-			head.position = _pos(leg, u, wall_side * 2.1, 2.9)
-			add_child(head)
+			var torch := Torch.new()
+			torch.basis = Basis.looking_at(_right(leg) * -wall_side)
+			torch.position = _pos(leg, u, wall_side * 2.35, 2.45)
+			add_child(torch)
 
 		side = -side
 		d += 8.0
