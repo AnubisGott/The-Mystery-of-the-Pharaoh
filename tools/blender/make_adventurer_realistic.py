@@ -197,20 +197,27 @@ def build_human():
 
 def add_fedora(rig, basemesh, meshes) -> None:
     # Procedural fedora skinned to the head bone (the character faces -Y).
-    # Placed relative to the actual mesh top and centered over the skull
-    # crown, NOT the body axis: the head sits ~7 cm forward (-Y) of the
-    # axis, and a hat centered on the axis hovers behind/above the head.
+    # Centered over the skull crown, NOT the body axis: the head sits
+    # ~7 cm forward (-Y) of the axis, and a hat centered on the axis
+    # hovers behind/above the head. The brim sits at the hairline (~5 cm
+    # below the scalp top) so the hat is worn, not balanced on top, and
+    # the crown is sized from the skull's cross-section at that line.
     z_max = max(v.co.z for v in basemesh.data.vertices)
-    head_top = z_max - 0.015
     crown = [v.co for v in basemesh.data.vertices if v.co.z > z_max - 0.03]
     cx = sum(c.x for c in crown) / len(crown)
     cy = sum(c.y for c in crown) / len(crown)
-    print("hat: head_top =", round(head_top, 4),
-            "center =", (round(cx, 4), round(cy, 4)))
+    brim_z = z_max - 0.05
+    ring = [v.co for v in basemesh.data.vertices
+            if abs(v.co.z - brim_z) < 0.015]
+    head_r = max(math.hypot(c.x - cx, c.y - cy) for c in ring)
+    crown_r = head_r + 0.008
+    print("hat: scalp_top =", round(z_max, 4), "brim_z =", round(brim_z, 4),
+            "center =", (round(cx, 4), round(cy, 4)),
+            "head_r =", round(head_r, 4))
     parts = [
-        ("HatBrim", 0.175, 0.022, head_top + 0.011),
-        ("HatCrown", 0.105, 0.095, head_top + 0.06),
-        ("HatBand", 0.11, 0.028, head_top + 0.038),
+        ("HatBrim", crown_r + 0.062, 0.022, brim_z + 0.011),
+        ("HatCrown", crown_r, 0.105, brim_z + 0.062),
+        ("HatBand", crown_r + 0.006, 0.028, brim_z + 0.042),
     ]
     for name, radius, depth, z in parts:
         bpy.ops.mesh.primitive_cylinder_add(radius=radius, depth=depth,
