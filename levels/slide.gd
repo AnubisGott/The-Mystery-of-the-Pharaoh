@@ -34,7 +34,7 @@ const OBSTACLES: Array[Vector2] = [
 const SPEED_START: float = 8.0
 const SPEED_END: float = 12.5
 const STEER_SPEED: float = 4.5
-const JUMP_VELOCITY: float = 5.0
+const JUMP_VELOCITY: float = 4.0
 
 @onready var player: CharacterBody3D = $Player
 @onready var god_label: Label = $ControlsHint/Root/GodLabel

@@ -17,6 +17,7 @@ var frozen: bool = false   # tests freeze the cycle
 
 var _up_time: float = 4.0
 var _time: float = 0.0
+var _eye_material: StandardMaterial3D
 
 
 func _ready() -> void:
@@ -45,8 +46,11 @@ func _ready() -> void:
 	_mesh_box(green, Vector3(0.45, 0.22, 1.1), Vector3(0, -0.1, 1.6))
 	for i in 3:
 		_mesh_box(dark, Vector3(0.12, 0.12, 0.5), Vector3(0, 0.18, -0.4 + i * 0.6))
-	_mesh_box(dark, Vector3(0.1, 0.12, 0.1), Vector3(-0.22, 0.18, -1.05))
-	_mesh_box(dark, Vector3(0.1, 0.12, 0.1), Vector3(0.22, 0.18, -1.05))
+	# The eyes get their own material so they can glow red as a warning.
+	_eye_material = StandardMaterial3D.new()
+	_eye_material.albedo_color = Color(0.1, 0.14, 0.07)
+	_mesh_box(_eye_material, Vector3(0.1, 0.12, 0.1), Vector3(-0.22, 0.18, -1.05))
+	_mesh_box(_eye_material, Vector3(0.1, 0.12, 0.1), Vector3(0.22, 0.18, -1.05))
 
 
 func cycle_length() -> float:
@@ -61,13 +65,16 @@ func _physics_process(delta: float) -> void:
 	var t := fmod(_time, cycle_length())
 	var offset := 0.0
 	var pitch := 0.0
+	var warning := false
 	if t < _up_time:
 		offset = 0.04 * sin(TAU * t / 1.9)   # idle bobbing
 		var warn := t - (_up_time - WARN_TIME)
 		if warn > 0.0:
-			# The tell before the dive: trembling and a dipped snout.
+			# The tell before the dive: trembling, a dipped snout and
+			# glowing red eyes.
 			offset -= 0.06 + 0.05 * sin(TAU * 7.0 * warn)
 			pitch = -0.1
+			warning = true
 	elif t < _up_time + SINK_TIME:
 		offset = -SINK_DEPTH * (t - _up_time) / SINK_TIME
 		pitch = -0.12
@@ -77,6 +84,10 @@ func _physics_process(delta: float) -> void:
 		offset = -SINK_DEPTH * (1.0 - (t - _up_time - SINK_TIME - UNDER_TIME) / SINK_TIME)
 	position.y = surface_y + offset
 	rotation.x = pitch
+	if _eye_material.emission_enabled != warning:
+		_eye_material.emission_enabled = warning
+		_eye_material.emission = Color(1.0, 0.15, 0.05)
+		_eye_material.emission_energy_multiplier = 2.5
 
 
 func _mesh_box(material: Material, size: Vector3, pos: Vector3) -> void:

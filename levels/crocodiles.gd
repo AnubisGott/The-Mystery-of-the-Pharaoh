@@ -195,9 +195,9 @@ func _build_landscape() -> void:
 	mouth.position = Vector3(0, 3.5, 13.2)
 	add_child(mouth)
 
-	# The stone ledge the player starts on: flush against the pyramid
-	# facade, but long enough that the chase camera stays out of it.
-	_add_box(Vector3(0, -0.3, 9.2), Vector3(6.0, 1.0, 6.4), FLOOR_MATERIAL)
+	# The stone ledge the player starts on: it reaches through the
+	# pyramid mouth so there is no gap to the facade at all.
+	_add_box(Vector3(0, -0.3, 9.9), Vector3(6.0, 1.0, 7.8), FLOOR_MATERIAL)
 
 	# Palms along the banks.
 	for data: Array in [[-11.0, -8.0, 4.6], [12.0, -20.0, 5.4], [-13.0, -42.0, 5.0],

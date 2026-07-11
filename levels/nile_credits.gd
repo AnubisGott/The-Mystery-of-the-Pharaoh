@@ -131,14 +131,20 @@ func _build_scene() -> void:
 	_boat = NileProps.build_boat()
 	add_child(_boat)
 
-	# The adventurer, resting on the foredeck, angled toward the camera.
+	# The adventurer lounges in a deck chair on the foredeck, sunglasses
+	# on, angled toward the camera.
+	var chair := _build_lounge_chair()
+	chair.position = Vector3(0, 1.05, -4.2)
+	chair.rotation.y = 2.5
+	_boat.add_child(chair)
 	var character: Node3D = CHARACTER.instantiate()
-	character.position = Vector3(0, 1.05, -4.2)
-	character.rotation.y = 2.5
-	_boat.add_child(character)
+	character.position = Vector3(0, 0.08, 0.32)
+	character.rotation.x = -0.45   # reclined against the backrest
+	chair.add_child(character)
 	var anim: AnimationPlayer = character.get_node("AnimationPlayer")
 	anim.get_animation("Crouch_Idle").loop_mode = Animation.LOOP_LINEAR
 	anim.play("Crouch_Idle")
+	_add_sunglasses(character)
 
 	# Smoke from the funnel.
 	var quad := QuadMesh.new()
@@ -177,6 +183,88 @@ func _build_scene() -> void:
 	add_child(cam)
 	cam.look_at(Vector3(0, 2.0, -1.5), Vector3.UP)
 	cam.current = true
+
+
+# A wooden deck chair with striped canvas, facing local +Z.
+func _build_lounge_chair() -> Node3D:
+	var wood := StandardMaterial3D.new()
+	wood.albedo_color = Color(0.5, 0.36, 0.2)
+	wood.roughness = 0.9
+	var canvas_a := StandardMaterial3D.new()
+	canvas_a.albedo_color = Color(0.85, 0.3, 0.2)
+	canvas_a.roughness = 0.95
+	var canvas_b := StandardMaterial3D.new()
+	canvas_b.albedo_color = Color(0.92, 0.88, 0.8)
+	canvas_b.roughness = 0.95
+
+	var chair := Node3D.new()
+	for corner: Vector2 in [Vector2(-0.3, 0.42), Vector2(0.3, 0.42),
+			Vector2(-0.3, -0.42), Vector2(0.3, -0.42)]:
+		var leg := MeshInstance3D.new()
+		var leg_mesh := BoxMesh.new()
+		leg_mesh.size = Vector3(0.07, 0.26, 0.07)
+		leg_mesh.material = wood
+		leg.mesh = leg_mesh
+		leg.position = Vector3(corner.x, 0.13, corner.y)
+		chair.add_child(leg)
+	# Striped canvas seat.
+	for i in 4:
+		var slat := MeshInstance3D.new()
+		var slat_mesh := BoxMesh.new()
+		slat_mesh.size = Vector3(0.66, 0.05, 0.24)
+		slat_mesh.material = canvas_a if i % 2 == 0 else canvas_b
+		slat.mesh = slat_mesh
+		slat.position = Vector3(0, 0.28, 0.38 - i * 0.24)
+		chair.add_child(slat)
+	# The tilted backrest, striped the same way.
+	for i in 4:
+		var slat := MeshInstance3D.new()
+		var slat_mesh := BoxMesh.new()
+		slat_mesh.size = Vector3(0.66, 0.24, 0.05)
+		slat_mesh.material = canvas_a if i % 2 == 0 else canvas_b
+		slat.mesh = slat_mesh
+		slat.position = Vector3(0, 0.36 + i * 0.215, -0.52 - i * 0.115)
+		slat.rotation.x = -0.5
+		chair.add_child(slat)
+	return chair
+
+
+# Black shades, attached to the head bone so they ride the idle sway.
+func _add_sunglasses(character: Node3D) -> void:
+	var skeleton: Skeleton3D = character.find_child("Skeleton3D", true, false)
+	var attach := BoneAttachment3D.new()
+	attach.bone_name = "head"
+	skeleton.add_child(attach)
+
+	var shade := StandardMaterial3D.new()
+	shade.albedo_color = Color(0.03, 0.03, 0.04)
+	shade.roughness = 0.2
+	shade.metallic = 0.4
+	var glasses := Node3D.new()
+	attach.add_child(glasses)
+	glasses.position = Vector3(0, 0.035, 0.125)
+	for data: Array in [[-0.055, 0.075], [0.055, 0.075]]:
+		var lens := MeshInstance3D.new()
+		var lens_mesh := BoxMesh.new()
+		lens_mesh.size = Vector3(data[1], 0.055, 0.02)
+		lens_mesh.material = shade
+		lens.mesh = lens_mesh
+		lens.position = Vector3(data[0], 0, 0)
+		glasses.add_child(lens)
+	var bridge := MeshInstance3D.new()
+	var bridge_mesh := BoxMesh.new()
+	bridge_mesh.size = Vector3(0.035, 0.015, 0.018)
+	bridge_mesh.material = shade
+	bridge.mesh = bridge_mesh
+	glasses.add_child(bridge)
+	for side: float in [-1.0, 1.0]:
+		var arm := MeshInstance3D.new()
+		var arm_mesh := BoxMesh.new()
+		arm_mesh.size = Vector3(0.015, 0.015, 0.13)
+		arm_mesh.material = shade
+		arm.mesh = arm_mesh
+		arm.position = Vector3(side * 0.095, 0, -0.06)
+		glasses.add_child(arm)
 
 
 func _build_credits() -> void:

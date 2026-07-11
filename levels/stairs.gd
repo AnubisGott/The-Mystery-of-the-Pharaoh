@@ -32,7 +32,11 @@ const BOULDER_SPEED: float = 7.5
 # The spawn interval ramps from easy to relentless with climb progress.
 const INTERVAL_EASY: float = 2.8
 const INTERVAL_HARD: float = 0.9
-const FIRST_BOULDER_DELAY: float = 2.5
+const FIRST_BOULDER_DELAY: float = 1.5
+# Boulders spawn this far up-slope from the player (capped at the top),
+# so the first ones arrive within seconds instead of rolling the whole
+# staircase down first.
+const SPAWN_AHEAD_Z: float = 42.0
 # Past this progress no fresh boulders spawn: the last stretch to the
 # exit stays clear.
 const CALM_PROGRESS: float = 0.9
@@ -258,8 +262,9 @@ func _spawn_boulder() -> Node3D:
 	boulder.speed = BOULDER_SPEED
 	boulder.flatten_z = STAIRS_START_Z
 	boulder.despawn_z = 5.5
+	var z := maxf(STAIRS_END_Z, to_local(player.global_position).z - SPAWN_AHEAD_Z)
 	boulder.position = Vector3(LANES[randi() % LANES.size()],
-			TOP_Y + Boulder.RADIUS, STAIRS_END_Z)
+			_ramp_y(z) + Boulder.RADIUS, z)
 	add_child(boulder)
 	boulder.player_hit.connect(_on_boulder_hit)
 	return boulder

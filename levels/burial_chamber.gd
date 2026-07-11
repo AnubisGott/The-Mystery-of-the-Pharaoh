@@ -15,7 +15,7 @@ const GlyphDial := preload("res://levels/glyph_dial.gd")
 const IntroTitle := preload("res://ui/intro_title.gd")
 
 const INTRO_HOLD: float = 1.4
-const INTERACT_RANGE: float = 2.4
+const INTERACT_RANGE: float = 1.7
 
 # Chamber frame: antechamber (8 wide) in front of the burial chamber
 # (14 wide); the pit strip of the chamber floor slides open at the end.
@@ -320,13 +320,20 @@ func _open_floor() -> void:
 	if floor_open:
 		return
 	floor_open = true
-	# A moment of silence, then the floor slides away under the player.
+	# A moment of silence, then the floor slides away under the player —
+	# and the dial sockets, standing on those slabs, tumble into the pit.
 	var tween := create_tween()
 	tween.tween_interval(0.8)
 	tween.tween_property(_pit_slabs[0], "position:x", -10.6, 1.4) \
 			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	tween.parallel().tween_property(_pit_slabs[1], "position:x", 10.6, 1.4) \
 			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	for i in _dials.size():
+		var dial: Node3D = _dials[i]
+		tween.parallel().tween_property(dial, "position:y", dial.position.y - 12.0, 1.3) \
+				.set_delay(0.5).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		tween.parallel().tween_property(dial, "rotation:x", 0.9 - 0.4 * i, 1.3) \
+				.set_delay(0.5)
 
 
 func _on_god_mode_changed(enabled: bool) -> void:

@@ -854,6 +854,12 @@ func test_stairs_difficulty_ramps_with_height() -> void:
 			"a boulder spawned in the calm final stretch")
 	stairs._boulder_timer.stop()
 
+	# Boulders spawn a stretch above the player, not at the distant top.
+	stairs_player.global_position = stairs.to_global(Vector3(0, 1.0, 3.0))
+	var near: Node3D = stairs._spawn_boulder()
+	_check(near.position.z > -50.0,
+			"boulder spawned too far up the stairs: z=%f" % near.position.z)
+
 	stairs.queue_free()
 	await get_tree().physics_frame
 
@@ -935,10 +941,12 @@ func test_burial_dials_open_the_floor() -> void:
 		dial.interact()
 		await get_tree().physics_frame
 
-	for i in 160:
+	for i in 220:
 		await get_tree().physics_frame
 	_check(chamber.floor_open, "all dials turned but the floor stayed shut")
 	_check(absf(chamber._pit_slabs[0].position.x) > 8.0, "pit slab did not slide away")
+	for dial in chamber._dials:
+		_check(dial.position.y < -5.0, "dial socket did not fall into the pit")
 
 	var end_zone: Area3D = chamber.get_node("EndZone")
 	_check(chamber.to_local(end_zone.global_position).y < -8.0,
