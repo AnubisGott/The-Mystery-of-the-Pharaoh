@@ -7,9 +7,12 @@ extends AnimatableBody3D
 
 const SINK_DEPTH: float = 1.7
 const SINK_TIME: float = 0.7
-const UNDER_TIME: float = 2.2
-# Shortly before diving the croc trembles and dips its snout.
+const UNDER_TIME: float = 1.4
+# Shortly before diving the croc dips its snout and its eyes glow.
 const WARN_TIME: float = 0.9
+# How long each croc floats on the surface (rolled per croc).
+const UP_TIME_MIN: float = 4.5
+const UP_TIME_MAX: float = 7.0
 
 # Set by the level before adding to the tree.
 var surface_y: float = -0.15
@@ -22,7 +25,7 @@ var _eye_material: StandardMaterial3D
 
 func _ready() -> void:
 	add_to_group("crocodiles")
-	_up_time = randf_range(3.2, 5.4)
+	_up_time = randf_range(UP_TIME_MIN, UP_TIME_MAX)
 	_time = randf() * cycle_length()
 	sync_to_physics = false
 
