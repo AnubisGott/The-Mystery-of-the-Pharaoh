@@ -1113,7 +1113,11 @@ func test_croc_water_kills_and_resets() -> void:
 			died = true
 			break
 	_check(died, "falling into the Nile did not kill")
+	# Exactly ONE sound: the splash. No whistle, no fall cry, no hit.
 	_check(crocs._splash_player.playing, "going under made no splash sound")
+	_check(not crocs_player._whistle_player.playing, "fall whistle played on drowning")
+	_check(not crocs_player._fall_player.playing, "fall cry played on drowning")
+	_check(not crocs_player._hit_player.playing, "hit sound played on drowning")
 	crocs.queue_free()
 	await get_tree().physics_frame
 
