@@ -61,6 +61,13 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if _intro_running:
 		return
+	# The falling-down sound as the player drops into the pit (the
+	# player's own whistle logic may be off during the pull).
+	if floor_open and player._whistle_player != null \
+			and not player._whistle_played \
+			and to_local(player.global_position).y < -1.0:
+		player._whistle_player.play()
+		player._whistle_played = true
 	if _pulling:
 		# Walk the player into the open pit, wherever they stand.
 		var target := to_global(Vector3(0, 0, (PIT_FROM_Z + PIT_TO_Z) / 2.0))
@@ -253,7 +260,7 @@ func _build_furniture() -> void:
 		dial.position = data[0]
 		dial.rotation.y = data[1]
 		add_child(dial)
-		dial.turned.connect(_on_dial_turned)
+		dial.solved.connect(_on_dial_solved)
 		_dials.append(dial)
 
 	var glyph_walls: Array = [
@@ -332,7 +339,7 @@ func _open_door() -> void:
 			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
-func _on_dial_turned() -> void:
+func _on_dial_solved() -> void:
 	_turned_count += 1
 	if _turned_count >= _dials.size():
 		_open_floor()

@@ -940,8 +940,17 @@ func test_burial_bowls_open_the_door() -> void:
 func test_burial_dials_open_the_floor() -> void:
 	var chamber := await _spawn_burial()
 	var chamber_player: CharacterBody3D = chamber.get_node("Player")
+
+	# One turn each is not enough: each wheel must complete TWO turns
+	# to sit in the right position.
 	for dial in chamber._dials:
-		_check(not chamber.floor_open, "floor opened before all dials were turned")
+		dial.interact()
+	for i in 60:
+		await get_tree().physics_frame
+	_check(not chamber.floor_open, "floor opened before the wheels reached their position")
+
+	for dial in chamber._dials:
+		_check(not chamber.floor_open, "floor opened before all dials were solved")
 		dial.interact()
 		await get_tree().physics_frame
 
@@ -1104,6 +1113,7 @@ func test_croc_water_kills_and_resets() -> void:
 			died = true
 			break
 	_check(died, "falling into the Nile did not kill")
+	_check(crocs._splash_player.playing, "going under made no splash sound")
 	crocs.queue_free()
 	await get_tree().physics_frame
 

@@ -13,6 +13,7 @@ const SAND_ROUGHNESS: Texture2D = preload("res://textures/aerial_sand_rough_1k.j
 const SAND_NORMAL: Texture2D = preload("res://textures/aerial_sand_nor_gl_1k.jpg")
 const Crocodile := preload("res://hazards/crocodile.gd")
 const IntroTitle := preload("res://ui/intro_title.gd")
+const SPLASH_SOUND: AudioStream = preload("res://sounds/splash_blub.wav")
 
 const INTRO_HOLD: float = 1.4
 
@@ -36,6 +37,7 @@ const GAP_FAR: float = 3.4
 
 var _spawn_transform: Transform3D
 var _croc_positions: Array[Vector3] = []
+var _splash_player: AudioStreamPlayer
 var _intro_running: bool = false
 var _intro_skip: bool = false
 var _intro_can_skip: bool = false
@@ -49,6 +51,11 @@ func _ready() -> void:
 	_build_crocs()
 	_build_jetty_and_boat()
 
+	_splash_player = AudioStreamPlayer.new()
+	_splash_player.stream = SPLASH_SOUND
+	_splash_player.volume_db = -4.0
+	add_child(_splash_player)
+
 	god_label.visible = GameManager.god_mode
 	GameManager.god_mode_changed.connect(_on_god_mode_changed)
 
@@ -58,6 +65,8 @@ func _ready() -> void:
 
 func _physics_process(_delta: float) -> void:
 	if to_local(player.global_position).y < KILL_CENTER_Y and not player.is_dying():
+		# Blub blub blub: going under is audible.
+		_splash_player.play()
 		if GameManager.god_mode:
 			player.reset_to_start(_spawn_transform)
 		else:

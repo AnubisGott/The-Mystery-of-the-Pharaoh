@@ -70,11 +70,12 @@ func _physics_process(delta: float) -> void:
 		offset = 0.04 * sin(TAU * t / 1.9)   # idle bobbing
 		var warn := t - (_up_time - WARN_TIME)
 		if warn > 0.0:
-			# The tell before the dive: a steady dipped snout and glowing
-			# red eyes. Steady on purpose — a trembling platform makes
-			# is_on_floor() flicker and eats the escape jump.
-			offset -= 0.08
-			pitch = -0.1
+			# The tell before the dive: a dipped snout and glowing red
+			# eyes. The dip ramps in gently — any sudden or trembling
+			# platform motion makes is_on_floor() flicker and eats the
+			# escape jump.
+			offset -= 0.08 * minf(warn / 0.25, 1.0)
+			pitch = -0.1 * minf(warn / 0.25, 1.0)
 			warning = true
 	elif t < _up_time + SINK_TIME:
 		# Ease into the dive: the first tenths are slow, so a well-timed
