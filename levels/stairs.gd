@@ -20,7 +20,7 @@ const INTRO_HOLD: float = 1.4
 # and a flat top platform with the exit.
 const SLOPE: float = 0.35
 const STAIRS_START_Z: float = -2.0
-const STAIRS_END_Z: float = -82.0
+const STAIRS_END_Z: float = -112.0
 const STEP_RUN: float = 0.5
 const STEP_RISE: float = STEP_RUN * SLOPE
 const CORRIDOR_WIDTH: float = 4.4
@@ -28,11 +28,14 @@ const WALL_HEIGHT: float = 4.5
 const TOP_Y: float = (STAIRS_START_Z - STAIRS_END_Z) * SLOPE
 
 const LANES: Array[float] = [-1.4, 0.0, 1.4]
-const BOULDER_SPEED: float = 7.0
+const BOULDER_SPEED: float = 7.5
 # The spawn interval ramps from easy to relentless with climb progress.
-const INTERVAL_EASY: float = 3.4
-const INTERVAL_HARD: float = 1.2
+const INTERVAL_EASY: float = 2.8
+const INTERVAL_HARD: float = 0.9
 const FIRST_BOULDER_DELAY: float = 2.5
+# Past this progress no fresh boulders spawn: the last stretch to the
+# exit stays clear.
+const CALM_PROGRESS: float = 0.9
 
 @onready var player: CharacterBody3D = $Player
 @onready var god_label: Label = $ControlsHint/Root/GodLabel
@@ -44,6 +47,7 @@ var _spawn_transform: Transform3D
 var _boulder_timer: Timer
 var _intro_running: bool = false
 var _intro_skip: bool = false
+var _intro_can_skip: bool = false
 
 
 func _ready() -> void:
@@ -79,7 +83,11 @@ func _physics_process(_delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _intro_running and event.is_pressed() \
+	# Skip the intro on a fresh key or click - but not on key repeats
+	# or input left over from finishing the previous level (a short
+	# grace period swallows those).
+	if _intro_running and _intro_can_skip and event.is_pressed() \
+			and not event.is_echo() \
 			and (event is InputEventKey or event is InputEventMouseButton):
 		_intro_skip = true
 
@@ -237,7 +245,10 @@ func _spawn_interval(progress: float) -> float:
 
 
 func _on_boulder_timer_timeout() -> void:
-	_spawn_boulder()
+	# The final stretch stays boulder-free so the arrival at the top is
+	# never cheap-shotted from point-blank range.
+	if _progress() < CALM_PROGRESS:
+		_spawn_boulder()
 	_boulder_timer.start(_spawn_interval(_progress()) * randf_range(0.85, 1.15))
 
 
@@ -279,6 +290,7 @@ func _on_god_mode_changed(enabled: bool) -> void:
 func _play_intro(duration: float = 4.0) -> void:
 	_intro_running = true
 	_intro_skip = false
+	_intro_can_skip = false
 	player.set_physics_process(false)
 	player.set_process_unhandled_input(false)
 	var pause_menu: Node = get_node_or_null("PauseMenu")
@@ -302,6 +314,7 @@ func _play_intro(duration: float = 4.0) -> void:
 		# The level can be torn down mid-intro (scene change); bail out.
 		if not is_inside_tree():
 			return
+		_intro_can_skip = elapsed > 0.6
 		var t := elapsed / duration
 		# The boulder rolls a short stretch in slow motion.
 		var z := lerpf(-38.0, -27.0, t)

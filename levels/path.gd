@@ -62,6 +62,7 @@ var _practice_timer: Timer
 var _practice_high: bool = false
 var _intro_running: bool = false
 var _intro_skip: bool = false
+var _intro_can_skip: bool = false
 
 
 func _ready() -> void:
@@ -113,7 +114,11 @@ func _start_spear_timers() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _intro_running and event.is_pressed() \
+	# Skip the intro on a fresh key or click - but not on key repeats
+	# or input left over from finishing the previous level (a short
+	# grace period swallows those).
+	if _intro_running and _intro_can_skip and event.is_pressed() \
+			and not event.is_echo() \
 			and (event is InputEventKey or event is InputEventMouseButton):
 		_intro_skip = true
 
@@ -124,6 +129,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _play_intro(duration: float = 4.0) -> void:
 	_intro_running = true
 	_intro_skip = false
+	_intro_can_skip = false
 	player.set_physics_process(false)
 	player.set_process_unhandled_input(false)
 	var pause_menu: Node = get_node_or_null("PauseMenu")
@@ -150,6 +156,7 @@ func _play_intro(duration: float = 4.0) -> void:
 		# The level can be torn down mid-intro (scene change); bail out.
 		if not is_inside_tree():
 			return
+		_intro_can_skip = elapsed > 0.6
 		var t := elapsed / duration
 		# The spear crosses the path in slow motion, grazing duck height.
 		spear.global_position = feet + Vector3(lerpf(-8.0, 8.0, t), 1.45, 0.0)

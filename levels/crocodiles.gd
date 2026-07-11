@@ -37,6 +37,7 @@ var _spawn_transform: Transform3D
 var _croc_positions: Array[Vector3] = []
 var _intro_running: bool = false
 var _intro_skip: bool = false
+var _intro_can_skip: bool = false
 
 
 func _ready() -> void:
@@ -63,7 +64,11 @@ func _physics_process(_delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _intro_running and event.is_pressed() \
+	# Skip the intro on a fresh key or click - but not on key repeats
+	# or input left over from finishing the previous level (a short
+	# grace period swallows those).
+	if _intro_running and _intro_can_skip and event.is_pressed() \
+			and not event.is_echo() \
 			and (event is InputEventKey or event is InputEventMouseButton):
 		_intro_skip = true
 
@@ -190,9 +195,9 @@ func _build_landscape() -> void:
 	mouth.position = Vector3(0, 3.5, 13.2)
 	add_child(mouth)
 
-	# The stone ledge the player starts on, in front of the pyramid mouth
-	# (far enough out that the chase camera stays clear of the facade).
-	_add_box(Vector3(0, -0.3, 8.5), Vector3(6.0, 1.0, 5.0), FLOOR_MATERIAL)
+	# The stone ledge the player starts on: flush against the pyramid
+	# facade, but long enough that the chase camera stays out of it.
+	_add_box(Vector3(0, -0.3, 9.2), Vector3(6.0, 1.0, 6.4), FLOOR_MATERIAL)
 
 	# Palms along the banks.
 	for data: Array in [[-11.0, -8.0, 4.6], [12.0, -20.0, 5.4], [-13.0, -42.0, 5.0],
@@ -207,14 +212,19 @@ func _build_landscape() -> void:
 func _build_crocs() -> void:
 	var z := 5.0
 	for i in CROC_COUNT:
-		var x := sin(float(i) * 1.7) * 1.3
+		# The first three crocs float in a tight straight row, an easy
+		# warm-up right off the ledge; after that they scatter and the
+		# gaps open up.
+		var in_row := i < 3
+		var x := 0.0 if in_row else sin(float(i) * 1.7) * 1.3
 		var croc: AnimatableBody3D = Crocodile.new()
 		croc.surface_y = -0.15
 		croc.position = Vector3(x, -0.15, z)
-		croc.rotation.y = sin(float(i) * 2.3) * 0.25
+		croc.rotation.y = 0.0 if in_row else sin(float(i) * 2.3) * 0.25
 		add_child(croc)
 		_croc_positions.append(Vector3(x, -0.15, z))
-		var gap := lerpf(GAP_NEAR, GAP_FAR, float(i) / float(CROC_COUNT - 1))
+		var gap := 1.3 if in_row \
+				else lerpf(GAP_NEAR, GAP_FAR, float(i) / float(CROC_COUNT - 1))
 		z -= CROC_LENGTH + gap
 
 
@@ -282,6 +292,7 @@ func _on_god_mode_changed(enabled: bool) -> void:
 func _play_intro(duration: float = 4.0) -> void:
 	_intro_running = true
 	_intro_skip = false
+	_intro_can_skip = false
 	player.set_physics_process(false)
 	player.set_process_unhandled_input(false)
 	var pause_menu: Node = get_node_or_null("PauseMenu")
@@ -302,6 +313,7 @@ func _play_intro(duration: float = 4.0) -> void:
 	while elapsed < duration and not _intro_skip:
 		if not is_inside_tree():
 			return
+		_intro_can_skip = elapsed > 0.6
 		var t := elapsed / duration
 		cam.fov = 68.0 - 24.0 * sin(PI * t)
 		cam.global_position = to_global(Vector3(

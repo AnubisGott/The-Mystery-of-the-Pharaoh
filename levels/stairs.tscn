@@ -17,7 +17,7 @@ sprint_allowed = true
 visual_lift = 0.0
 
 [node name="WinZone" type="Area3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 29.2, -88.8)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 39.7, -118.8)
 script = ExtResource("3")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="WinZone"]

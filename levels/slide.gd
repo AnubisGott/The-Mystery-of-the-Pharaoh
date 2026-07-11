@@ -46,6 +46,7 @@ var _spawn_transform: Transform3D
 var _sliding: bool = false
 var _intro_running: bool = false
 var _intro_skip: bool = false
+var _intro_can_skip: bool = false
 
 
 func _ready() -> void:
@@ -58,9 +59,11 @@ func _ready() -> void:
 	GameManager.god_mode_changed.connect(_on_god_mode_changed)
 
 	# The slide drives the body itself; the player only reads the mouse.
+	# The pose is the crouch from the first frame on, and again after
+	# every respawn (die_and_reset ends on "Idle").
 	player.set_physics_process(false)
-	var anim: AnimationPlayer = player.get_node("Visual/AnimationPlayer")
-	anim.play("Crouch_Idle", 0.2)
+	player.get_node("Visual/AnimationPlayer").play("Crouch_Idle")
+	player.respawned.connect(_on_player_respawned)
 
 	if intro_enabled and DisplayServer.get_name() != "headless":
 		_play_intro()
@@ -96,16 +99,24 @@ func _physics_process(delta: float) -> void:
 	player.velocity = v
 	player.move_and_slide()
 
-	# The player's own camera-height logic is off with its physics;
-	# mirror it so the camera rides the chute down.
-	if player.is_on_floor():
-		player._camera_base_y = lerpf(player._camera_base_y,
-				player._camera_target_y(), minf(delta * 10.0, 1.0))
+	# The camera rides the chute line rather than the jump arc: freezing
+	# it while airborne (the flat-level rule) let long forward jumps
+	# carry it into the ceiling as the chute dropped away beneath.
+	var chute_head: float = to_global(Vector3(0, _ramp_y(lp.z), lp.z)).y + 1.55
+	player._camera_base_y = lerpf(player._camera_base_y, chute_head, minf(delta * 10.0, 1.0))
 	player.camera_pivot.global_position.y = player._camera_base_y
 
 
+func _on_player_respawned() -> void:
+	player.get_node("Visual/AnimationPlayer").play("Crouch_Idle", 0.1)
+
+
 func _unhandled_input(event: InputEvent) -> void:
-	if _intro_running and event.is_pressed() \
+	# Skip the intro on a fresh key or click - but not on key repeats
+	# or input left over from finishing the previous level (a short
+	# grace period swallows those).
+	if _intro_running and _intro_can_skip and event.is_pressed() \
+			and not event.is_echo() \
 			and (event is InputEventKey or event is InputEventMouseButton):
 		_intro_skip = true
 
@@ -270,6 +281,7 @@ func _on_god_mode_changed(enabled: bool) -> void:
 func _play_intro(duration: float = 4.0) -> void:
 	_intro_running = true
 	_intro_skip = false
+	_intro_can_skip = false
 	player.set_process_unhandled_input(false)
 	var pause_menu: Node = get_node_or_null("PauseMenu")
 	if pause_menu:
@@ -289,6 +301,7 @@ func _play_intro(duration: float = 4.0) -> void:
 	while elapsed < duration and not _intro_skip:
 		if not is_inside_tree():
 			return
+		_intro_can_skip = elapsed > 0.6
 		var t := elapsed / duration
 		cam.fov = 68.0 - 24.0 * sin(PI * t)
 		var cam_z := -2.0 - 6.0 * t

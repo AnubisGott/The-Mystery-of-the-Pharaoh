@@ -2,9 +2,9 @@ extends Node3D
 
 # Level 4: The Burial Chamber. The player lights the two fire bowls
 # flanking the locked door (F/E) to open it, then finds the burial
-# chamber: the sarcophagus of Tut-Ench-Amun, an Anubis statue and
-# three hieroglyph dials. Turning every dial at least once opens the
-# floor — the player falls through, and the level ends.
+# chamber: the sarcophagus of Tut-Ench-Amun, an Anubis statue and two
+# hieroglyph dials beside the pit strip. Turning both dials at least
+# once opens the floor — the player falls through, and the level ends.
 
 const LEVEL_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel02.mp3")
 const WALL_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_sphinx.tres")
@@ -40,6 +40,7 @@ var _pit_slabs: Array[AnimatableBody3D] = []
 var _turned_count: int = 0
 var _intro_running: bool = false
 var _intro_skip: bool = false
+var _intro_can_skip: bool = false
 
 
 func _ready() -> void:
@@ -77,7 +78,11 @@ func _physics_process(_delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _intro_running and event.is_pressed() \
+	# Skip the intro on a fresh key or click - but not on key repeats
+	# or input left over from finishing the previous level (a short
+	# grace period swallows those).
+	if _intro_running and _intro_can_skip and event.is_pressed() \
+			and not event.is_echo() \
 			and (event is InputEventKey or event is InputEventMouseButton):
 		_intro_skip = true
 
@@ -215,11 +220,10 @@ func _build_furniture() -> void:
 	_prop_box(anubis, black, Vector3(0.14, 0.55, 0.08), Vector3(-0.16, 2.85, -0.1))
 	_prop_box(anubis, black, Vector3(0.14, 0.55, 0.08), Vector3(0.16, 2.85, -0.1))
 
-	# The three dials and their matching wall glyphs.
+	# The two dials flanking the pit strip, and the wall glyphs.
 	var dial_data: Array = [
 		[Vector3(-5.9, 0, -12.0), -PI / 2.0, 0],
 		[Vector3(5.9, 0, -12.0), PI / 2.0, 1],
-		[Vector3(4.5, 0, -21.2), 0.0, 2],
 	]
 	for data: Array in dial_data:
 		var dial := GlyphDial.new()
@@ -337,6 +341,7 @@ func _on_god_mode_changed(enabled: bool) -> void:
 func _play_intro(duration: float = 4.0) -> void:
 	_intro_running = true
 	_intro_skip = false
+	_intro_can_skip = false
 	player.set_physics_process(false)
 	player.set_process_unhandled_input(false)
 	var pause_menu: Node = get_node_or_null("PauseMenu")
@@ -357,6 +362,7 @@ func _play_intro(duration: float = 4.0) -> void:
 	while elapsed < duration and not _intro_skip:
 		if not is_inside_tree():
 			return
+		_intro_can_skip = elapsed > 0.6
 		var t := elapsed / duration
 		cam.fov = 66.0 - 22.0 * sin(PI * t)
 		cam.global_position = to_global(Vector3(

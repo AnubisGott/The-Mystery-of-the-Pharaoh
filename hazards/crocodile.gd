@@ -8,6 +8,8 @@ extends AnimatableBody3D
 const SINK_DEPTH: float = 1.7
 const SINK_TIME: float = 0.7
 const UNDER_TIME: float = 2.2
+# Shortly before diving the croc trembles and dips its snout.
+const WARN_TIME: float = 0.9
 
 # Set by the level before adding to the tree.
 var surface_y: float = -0.15
@@ -58,15 +60,23 @@ func _physics_process(delta: float) -> void:
 	_time += delta
 	var t := fmod(_time, cycle_length())
 	var offset := 0.0
+	var pitch := 0.0
 	if t < _up_time:
 		offset = 0.04 * sin(TAU * t / 1.9)   # idle bobbing
+		var warn := t - (_up_time - WARN_TIME)
+		if warn > 0.0:
+			# The tell before the dive: trembling and a dipped snout.
+			offset -= 0.06 + 0.05 * sin(TAU * 7.0 * warn)
+			pitch = -0.1
 	elif t < _up_time + SINK_TIME:
 		offset = -SINK_DEPTH * (t - _up_time) / SINK_TIME
+		pitch = -0.12
 	elif t < _up_time + SINK_TIME + UNDER_TIME:
 		offset = -SINK_DEPTH
 	else:
 		offset = -SINK_DEPTH * (1.0 - (t - _up_time - SINK_TIME - UNDER_TIME) / SINK_TIME)
 	position.y = surface_y + offset
+	rotation.x = pitch
 
 
 func _mesh_box(material: Material, size: Vector3, pos: Vector3) -> void:

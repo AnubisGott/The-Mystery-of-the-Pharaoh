@@ -61,7 +61,10 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_pressed() and (event is InputEventKey or event is InputEventMouseButton):
+	# Leave for the menu on a fresh key or click — ignoring key repeats
+	# and input left over from the sprint onto the boat.
+	if _time > 1.0 and event.is_pressed() and not event.is_echo() \
+			and (event is InputEventKey or event is InputEventMouseButton):
 		GameManager.show_main_menu()
 
 
@@ -128,10 +131,10 @@ func _build_scene() -> void:
 	_boat = NileProps.build_boat()
 	add_child(_boat)
 
-	# The adventurer, resting on the foredeck.
+	# The adventurer, resting on the foredeck, angled toward the camera.
 	var character: Node3D = CHARACTER.instantiate()
-	character.position = Vector3(0, 1.1, -3.4)
-	character.rotation.y = PI
+	character.position = Vector3(0, 1.05, -4.2)
+	character.rotation.y = 2.5
 	_boat.add_child(character)
 	var anim: AnimationPlayer = character.get_node("AnimationPlayer")
 	anim.get_animation("Crouch_Idle").loop_mode = Animation.LOOP_LINEAR
@@ -170,9 +173,9 @@ func _build_scene() -> void:
 
 	var cam := Camera3D.new()
 	cam.fov = 55.0
-	cam.position = Vector3(9.5, 3.4, 9.0)
+	cam.position = Vector3(8.0, 3.0, -9.5)
 	add_child(cam)
-	cam.look_at(Vector3(0, 2.4, 0), Vector3.UP)
+	cam.look_at(Vector3(0, 2.0, -1.5), Vector3.UP)
 	cam.current = true
 
 

@@ -834,8 +834,17 @@ func test_stairs_difficulty_ramps_with_height() -> void:
 	var stairs_player: CharacterBody3D = stairs.get_node("Player")
 	_check(stairs._progress() < 0.05, "progress not zero at the bottom")
 	stairs_player.global_position = stairs.to_global(
-			Vector3(0, stairs._ramp_y(-42.0) + 1.0, -42.0))
+			Vector3(0, stairs._ramp_y(-57.0) + 1.0, -57.0))
 	_check(absf(stairs._progress() - 0.5) < 0.05, "progress wrong mid-climb")
+
+	# The final stretch stays clear: no fresh boulders near the top.
+	stairs_player.global_position = stairs.to_global(
+			Vector3(0, stairs._ramp_y(-108.0) + 1.0, -108.0))
+	var before := get_tree().get_nodes_in_group("boulders").size()
+	stairs._on_boulder_timer_timeout()
+	_check(get_tree().get_nodes_in_group("boulders").size() == before,
+			"a boulder spawned in the calm final stretch")
+	stairs._boulder_timer.stop()
 
 	stairs.queue_free()
 	await get_tree().physics_frame
