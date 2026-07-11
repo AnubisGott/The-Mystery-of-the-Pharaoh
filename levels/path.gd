@@ -27,6 +27,9 @@ const SPEAR_MAX_INTERVAL: float = 3.0
 # Practice near the start: spears alternate low (jump) and high (duck)
 # in a fixed rhythm. Random spears only begin past the practice zone.
 const PRACTICE_INTERVAL: float = 2.4
+# A longer, gentler lead-in before the very first spear so the player can
+# settle in; regular practice spacing takes over afterwards.
+const INITIAL_SPEAR_DELAY: float = 5.0
 const RANDOM_SPEARS_START_Z: float = 18.0
 
 @onready var player: CharacterBody3D = $Player
@@ -66,7 +69,7 @@ func _ready() -> void:
 	_restart_spear_timer()
 
 	_practice_timer = Timer.new()
-	_practice_timer.wait_time = PRACTICE_INTERVAL
+	_practice_timer.wait_time = INITIAL_SPEAR_DELAY
 	_practice_timer.timeout.connect(_on_practice_timer_timeout)
 	add_child(_practice_timer)
 	_practice_timer.start()
@@ -120,6 +123,8 @@ func _on_spear_timer_timeout() -> void:
 
 
 func _on_practice_timer_timeout() -> void:
+	# After the long lead-in, drop back to the regular practice cadence.
+	_practice_timer.wait_time = PRACTICE_INTERVAL
 	if spear_layer.has_active_spears():
 		return
 	spear_layer.spawn_spear(_practice_high, _practice_high)

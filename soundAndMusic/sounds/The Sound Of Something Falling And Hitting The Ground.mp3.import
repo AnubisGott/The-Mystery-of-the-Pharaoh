@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://ddgarjbdd51ws"
+path="res://.godot/imported/The Sound Of Something Falling And Hitting The Ground.mp3-390569c75e7e129739c117d96dda5ada.mp3str"
+
+[deps]
+
+source_file="res://soundAndMusic/sounds/The Sound Of Something Falling And Hitting The Ground.mp3"
+dest_files=["res://.godot/imported/The Sound Of Something Falling And Hitting The Ground.mp3-390569c75e7e129739c117d96dda5ada.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

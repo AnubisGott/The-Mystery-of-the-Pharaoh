@@ -39,6 +39,9 @@ const LOOPED_CLIPS: Array[String] = [
 @onready var _anim: AnimationPlayer = $Visual/AnimationPlayer
 @onready var _footstep_player: AudioStreamPlayer = $FootstepPlayer
 @onready var _hit_player: AudioStreamPlayer = $HitPlayer
+# Optional: a distinct cry for falling deaths (present on the Level-2
+# player). Falls back to the spear-hit sound where it is absent.
+@onready var _fall_player: AudioStreamPlayer = get_node_or_null("FallPlayer")
 
 var _pitch: float = 0.0
 var _yaw: float = 0.0
@@ -149,21 +152,24 @@ func die_and_reset(spawn: Transform3D, hit_high: bool = true, animate: bool = tr
 		return
 
 	_is_dying = true
-	_hit_player.play()
 	velocity = Vector3.ZERO
 
 	var tween := create_tween()
 	if animate:
-		# The forward slam is longer, play it faster so both deaths
-		# restart at a similar pace. The wait derives from the clip
-		# length (they differ per character), plus a beat on the ground.
+		# Hit by a spear/pendulum: the impact sound, then the death clip.
+		# The forward slam is longer, play it faster so both deaths restart
+		# at a similar pace. The wait derives from the clip length (they
+		# differ per character), plus a beat on the ground.
+		_hit_player.play()
 		var clip := "Death_B" if hit_high else "Death_A"
 		var speed := 1.5 if hit_high else 1.0
 		_anim.speed_scale = speed
 		_anim.play(clip, 0.1)
 		tween.tween_interval(clampf(_anim.get_animation(clip).length / speed + 0.35, 0.8, 2.2))
 	else:
-		# Falling into a pit: keep the airborne flail, just a short beat.
+		# Falling into a pit: the falling/impact cry, keep the airborne
+		# flail, then a short beat before respawning.
+		(_fall_player if _fall_player else _hit_player).play()
 		tween.tween_interval(0.4)
 	tween.tween_callback(_finish_death.bind(spawn))
 

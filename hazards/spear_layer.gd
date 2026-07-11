@@ -5,11 +5,16 @@ signal player_hit(hit_high: bool)
 const Spear2D := preload("res://hazards/spear_2d.gd")
 
 const SPEAR_SPEED: float = 900.0
+# The first spears fly slowly and each one is a little faster, reaching
+# the full speed on the RAMP_COUNT-th spear, so the player can ease in.
+const SPEAR_SPEED_FIRST: float = 430.0
+const RAMP_COUNT: int = 8
 # World-space heights above the character's feet; projected to screen
 # at spawn time so the lanes track the character at any camera pitch.
-# The hat sits at ~2.1-2.4 m; ducking (1.3 m) passes well underneath.
-const LOW_ANKLE_HEIGHT: float = 0.25
-const HIGH_HAT_HEIGHT: float = 2.05
+# Tuned to the Level-1 archaeologist: the high spear grazes the hat brim
+# (~1.75 m) and the low spear the ankles (~0.12 m).
+const LOW_ANKLE_HEIGHT: float = 0.12
+const HIGH_HAT_HEIGHT: float = 1.80
 const OFFSCREEN_MARGIN: float = 120.0
 
 # Drawn spear extent around its origin (see spear_2d.gd _draw).
@@ -18,6 +23,8 @@ const SPEAR_TAIL: float = 80.0
 const CHARACTER_HALF_WIDTH: float = 35.0
 
 @onready var player: CharacterBody3D = $"../Player"
+
+var _spawn_count: int = 0
 
 
 func has_active_spears() -> bool:
@@ -32,7 +39,10 @@ func spawn_spear(is_high: bool, from_left: bool) -> void:
 	var spear := Spear2D.new()
 	spear.is_high = is_high
 	spear.direction = 1.0 if from_left else -1.0
-	spear.speed = SPEAR_SPEED
+	# Ramp the speed up over the first RAMP_COUNT spears.
+	var t := clampf(float(_spawn_count) / float(RAMP_COUNT - 1), 0.0, 1.0)
+	spear.speed = lerpf(SPEAR_SPEED_FIRST, SPEAR_SPEED, t)
+	_spawn_count += 1
 	spear.scale.x = spear.direction
 	spear.position = Vector2(
 		-OFFSCREEN_MARGIN if from_left else view_size.x + OFFSCREEN_MARGIN,
