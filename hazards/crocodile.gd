@@ -3,7 +3,11 @@ extends AnimatableBody3D
 # A crocodile floating in the Nile, used as a stepping stone. Each one
 # runs its own surface/sink cycle with a random phase and period; while
 # it is under, whoever stood on it is in the water. The collision box
-# is the croc's back, just above the waterline.
+# is the croc's back, just above the waterline. The body is the
+# generated low-poly model (tools/blender/make_crocodile.py); its
+# separate "Eyes" mesh gets a per-croc material for the warning glow.
+
+const CROC_SCENE: PackedScene = preload("res://models/crocodile.glb")
 
 const SINK_DEPTH: float = 1.7
 const SINK_TIME: float = 0.7
@@ -35,25 +39,16 @@ func _ready() -> void:
 	collision.shape = shape
 	add_child(collision)
 
-	var green := StandardMaterial3D.new()
-	green.albedo_color = Color(0.2, 0.34, 0.16)
-	green.roughness = 0.9
-	var belly := StandardMaterial3D.new()
-	belly.albedo_color = Color(0.35, 0.4, 0.25)
-	belly.roughness = 0.9
-	var dark := StandardMaterial3D.new()
-	dark.albedo_color = Color(0.1, 0.14, 0.07)
+	add_child(CROC_SCENE.instantiate())
 
-	_mesh_box(green, Vector3(0.95, 0.4, 2.0), Vector3(0, -0.05, 0.1))
-	_mesh_box(belly, Vector3(0.6, 0.28, 0.85), Vector3(0, 0.0, -1.25))
-	_mesh_box(green, Vector3(0.45, 0.22, 1.1), Vector3(0, -0.1, 1.6))
-	for i in 3:
-		_mesh_box(dark, Vector3(0.12, 0.12, 0.5), Vector3(0, 0.18, -0.4 + i * 0.6))
-	# The eyes get their own material so they can glow red as a warning.
-	_eye_material = StandardMaterial3D.new()
-	_eye_material.albedo_color = Color(0.1, 0.14, 0.07)
-	_mesh_box(_eye_material, Vector3(0.1, 0.12, 0.1), Vector3(-0.22, 0.18, -1.05))
-	_mesh_box(_eye_material, Vector3(0.1, 0.12, 0.1), Vector3(0.22, 0.18, -1.05))
+	# The eyes get their own per-croc material so they can glow red as a
+	# warning; the GLB keeps them as a separate "Eyes" mesh for this.
+	for mesh in find_children("*", "MeshInstance3D", true, false):
+		if String(mesh.name).begins_with("Eyes"):
+			var eye_mesh := mesh as MeshInstance3D
+			_eye_material = eye_mesh.get_active_material(0).duplicate()
+			eye_mesh.set_surface_override_material(0, _eye_material)
+			break
 
 
 func cycle_length() -> float:
@@ -96,13 +91,3 @@ func _physics_process(delta: float) -> void:
 		_eye_material.emission_enabled = warning
 		_eye_material.emission = Color(1.0, 0.15, 0.05)
 		_eye_material.emission_energy_multiplier = 2.5
-
-
-func _mesh_box(material: Material, size: Vector3, pos: Vector3) -> void:
-	var mesh := MeshInstance3D.new()
-	var box := BoxMesh.new()
-	box.size = size
-	box.material = material
-	mesh.mesh = box
-	mesh.position = pos
-	add_child(mesh)
