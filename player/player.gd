@@ -17,13 +17,20 @@ const DUCK_HEIGHT: float = 1.3
 # overlays (the 2D spears) visibly fly straight.
 const CAMERA_HEIGHT: float = 2.3
 
+# The GLB imports every clip as one-shot; these cycle while they play.
+const LOOPED_CLIPS: Array[String] = [
+	"Idle", "Walking_A", "Running_A", "Jump_Idle", "Crouch_Idle", "Crouch_Walk",
+]
+# Ground speed at which each cycle plays at 1x; faster movement speeds the
+# clip up proportionally so the stride roughly tracks the floor.
+const WALK_STRIDE_SPEED: float = 3.0
+const RUN_STRIDE_SPEED: float = 5.5
+const CROUCH_STRIDE_SPEED: float = 2.0
+
 @onready var camera_pivot: Node3D = $CameraPivot
 @onready var collision_shape: CollisionShape3D = $CollisionShape3D
 @onready var visual: Node3D = $Visual
-@onready var _leg_l: Node3D = $Visual/LegL
-@onready var _leg_r: Node3D = $Visual/LegR
-@onready var _arm_l: Node3D = $Visual/ArmL
-@onready var _arm_r: Node3D = $Visual/ArmR
+@onready var _anim: AnimationPlayer = $Visual/AnimationPlayer
 @onready var _footstep_player: AudioStreamPlayer = $FootstepPlayer
 @onready var _hit_player: AudioStreamPlayer = $HitPlayer
 
@@ -31,6 +38,7 @@ var _pitch: float = 0.0
 var _yaw: float = 0.0
 var _is_ducking: bool = false
 var _is_dying: bool = false
+var _was_airborne: bool = false
 var _walk_phase: float = 0.0
 var _last_step_index: int = 0
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
@@ -38,9 +46,15 @@ var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	# The player keeps processing while paused (to handle unpausing), but
+	# the model should freeze with the rest of the world.
+	visual.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_to_group("player")
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	$CameraPivot/CameraArm.add_excluded_object(get_rid())
+	for clip in LOOPED_CLIPS:
+		_anim.get_animation(clip).loop_mode = Animation.LOOP_LINEAR
+	_anim.play("Idle")
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -101,10 +115,13 @@ func _physics_process(delta: float) -> void:
 
 	if is_on_floor() and not _is_ducking and Input.is_action_just_pressed("jump"):
 		velocity.y = jump_velocity
+		_anim.speed_scale = 1.0
+		_anim.play("Jump_Start", 0.1)
 
 	move_and_slide()
 	camera_pivot.global_position.y = CAMERA_HEIGHT
-	_animate_walk(delta)
+	_update_animation()
+	_update_footsteps(delta)
 
 
 func is_ducking() -> bool:
@@ -116,9 +133,10 @@ func is_dying() -> bool:
 
 
 # Hit by a spear: thud, fall over, lie still, then restart. A head-high
-# spear knocks the body forward, one against the feet sweeps it backwards.
-# One tween chain, no awaits: a coroutine suspended on a SceneTreeTimer
-# leaks at exit if the game quits mid-sequence.
+# spear slams the body face-down forward (Death_B), one against the feet
+# flings it onto the back (Death_A). One tween chain, no awaits: a
+# coroutine suspended on a SceneTreeTimer leaks at exit if the game quits
+# mid-sequence.
 func die_and_reset(spawn: Transform3D, hit_high: bool = true, animate: bool = true) -> void:
 	if _is_dying:
 		return
@@ -129,18 +147,20 @@ func die_and_reset(spawn: Transform3D, hit_high: bool = true, animate: bool = tr
 
 	var tween := create_tween()
 	if animate:
-		var fall_angle := -PI / 2.0 if hit_high else PI / 2.0
-		tween.tween_property(visual, "rotation:x", fall_angle, 0.6) \
-				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-		tween.tween_interval(0.5)
+		# Death_B is a 2.1s clip; play it faster so both deaths restart
+		# at a similar pace, with a short beat on the ground.
+		_anim.speed_scale = 1.5 if hit_high else 1.0
+		_anim.play("Death_B" if hit_high else "Death_A", 0.1)
+		tween.tween_interval(1.5 if hit_high else 1.1)
 	else:
-		# Falling into a pit: no tip-over animation, just a short beat.
+		# Falling into a pit: keep the airborne flail, just a short beat.
 		tween.tween_interval(0.4)
 	tween.tween_callback(_finish_death.bind(spawn))
 
 
 func _finish_death(spawn: Transform3D) -> void:
-	visual.rotation.x = 0.0
+	_anim.speed_scale = 1.0
+	_anim.play("Idle")
 	reset_to_start(spawn)
 	_is_dying = false
 
@@ -165,29 +185,56 @@ func _set_ducking(ducking: bool) -> void:
 	# Shift the body by the height difference in the same frame the
 	# capsule resizes, so the feet stay planted and only the head moves.
 	# The visual's origin is at the feet: keep it on the capsule bottom.
+	# The crouch pose itself comes from the Crouch_* animation clips.
 	if ducking:
-		visual.scale.y = DUCK_HEIGHT / STAND_HEIGHT
 		visual.position.y = -DUCK_HEIGHT / 2.0
 		position.y -= (STAND_HEIGHT - DUCK_HEIGHT) / 2.0
 	else:
-		visual.scale.y = 1.0
 		visual.position.y = -STAND_HEIGHT / 2.0
 		position.y += (STAND_HEIGHT - DUCK_HEIGHT) / 2.0
 
 
-# Simple procedural walk: legs swing opposite each other, arms counter.
-func _animate_walk(delta: float) -> void:
+# Picks the clip matching the current movement state. Jump_Start and
+# Jump_Land are one-shots that get to finish before the state takes over
+# again; everything else follows velocity directly.
+func _update_animation() -> void:
 	var ground_speed := Vector2(velocity.x, velocity.z).length()
+	var airborne := not is_on_floor()
+	var just_landed := _was_airborne and not airborne
+	_was_airborne = airborne
 
+	var target := "Idle"
+	var time_scale := 1.0
+	if airborne:
+		if _anim.current_animation == "Jump_Start":
+			return  # let the takeoff finish, Jump_Idle follows
+		target = "Jump_Idle"
+	elif _is_ducking and ground_speed > 0.2:
+		target = "Crouch_Walk"
+		time_scale = ground_speed / CROUCH_STRIDE_SPEED
+	elif _is_ducking:
+		target = "Crouch_Idle"
+	elif ground_speed > move_speed + 0.2:
+		target = "Running_A"
+		time_scale = ground_speed / RUN_STRIDE_SPEED
+	elif ground_speed > 0.2:
+		target = "Walking_A"
+		time_scale = ground_speed / WALK_STRIDE_SPEED
+	elif just_landed:
+		target = "Jump_Land"
+	elif _anim.current_animation == "Jump_Land":
+		return  # let the landing finish before idling
+	_anim.speed_scale = time_scale
+	if _anim.current_animation != target:
+		_anim.play(target, 0.2)
+
+
+# One footfall per half stride, paced by ground speed like the old
+# procedural walk, so steps stay in sync at every movement speed.
+func _update_footsteps(delta: float) -> void:
+	var ground_speed := Vector2(velocity.x, velocity.z).length()
 	if ground_speed > 0.2 and is_on_floor():
 		_walk_phase += delta * ground_speed * 2.2
-		var swing := sin(_walk_phase) * 0.55
-		_leg_l.rotation.x = swing
-		_leg_r.rotation.x = -swing
-		_arm_l.rotation.x = -swing * 0.6
-		_arm_r.rotation.x = swing * 0.6
-
-		# One footfall per half stride, when the leading leg comes down.
 		var step_index := int(_walk_phase / PI)
 		if step_index != _last_step_index:
 			_last_step_index = step_index
@@ -195,9 +242,6 @@ func _animate_walk(delta: float) -> void:
 	else:
 		_walk_phase = 0.0
 		_last_step_index = 0
-		var ease_back := minf(10.0 * delta, 1.0)
-		for limb in [_leg_l, _leg_r, _arm_l, _arm_r]:
-			limb.rotation.x = lerp_angle(limb.rotation.x, 0.0, ease_back)
 
 
 func _toggle_pause() -> void:

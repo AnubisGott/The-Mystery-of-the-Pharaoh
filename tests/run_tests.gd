@@ -286,11 +286,13 @@ func test_head_hit_falls_forward() -> void:
 
 	_check(player.is_dying(), "player not in dying state after hit")
 	_check(player.get_node("HitPlayer") != null, "HitPlayer node missing")
-	var visual: Node3D = player.get_node("Visual")
-	_check(visual.rotation.x < -0.05, "head hit did not tip the body forward")
+	var anim: AnimationPlayer = player.get_node("Visual/AnimationPlayer")
+	_check(anim.current_animation == "Death_B",
+			"head hit did not play the forward death clip: %s" % anim.current_animation)
 
 	_check(await _await_death_reset(), "death sequence did not end in a reset")
-	_check(absf(visual.rotation.x) < 0.01, "body rotation not restored after reset")
+	_check(anim.current_animation == "Idle",
+			"pose not restored after reset: %s" % anim.current_animation)
 
 
 func test_feet_hit_falls_backwards() -> void:
@@ -300,11 +302,13 @@ func test_feet_hit_falls_backwards() -> void:
 		await get_tree().physics_frame
 
 	_check(player.is_dying(), "player not in dying state after hit")
-	var visual: Node3D = player.get_node("Visual")
-	_check(visual.rotation.x > 0.05, "feet hit did not tip the body backwards")
+	var anim: AnimationPlayer = player.get_node("Visual/AnimationPlayer")
+	_check(anim.current_animation == "Death_A",
+			"feet hit did not play the backward death clip: %s" % anim.current_animation)
 
 	_check(await _await_death_reset(), "death sequence did not end in a reset")
-	_check(absf(visual.rotation.x) < 0.01, "body rotation not restored after reset")
+	_check(anim.current_animation == "Idle",
+			"pose not restored after reset: %s" % anim.current_animation)
 
 
 func test_ducking_dodges_high_spear() -> void:
@@ -470,6 +474,30 @@ func test_footsteps_fire_while_walking() -> void:
 	for i in 10:
 		await get_tree().physics_frame
 	_check(player._last_step_index == 0, "step counter not reset when standing")
+
+
+func test_movement_plays_matching_clips() -> void:
+	var anim: AnimationPlayer = player.get_node("Visual/AnimationPlayer")
+
+	Input.action_press("move_forward")
+	for i in 10:
+		await get_tree().physics_frame
+	var walking := anim.current_animation
+
+	Input.action_press("sprint")
+	for i in 10:
+		await get_tree().physics_frame
+	var running := anim.current_animation
+	Input.action_release("sprint")
+	Input.action_release("move_forward")
+
+	for i in 30:
+		await get_tree().physics_frame
+	var standing := anim.current_animation
+
+	_check(walking == "Walking_A", "moving did not play the walk clip: %s" % walking)
+	_check(running == "Running_A", "sprinting did not play the run clip: %s" % running)
+	_check(standing == "Idle", "standing still did not return to idle: %s" % standing)
 
 
 func test_menu_music_plays_and_toggles() -> void:
