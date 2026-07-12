@@ -56,6 +56,10 @@ var _camera_base_y: float = 0.0
 # Optional: a bomb-drop whistle the instant the player pitches into a pit.
 @onready var _whistle_player: AudioStreamPlayer = get_node_or_null("WhistlePlayer")
 
+# The soft touch-down thud after a jump or drop.
+const LAND_SOUND: AudioStream = preload("res://sounds/croc_land.wav")
+var _land_player: AudioStreamPlayer
+
 var _pitch: float = 0.0
 var _yaw: float = 0.0
 var _is_ducking: bool = false
@@ -73,8 +77,13 @@ func _ready() -> void:
 	# the model should freeze with the rest of the world.
 	visual.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_to_group("player")
+	_land_player = AudioStreamPlayer.new()
+	_land_player.stream = LAND_SOUND
+	_land_player.volume_db = -10.0
+	add_child(_land_player)
 	# All effects live on the Sfx bus (its own volume slider).
-	for sound in [_footstep_player, _hit_player, _fall_player, _whistle_player]:
+	for sound in [_footstep_player, _hit_player, _fall_player, _whistle_player,
+			_land_player]:
 		if sound != null:
 			sound.bus = "Sfx"
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -143,7 +152,12 @@ func _physics_process(delta: float) -> void:
 		_anim.speed_scale = 1.0
 		_anim.play("Jump_Start", 0.1)
 
+	var was_airborne := not is_on_floor()
+	var falling_fast := velocity.y < -2.5
 	move_and_slide()
+	# Touching down after a jump or drop lands with a soft thud.
+	if was_airborne and is_on_floor() and falling_fast:
+		_land_player.play()
 	# The camera floats at a fixed height above the feet. Following them
 	# only while grounded (smoothed) keeps it steady through jumps and
 	# ducks, yet lets it climb stairs and slopes with the player.

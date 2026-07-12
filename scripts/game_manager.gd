@@ -43,7 +43,7 @@ var fullscreen: bool = false
 var window_size: Vector2i = Vector2i(1152, 648)
 # Separate loudness for effects and music (0..1), each on its own audio
 # bus; the options sliders override the defaults.
-var sound_volume: float = 1.0
+var sound_volume: float = 0.5
 var music_volume: float = 0.1
 
 var _music_player: AudioStreamPlayer

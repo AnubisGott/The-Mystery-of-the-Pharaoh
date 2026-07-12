@@ -81,7 +81,7 @@ func _ready() -> void:
 	glide.loop_end = glide.data.size() / 2   # 16-bit mono frames
 	_glide_player = AudioStreamPlayer.new()
 	_glide_player.stream = glide
-	_glide_player.volume_db = -20.0
+	_glide_player.volume_db = -17.0
 	_glide_player.bus = "Sfx"
 	add_child(_glide_player)
 

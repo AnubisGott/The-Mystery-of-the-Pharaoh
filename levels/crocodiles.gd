@@ -14,7 +14,6 @@ const SAND_NORMAL: Texture2D = preload("res://textures/aerial_sand_nor_gl_1k.jpg
 const Crocodile := preload("res://hazards/crocodile.gd")
 const IntroTitle := preload("res://ui/intro_title.gd")
 const SPLASH_SOUND: AudioStream = preload("res://sounds/splash_blub.wav")
-const LAND_SOUND: AudioStream = preload("res://sounds/croc_land.wav")
 
 const INTRO_HOLD: float = 1.4
 
@@ -39,8 +38,6 @@ const GAP_FAR: float = 3.4
 var _spawn_transform: Transform3D
 var _croc_positions: Array[Vector3] = []
 var _splash_player: AudioStreamPlayer
-var _land_player: AudioStreamPlayer
-var _was_on_floor: bool = true
 var _intro_running: bool = false
 var _intro_skip: bool = false
 var _intro_can_skip: bool = false
@@ -60,12 +57,6 @@ func _ready() -> void:
 	_splash_player.bus = "Sfx"
 	add_child(_splash_player)
 
-	_land_player = AudioStreamPlayer.new()
-	_land_player.stream = LAND_SOUND
-	_land_player.volume_db = -10.0
-	_land_player.bus = "Sfx"
-	add_child(_land_player)
-
 	god_label.visible = GameManager.god_mode
 	GameManager.god_mode_changed.connect(_on_god_mode_changed)
 
@@ -74,15 +65,6 @@ func _ready() -> void:
 
 
 func _physics_process(_delta: float) -> void:
-	# A soft wet thud whenever the player lands on a crocodile's back.
-	var on_floor := player.is_on_floor()
-	if on_floor and not _was_on_floor:
-		var collision := player.get_last_slide_collision()
-		if collision != null and collision.get_collider() != null \
-				and collision.get_collider().is_in_group("crocodiles"):
-			_land_player.play()
-	_was_on_floor = on_floor
-
 	if to_local(player.global_position).y < KILL_CENTER_Y and not player.is_dying():
 		# Blub blub blub: going under is audible.
 		_splash_player.play()

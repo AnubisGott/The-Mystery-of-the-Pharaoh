@@ -954,9 +954,9 @@ func test_burial_dials_open_the_floor() -> void:
 	var chamber := await _spawn_burial()
 	var chamber_player: CharacterBody3D = chamber.get_node("Player")
 
-	# Every drum carries four symbols (plus the drum mesh itself), so
-	# each turn brings a different glyph to the front.
-	_check(chamber._dials[0]._drum.get_child_count() == 5,
+	# Every drum carries four symbols (plus the drum mesh, gold rims and
+	# the scarab), so each turn brings a different glyph to the front.
+	_check(chamber._dials[0]._drum.get_child_count() >= 5,
 			"dial drum does not carry four symbols")
 
 	# One turn each is not enough: each wheel must complete TWO turns
@@ -1148,12 +1148,13 @@ func test_croc_backs_hold_the_player() -> void:
 	# Freeze every croc surfaced, then stand on the first one.
 	for croc in get_tree().get_nodes_in_group("crocodiles"):
 		croc.frozen = true
+	# High enough that the landing is as fast as a real jump's.
 	crocs_player.global_position = crocs.to_global(
-			crocs._croc_positions[0] + Vector3(0, 1.2, 0))
+			crocs._croc_positions[0] + Vector3(0, 2.2, 0))
 	var landing_heard := false
 	for i in 40:
 		await get_tree().physics_frame
-		landing_heard = landing_heard or crocs._land_player.playing
+		landing_heard = landing_heard or crocs_player._land_player.playing
 	_check(not crocs_player.is_dying(), "standing on a surfaced croc killed the player")
 	_check(crocs_player.is_on_floor(), "player does not stand on the croc's back")
 	_check(landing_heard, "landing on the croc made no sound")

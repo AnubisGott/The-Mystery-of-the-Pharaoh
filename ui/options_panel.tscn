@@ -36,7 +36,7 @@ custom_minimum_size = Vector2(280, 24)
 layout_mode = 2
 max_value = 100.0
 step = 5.0
-value = 100.0
+value = 50.0
 
 [node name="MusicLabel" type="Label" parent="."]
 layout_mode = 2
