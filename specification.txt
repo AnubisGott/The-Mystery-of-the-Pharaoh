@@ -55,6 +55,21 @@ Esc = pause
 
 Windows EXE in the build folder
 
+Dein Projekt dürfte kein grundsätzliches Problem mit Spiele-Shops haben in Bezug auf KI haben: Du entwickelst eigene Level, Mechaniken, Fallen, Sounds, Steuerung und Szenen und setzt ausgewählte lizenzierte Assets ein. Das ist etwas völlig anderes als ein automatisch zusammengestelltes Spiel ohne erkennbare Gestaltung.
+
+Generative AI tools were used during development to assist with programming, debugging, concept development, and the creation of selected pre-generated audio and visual assets. All content was reviewed, selected, edited, and integrated by the developer. The game does not use live generative AI during gameplay.
+
+https://github.com/AnubisGott/The-Mystery-of-the-Pharaoh
 
 todo-list:
 
+- Languages/translation, just use System language, if not possible then English
+- Wieso steht da Debug version am Fensterrand?
+- linux
+
+- A more beautiful ship in Level 6 and 7
+- Zielbereich von Level 6 testen.
+- neue Musik für den Krokodil Level
+
+d:\daten\development\gaming\The Mystery of the Pharaoh>
+claude --resume fd78c720-01da-4e29-bade-78fe84af8184

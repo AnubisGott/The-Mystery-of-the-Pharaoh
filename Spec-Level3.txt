@@ -33,7 +33,7 @@ End of level.
 
 Level 6: Crocodiles
 
-The player must run on the crocodiles. Every now and then, a crocodile sinks, so the player must jump onto the next crocodile before it sinks. There are many crocodiles at the beginning, but by the end of the level, there are fewer of them, making it more difficult. During the level, you leave the pyramid because the river running beneath it flows out into the open. There, you’ll see a Nile steamboat—sprint toward it, and the level ends. The landscape is the river Nil, dunes from the first level and some palmes.
+The player must run on the crocodiles. Every now and then, a crocodile sinks, so the player must jump onto the next crocodile before it sinks. There are many crocodiles at the beginning, but by the end of the level, there are fewer of them, making it more difficult. During the level, you leave the pyramid because the river running beneath it flows out into the open. There, you’ll see a Nile steamboat—sprint toward it, and the level ends. The landscape is the river Nil, dunes from the first level and some palmes.3
 
 
 Level 7: just sitting on the Nile steam boat and the game's credits roll over it.
