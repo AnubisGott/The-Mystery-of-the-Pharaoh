@@ -19,21 +19,31 @@ func setup(kicker: String, title: String) -> void:
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.add_child(box)
 
-	box.add_child(_make_label(kicker, 44))
-	box.add_child(_make_label(title, 112))
+	# Font sizes are tuned for the 648-high base window: scale with the
+	# real window height, then shrink long lines to fit the width.
+	var win := Vector2(DisplayServer.window_get_size())
+	var font_scale := win.y / 648.0 if win.y > 0.0 else 1.0
+	box.add_child(_make_label(kicker, int(44 * font_scale), win.x))
+	box.add_child(_make_label(title, int(112 * font_scale), win.x))
 
 
 func set_opacity(alpha: float) -> void:
 	_root.modulate.a = alpha
 
 
-func _make_label(text: String, size: int) -> Label:
+func _make_label(text: String, size: int, max_width: float = 0.0) -> Label:
 	var label := Label.new()
 	label.text = text
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var font := SystemFont.new()
 	font.font_names = PackedStringArray(["Arial Black", "Arial", "Segoe UI"])
 	font.font_weight = 900
+	# Long titles (Level 1!) would spill past the window edges.
+	if max_width > 0.0:
+		var line_width := font.get_string_size(text,
+				HORIZONTAL_ALIGNMENT_CENTER, -1, size).x
+		if line_width > max_width * 0.94:
+			size = maxi(int(size * max_width * 0.94 / line_width), 1)
 	label.add_theme_font_override("font", font)
 	label.add_theme_font_size_override("font_size", size)
 	label.add_theme_color_override("font_color", Color(1.0, 0.88, 0.5))

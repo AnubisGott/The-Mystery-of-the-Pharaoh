@@ -51,6 +51,7 @@ grow_vertical = 2
 text = "A D - Steer
 Space - Jump holes
 M - Music on/off
+F11 - Fullscreen
 Esc - Menu"
 horizontal_alignment = 2
 

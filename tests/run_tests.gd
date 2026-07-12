@@ -1192,6 +1192,21 @@ func test_credits_scene_has_rolling_credits() -> void:
 	await get_tree().physics_frame
 
 
+# Past the end of one pass the scroll wraps around and keeps rolling
+# instead of leaving the level (only ESC or the end of the music do).
+func test_credits_scroll_loops_endlessly() -> void:
+	var credits: Node3D = load("res://levels/nile_credits.tscn").instantiate()
+	credits.position = Vector3(1800.0, 0.0, 0.0)
+	add_child(credits)
+	await get_tree().process_frame
+	credits._time = credits.SCROLL_TIME + 0.2
+	await get_tree().process_frame
+	_check(credits._scroll.position.y > 0.0,
+			"credits scroll did not wrap around after a full pass")
+	credits.queue_free()
+	await get_tree().physics_frame
+
+
 func test_pendulum_kills_and_god_mode_spares() -> void:
 	var hall := await _spawn_hall()
 	var hall_player: CharacterBody3D = hall.get_node("Player")

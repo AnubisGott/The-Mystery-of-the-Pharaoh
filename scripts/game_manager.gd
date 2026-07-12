@@ -3,6 +3,7 @@ extends Node
 signal game_won
 signal god_mode_changed(enabled: bool)
 signal music_enabled_changed(enabled: bool)
+signal music_finished
 signal display_changed
 
 const MAIN_MENU_SCENE: String = "res://ui/main_menu.tscn"
@@ -40,8 +41,9 @@ var music_enabled: bool = true
 
 var fullscreen: bool = false
 var window_size: Vector2i = Vector2i(1152, 648)
-# Master loudness, 0..1, applied to the Master audio bus.
-var volume: float = 1.0
+# Master loudness, 0..1, applied to the Master audio bus. A quarter of
+# full scale is the out-of-the-box level; the options slider overrides it.
+var volume: float = 0.25
 
 var _music_player: AudioStreamPlayer
 
@@ -54,6 +56,8 @@ func _ready() -> void:
 	_music_player = AudioStreamPlayer.new()
 	_music_player.volume_db = -6.0
 	add_child(_music_player)
+	# Fires only for non-looping tracks (the credits use it to end the game).
+	_music_player.finished.connect(func() -> void: music_finished.emit())
 	# Route window-close through quit_game() so the music stops a frame
 	# before shutdown: an MP3 still playing at exit leaks its playback
 	# object (cosmetic engine warning).

@@ -1,8 +1,8 @@
 extends Node3D
 
 # Level 7: the journey home. The adventurer sits on the Nile steamboat
-# while the credits roll over the scene. Any key skips; when the scroll
-# ends, the game returns to the main menu.
+# while the credits roll over the scene in an endless loop. The level
+# ends when the music finishes or on ESC.
 
 const LEVEL_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel07.mp3")
 const CHARACTER: PackedScene = preload("res://models/adventurer_realistic.glb")
@@ -12,12 +12,28 @@ const CREDITS: Array[Array] = [
 	["The Mystery of the Pharaoh", 52],
 	["", 20],
 	["A game by", 22],
-	["Stefan Gernhardt", 34],
-	["", 20],
-	["Design & Programming", 22],
-	["Stefan Gernhardt", 30],
+	["Anubis", 34],
 	["", 30],
-	["Built with the Godot Engine", 26],
+	["Creative Director", 22],
+	["Anubis", 30],
+	["", 20],
+	["Level Design", 22],
+	["Claude Code", 30],
+	["", 20],
+	["Testing", 22],
+	["Anubis & Friends", 30],
+	["", 30],
+	["Music", 22],
+	["Suono", 30],
+	["", 20],
+	["Sound Effects", 22],
+	["freesound.org & Claude Code", 30],
+	["", 20],
+	["Artwork", 22],
+	["Nano Banana", 30],
+	["", 30],
+	["Game Engine", 22],
+	["Godot", 30],
 	["", 30],
 	["Character", 22],
 	["MakeHuman / MPFB2 (MakeHuman community)", 24],
@@ -42,7 +58,9 @@ var _view_height: float = 648.0
 
 
 func _ready() -> void:
-	GameManager.play_music(LEVEL_MUSIC)
+	# The track plays once, not looped: its end is what ends the level.
+	GameManager.play_music(LEVEL_MUSIC, false)
+	GameManager.music_finished.connect(_on_music_finished)
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	_build_scene()
 	_build_credits()
@@ -56,17 +74,23 @@ func _process(delta: float) -> void:
 	_boat.position.y = 0.1 + 0.08 * sin(_time * 0.7)
 	_boat.rotation.z = 0.012 * sin(_time * 0.55 + 1.0)
 
-	var progress := _time / SCROLL_TIME
+	# The scroll wraps around endlessly; leaving is the music's (or the
+	# ESC key's) job. The height is re-read so window changes mid-roll
+	# keep the wrap points on screen.
+	_view_height = get_viewport().get_visible_rect().size.y
+	var progress := fposmod(_time / SCROLL_TIME, 1.0)
 	_scroll.position.y = _view_height - (_view_height + _scroll.size.y + 60.0) * progress
-	if progress >= 1.0:
-		GameManager.show_main_menu()
+
+
+func _on_music_finished() -> void:
+	GameManager.show_main_menu()
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	# Leave for the menu on a fresh key or click — ignoring key repeats
-	# and input left over from the sprint onto the boat.
-	if _time > 1.0 and event.is_pressed() and not event.is_echo() \
-			and (event is InputEventKey or event is InputEventMouseButton):
+	# ESC leaves for the menu — a fresh press only, ignoring key repeats
+	# left over from the sprint onto the boat.
+	if _time > 1.0 and event is InputEventKey and event.is_pressed() \
+			and not event.is_echo() and event.physical_keycode == KEY_ESCAPE:
 		GameManager.show_main_menu()
 
 
