@@ -57,13 +57,23 @@ const CREDITS: Array[Array] = [
 	["Scarab", 22],
 	["\"Egyptian scarab beetle\" by Kudo (CC-BY 4.0)", 24],
 	["", 20],
+	["Steamship", 22],
+	["\"Steamship sultana.\" by Bunnysalad (CC-BY 4.0)", 24],
+	["", 20],
 	["Textures", 22],
 	["Poly Haven (CC0)", 24],
 	["", 40],
 	["Thank you for playing!", 36],
 ]
 
+# The bank clusters form a ring this long around the boat; whatever
+# falls behind wraps far ahead, hidden deep in the haze.
+const BANK_SPACING: float = 35.0
+const BANK_COUNT: int = 12
+
 var _boat: Node3D
+var _river: MeshInstance3D
+var _banks: Array[Node3D] = []
 var _scroll: VBoxContainer
 var _time: float = 0.0
 var _view_height: float = 648.0
@@ -85,6 +95,15 @@ func _process(delta: float) -> void:
 	_boat.position.z -= delta * 2.0
 	_boat.position.y = 0.1 + 0.08 * sin(_time * 0.7)
 	_boat.rotation.z = 0.012 * sin(_time * 0.55 + 1.0)
+
+	# The scenery travels along: the water slides underneath the boat,
+	# and bank clusters that fall behind wrap around far ahead — the
+	# Nile never ends, however long the music plays.
+	_river.position.z = _boat.position.z
+	var ring := BANK_SPACING * BANK_COUNT
+	for cluster in _banks:
+		var rel := fposmod(_boat.position.z + 155.0 - cluster.position.z, ring)
+		cluster.position.z = _boat.position.z + 155.0 - rel
 
 	# The scroll wraps around endlessly; leaving is the music's (or the
 	# ESC key's) job. The height is re-read so window changes mid-roll
@@ -140,40 +159,47 @@ func _build_scene() -> void:
 	water.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	water.roughness = 0.08
 	water.metallic = 0.4
-	var river := MeshInstance3D.new()
+	_river = MeshInstance3D.new()
 	var river_mesh := BoxMesh.new()
-	river_mesh.size = Vector3(300, 0.4, 300)
+	river_mesh.size = Vector3(300, 0.4, 600)
 	river_mesh.material = water
-	river.mesh = river_mesh
-	river.position = Vector3(0, -0.5, 0)
-	add_child(river)
+	_river.mesh = river_mesh
+	_river.position = Vector3(0, -0.5, 0)
+	add_child(_river)
 
-	# Banks with palms along the journey ahead.
+	# Banks with palms, one cluster per BANK_SPACING of river. They are
+	# grouped under one node each so _process can wrap whole clusters
+	# from behind the boat to far ahead.
 	var sand := StandardMaterial3D.new()
 	sand.albedo_color = Color(0.8, 0.68, 0.48)
-	for data: Array in [[47.0, 20.0], [-40.0, -15.0], [45.0, -45.0],
-			[-38.0, -80.0], [50.0, -115.0], [-42.0, -150.0]]:
+	for k in BANK_COUNT:
+		var side := 1.0 if k % 2 == 0 else -1.0
+		var cluster := Node3D.new()
+		cluster.position = Vector3(side * (38.0 + 12.0 * (0.5 + 0.5 * sin(k * 2.6))),
+				0, 20.0 - BANK_SPACING * k)
 		var bank := MeshInstance3D.new()
 		var bank_mesh := SphereMesh.new()
 		bank_mesh.radius = 22.0
 		bank_mesh.height = 6.0
 		bank_mesh.material = sand
 		bank.mesh = bank_mesh
-		bank.position = Vector3(data[0], -1.5, data[1])
-		add_child(bank)
+		bank.position = Vector3(0, -1.5, 0)
+		cluster.add_child(bank)
 		for i in 3:
 			var palm := NileProps.build_palm(4.4 + 0.7 * i)
-			palm.position = Vector3(data[0] + i * 4.0 - 4.0, 0.6, data[1] + (i - 1) * 5.0)
-			palm.rotation.y = i * 2.1 + data[1]
-			add_child(palm)
+			palm.position = Vector3(i * 4.0 - 4.0, 0.6, (i - 1) * 5.0)
+			palm.rotation.y = i * 2.1 + k * 1.7
+			cluster.add_child(palm)
+		add_child(cluster)
+		_banks.append(cluster)
 
 	_boat = NileProps.build_boat()
 	add_child(_boat)
 
-	# The adventurer lounges in a deck chair on the foredeck, sunglasses
-	# on, angled toward the camera.
+	# The adventurer lounges in a deck chair on the open hurricane deck
+	# aft of the funnels, sunglasses on, angled toward the camera.
 	var chair := _build_lounge_chair()
-	chair.position = Vector3(0, 1.05, -4.2)
+	chair.position = Vector3(0, 2.0, 3.4)
 	chair.rotation.y = 2.5
 	_boat.add_child(chair)
 	var character: Node3D = CHARACTER.instantiate()

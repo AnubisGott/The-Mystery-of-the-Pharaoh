@@ -39,9 +39,11 @@ var _spawn_transform: Transform3D
 var _croc_positions: Array[Vector3] = []
 var _splash_player: AudioStreamPlayer
 var _god_walkway: CollisionShape3D
+var _dock_end_z: float = 0.0
 var _intro_running: bool = false
 var _intro_skip: bool = false
 var _intro_can_skip: bool = false
+var _outro_running: bool = false
 
 
 func _ready() -> void:
@@ -88,10 +90,10 @@ func _physics_process(_delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	# Skip the intro on a fresh key or click - but not on key repeats
-	# or input left over from finishing the previous level (a short
-	# grace period swallows those).
-	if _intro_running and _intro_can_skip and event.is_pressed() \
+	# Skip the intro or the finale on a fresh key or click - but not on
+	# key repeats or input left over from finishing the previous level
+	# (a short grace period swallows those).
+	if (_intro_running or _outro_running) and _intro_can_skip and event.is_pressed() \
 			and not event.is_echo() \
 			and (event is InputEventKey or event is InputEventMouseButton):
 		_intro_skip = true
@@ -181,6 +183,8 @@ func _build_landscape() -> void:
 	add_child(dunes)
 
 	# The river itself, plus its bed so the water has depth to sink into.
+	# It runs the whole carved channel to the far edge of the dune sheet,
+	# so from the jetty the canal reaches the horizon.
 	var water := StandardMaterial3D.new()
 	water.albedo_color = Color(0.13, 0.34, 0.42, 0.8)
 	water.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -188,12 +192,12 @@ func _build_landscape() -> void:
 	water.metallic = 0.3
 	var river := MeshInstance3D.new()
 	var river_mesh := BoxMesh.new()
-	river_mesh.size = Vector3(RIVER_HALF_WIDTH * 2.0, 0.3, 180.0)
+	river_mesh.size = Vector3(RIVER_HALF_WIDTH * 2.0, 0.3, 280.0)
 	river_mesh.material = water
 	river.mesh = river_mesh
-	river.position = Vector3(0, WATER_Y - 0.15, -55.0)
+	river.position = Vector3(0, WATER_Y - 0.15, -105.0)
 	add_child(river)
-	_add_box(Vector3(0, -3.2, -55.0), Vector3(RIVER_HALF_WIDTH * 2.0, 0.4, 180.0),
+	_add_box(Vector3(0, -3.2, -105.0), Vector3(RIVER_HALF_WIDTH * 2.0, 0.4, 280.0),
 			FLOOR_MATERIAL, false)
 
 	# Invisible banks keep the crossing on the crocodiles.
@@ -279,8 +283,10 @@ func _build_jetty_and_boat() -> void:
 			post.position = Vector3(side * 1.4, -0.4, post_z)
 			add_child(post)
 
+	# The steamboat moors alongside the dock, its paddle box a step from
+	# the planks, ready to leave for Level 7.
 	var boat := NileProps.build_boat()
-	boat.position = Vector3(5.4, WATER_Y + 0.5, jetty_to - 2.0)
+	boat.position = Vector3(3.6, WATER_Y + 0.5, (jetty_from + jetty_to) / 2.0)
 	boat.rotation.y = 0.1
 	add_child(boat)
 
@@ -295,6 +301,12 @@ func _build_jetty_and_boat() -> void:
 	end_zone.position = Vector3(0, 1.2, (zone_from + zone_to) / 2.0)
 	var end_shape: BoxShape3D = end_zone.get_node("CollisionShape3D").shape
 	end_shape.size = Vector3(3.6, 3.0, zone_from - zone_to)
+
+	# Reaching the line does not cut straight to Level 7: the zone hands
+	# over to the slow-motion finale below.
+	_dock_end_z = jetty_to
+	end_zone.custom_finale = true
+	end_zone.player_entered.connect(_on_end_zone_entered)
 
 
 func _add_box(center: Vector3, size: Vector3, material: Material,
@@ -381,3 +393,79 @@ func _play_intro(duration: float = 4.0) -> void:
 	player.set_process_unhandled_input(true)
 	player.set_physics_process(true)
 	_intro_running = false
+
+
+# ---------------------------------------------------------------- outro
+
+func _on_end_zone_entered() -> void:
+	if _outro_running:
+		return
+	_outro_running = true
+	if DisplayServer.get_name() != "headless":
+		# body_entered fires while physics is flushing; the cutscene
+		# adds nodes, so it must wait for the flush to finish.
+		_play_outro.call_deferred()
+	else:
+		GameManager.complete_level()
+
+
+# The finale: the adventurer covers the last stretch of the dock in slow
+# motion, the camera gliding low over the water alongside, the steamer
+# towering over the planks — then the journey home begins. Any key or
+# click skips straight to Level 7.
+func _play_outro() -> void:
+	_intro_skip = false
+	_intro_can_skip = true
+	player.set_physics_process(false)
+	player.set_process_unhandled_input(false)
+	var pause_menu: Node = get_node_or_null("PauseMenu")
+	if pause_menu:
+		pause_menu.set_process_unhandled_input(false)
+	get_node("ControlsHint").visible = false   # no HUD over the cutscene
+
+	var anim: AnimationPlayer = player.get_node("Visual/AnimationPlayer")
+	anim.speed_scale = 1.0
+	anim.play("Running_A", 0.2)
+	player.rotation.y = 0.0   # squarely down the dock
+
+	var cam := Camera3D.new()
+	cam.fov = 50.0
+	add_child(cam)
+	cam.make_current()
+
+	Engine.time_scale = 0.35
+	var tree := get_tree()
+	var from := player.global_position
+	var target := to_global(Vector3(0, 0, _dock_end_z + 3.5))
+	target.y = from.y
+	var travel := maxf(absf(from.z - target.z), 0.1)
+	var t := 0.0
+	while t < 1.0 and not _intro_skip:
+		if not is_inside_tree():
+			Engine.time_scale = 1.0
+			return
+		# The stride pace matches the run clip, so the slow motion is
+		# pure time_scale - no moonwalking.
+		t = minf(t + get_process_delta_time() * player.run_stride_speed / travel, 1.0)
+		player.global_position = from.lerp(target, t)
+		var focus := player.global_position + Vector3(0, 0.75, 0)
+		cam.global_position = focus + Vector3(-4.4, 0.35 + 0.45 * t, -2.2)
+		cam.look_at(focus + Vector3(1.2, 0, -1.0), Vector3.UP)
+		await tree.process_frame
+
+	# Arrived: pull out of the sprint and turn to face the ship.
+	anim.play("Idle", 0.3)
+	var hold := 0.0
+	while hold < 0.6 and not _intro_skip:
+		if not is_inside_tree():
+			Engine.time_scale = 1.0
+			return
+		player.rotation.y = lerp_angle(0.0, -PI / 2.0, minf(hold / 0.35, 1.0))
+		var focus := player.global_position + Vector3(0, 0.75, 0)
+		cam.global_position = focus + Vector3(-4.4, 0.8, -2.2)
+		cam.look_at(focus + Vector3(1.2, 0.2, -1.0), Vector3.UP)
+		await tree.process_frame
+		hold += get_process_delta_time()
+
+	Engine.time_scale = 1.0
+	GameManager.complete_level()

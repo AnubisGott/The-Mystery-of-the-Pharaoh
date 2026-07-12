@@ -70,6 +70,8 @@ todo-list:
 - A more beautiful ship in Level 6 and 7
 - Zielbereich von Level 6 testen.
 - neue Musik für den Krokodil Level
+- Create an cutscene for Level 6 to 7 showing the adventurer reaching the ship in slow motion.
+- Fluss endet sowohl in Level 7 als auch in 8
 
 d:\daten\development\gaming\The Mystery of the Pharaoh>
 claude --resume fd78c720-01da-4e29-bade-78fe84af8184

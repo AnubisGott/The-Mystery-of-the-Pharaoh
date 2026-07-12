@@ -1,95 +1,63 @@
 extends Object
 class_name NileProps
 
-# Procedural props for the Nile levels: the paddle steamboat (Level 6
-# finish line, Level 7 stage) and the palm trees along the banks.
+# Props for the Nile levels: the paddle steamer (Level 6 finish line,
+# Level 7 stage — a CC-BY model, see models/CREDITS.md) and the
+# procedural palm trees along the banks.
+
+const STEAMSHIP: PackedScene = preload("res://models/steamship.glb")
 
 
 static func build_boat() -> Node3D:
-	var white := StandardMaterial3D.new()
-	white.albedo_color = Color(0.92, 0.9, 0.85)
-	white.roughness = 0.6
-	var cream := StandardMaterial3D.new()
-	cream.albedo_color = Color(0.85, 0.78, 0.62)
-	cream.roughness = 0.7
-	var dark := StandardMaterial3D.new()
-	dark.albedo_color = Color(0.15, 0.13, 0.12)
-	dark.roughness = 0.5
-	var red := StandardMaterial3D.new()
-	red.albedo_color = Color(0.6, 0.15, 0.1)
-	red.roughness = 0.6
-	var wood := StandardMaterial3D.new()
-	wood.albedo_color = Color(0.4, 0.28, 0.16)
-	wood.roughness = 0.9
-
 	var boat := Node3D.new()
 	boat.name = "Boat"
-	# Hull with a raked bow block, then two decks, cabins and the funnel.
-	_box(boat, white, Vector3(4.5, 1.4, 11.0), Vector3(0, 0.2, 0))
-	_box(boat, white, Vector3(3.2, 1.2, 1.8), Vector3(0, 0.25, -6.0))
-	_box(boat, wood, Vector3(4.2, 0.25, 10.6), Vector3(0, 1.0, 0))
-	_box(boat, cream, Vector3(3.4, 1.6, 7.0), Vector3(0, 1.9, 0.4))
-	_box(boat, dark, Vector3(3.45, 0.5, 6.0), Vector3(0, 2.0, 0.4))
-	_box(boat, wood, Vector3(3.8, 0.2, 7.6), Vector3(0, 2.8, 0.4))
-	_box(boat, cream, Vector3(2.6, 1.3, 4.6), Vector3(0, 3.5, 0.6))
-	_box(boat, dark, Vector3(2.65, 0.4, 3.8), Vector3(0, 3.6, 0.6))
-	_box(boat, wood, Vector3(3.0, 0.15, 5.0), Vector3(0, 4.2, 0.6))
+	boat.add_child(STEAMSHIP.instantiate())
 
-	var funnel := MeshInstance3D.new()
-	var funnel_mesh := CylinderMesh.new()
-	funnel_mesh.top_radius = 0.32
-	funnel_mesh.bottom_radius = 0.4
-	funnel_mesh.height = 2.2
-	funnel_mesh.material = dark
-	funnel.mesh = funnel_mesh
-	funnel.position = Vector3(0, 5.2, -0.8)
-	boat.add_child(funnel)
-	var band := MeshInstance3D.new()
-	var band_mesh := CylinderMesh.new()
-	band_mesh.top_radius = 0.42
-	band_mesh.bottom_radius = 0.42
-	band_mesh.height = 0.35
-	band_mesh.material = red
-	band.mesh = band_mesh
-	band.position = Vector3(0, 5.6, -0.8)
-	boat.add_child(band)
-
-	# Side paddle wheels in their red housings.
-	for side: float in [-1.0, 1.0]:
-		_box(boat, red, Vector3(0.5, 2.0, 3.2), Vector3(side * 2.4, 1.1, 1.6))
-		_box(boat, dark, Vector3(0.55, 0.3, 3.3), Vector3(side * 2.4, 2.15, 1.6))
-
-	# Smoke from the funnel — part of the boat, so it steams identically
-	# at the Level-6 jetty and on the Level-7 journey.
+	# Smoke from the two funnels — part of the boat, so it steams
+	# identically at the Level-6 jetty and on the Level-7 journey.
 	var quad := QuadMesh.new()
-	quad.size = Vector2(0.9, 0.9)
+	quad.size = Vector2(0.55, 0.55)
 	var smoke_material := StandardMaterial3D.new()
 	smoke_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	smoke_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	smoke_material.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
 	smoke_material.vertex_color_use_as_albedo = true
+	# A radial falloff so each particle is a soft puff — the bare quad
+	# reads as a hard-edged square while young and still opaque.
+	var soft := Gradient.new()
+	soft.set_color(0, Color(1, 1, 1, 1))
+	soft.set_color(1, Color(1, 1, 1, 0))
+	var puff := GradientTexture2D.new()
+	puff.gradient = soft
+	puff.fill = GradientTexture2D.FILL_RADIAL
+	puff.fill_from = Vector2(0.5, 0.5)
+	puff.fill_to = Vector2(0.5, 0.0)
+	smoke_material.albedo_texture = puff
 	quad.material = smoke_material
+	# Puffs start small and quick so they clear the cap instead of
+	# pooling into a dark ball on it, then swell as they thin out.
 	var fade := Curve.new()
-	fade.add_point(Vector2(0.0, 0.4))
+	fade.add_point(Vector2(0.0, 0.6))
 	fade.add_point(Vector2(1.0, 1.0))
 	var ramp := Gradient.new()
-	ramp.set_color(0, Color(0.3, 0.3, 0.3, 0.6))
-	ramp.set_color(1, Color(0.6, 0.6, 0.6, 0.0))
-	var smoke := CPUParticles3D.new()
-	smoke.mesh = quad
-	smoke.amount = 24
-	smoke.lifetime = 3.5
-	smoke.direction = Vector3(0.3, 1, 0)
-	smoke.spread = 10.0
-	smoke.gravity = Vector3.ZERO
-	smoke.initial_velocity_min = 0.8
-	smoke.initial_velocity_max = 1.4
-	smoke.scale_amount_min = 0.6
-	smoke.scale_amount_max = 1.0
-	smoke.scale_amount_curve = fade
-	smoke.color_ramp = ramp
-	smoke.position = Vector3(0, 6.4, -0.8)
-	boat.add_child(smoke)
+	ramp.set_color(0, Color(0.5, 0.5, 0.5, 0.3))
+	ramp.set_color(1, Color(0.62, 0.62, 0.62, 0.0))
+	for funnel_x: float in [-0.8, 0.8]:
+		var smoke := CPUParticles3D.new()
+		smoke.mesh = quad
+		smoke.amount = 10
+		smoke.lifetime = 3.5
+		smoke.direction = Vector3(0.3, 1, 0)
+		smoke.spread = 10.0
+		smoke.gravity = Vector3.ZERO
+		smoke.initial_velocity_min = 1.6
+		smoke.initial_velocity_max = 2.2
+		smoke.scale_amount_min = 0.6
+		smoke.scale_amount_max = 1.0
+		smoke.scale_amount_curve = fade
+		smoke.color_ramp = ramp
+		smoke.position = Vector3(funnel_x, 4.85, -2.18)
+		boat.add_child(smoke)
 	return boat
 
 
@@ -131,13 +99,3 @@ static func build_palm(height: float = 5.0) -> Node3D:
 		frond.translate_object_local(Vector3(0, 0, -1.0))
 		palm.add_child(frond)
 	return palm
-
-
-static func _box(parent: Node3D, material: Material, size: Vector3, pos: Vector3) -> void:
-	var mesh := MeshInstance3D.new()
-	var box := BoxMesh.new()
-	box.size = size
-	box.material = material
-	mesh.mesh = box
-	mesh.position = pos
-	parent.add_child(mesh)
