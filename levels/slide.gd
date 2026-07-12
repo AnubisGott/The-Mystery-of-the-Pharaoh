@@ -7,6 +7,7 @@ extends Node3D
 
 const LEVEL_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel05.mp3")
 const GLIDE_SOUND: AudioStreamWAV = preload("res://sounds/slide_glide.wav")
+const BUMP_SOUND: AudioStream = preload("res://sounds/bump.wav")
 const WALL_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_sphinx.tres")
 const FLOOR_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_pyramid.tres")
 const Torch := preload("res://levels/torch.gd")
@@ -51,6 +52,7 @@ const SLIDE_GRAVITY: float = 30.0
 
 var _spawn_transform: Transform3D
 var _glide_player: AudioStreamPlayer
+var _bump_player: AudioStreamPlayer
 var _sliding: bool = false
 var _intro_running: bool = false
 var _intro_skip: bool = false
@@ -80,7 +82,14 @@ func _ready() -> void:
 	_glide_player = AudioStreamPlayer.new()
 	_glide_player.stream = glide
 	_glide_player.volume_db = -14.0
+	_glide_player.bus = "Sfx"
 	add_child(_glide_player)
+
+	# The dull blow of slamming into a stone block.
+	_bump_player = AudioStreamPlayer.new()
+	_bump_player.stream = BUMP_SOUND
+	_bump_player.bus = "Sfx"
+	add_child(_bump_player)
 
 	if intro_enabled and DisplayServer.get_name() != "headless":
 		_play_intro()
@@ -303,7 +312,9 @@ func _build_environment() -> void:
 func _on_obstacle_hit(body: Node3D) -> void:
 	if not body.is_in_group("player") or GameManager.god_mode or player.is_dying():
 		return
-	player.die_and_reset(_spawn_transform, true)
+	# The bump replaces the spear-hit cry.
+	_bump_player.play()
+	player.die_and_reset(_spawn_transform, true, true, false)
 
 
 func _on_god_mode_changed(enabled: bool) -> void:

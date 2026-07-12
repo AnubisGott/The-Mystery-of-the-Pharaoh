@@ -46,6 +46,7 @@ func _ready() -> void:
 	trigger.body_entered.connect(_on_body_entered)
 
 	_crack_player = AudioStreamPlayer3D.new()
+	_crack_player.bus = "Sfx"
 	_crack_player.stream = preload("res://sounds/footstep_sand_1.wav")
 	_crack_player.pitch_scale = 0.55
 	_crack_player.volume_db = 2.0

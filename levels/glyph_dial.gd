@@ -1,13 +1,15 @@
 extends Node3D
 
 # A stone dial in the burial chamber bearing FOUR hieroglyphs, one per
-# drum quarter — every F/E press turns the next symbol to the front,
+# drum quarter — every F/E press grinds the next symbol to the front,
 # endlessly, like a combination lock. The dial is solved while its
 # TARGET glyph (matching the wall glyph above) faces the room; it
-# starts two turns away, and the glyph glows in the right position.
-# The finale needs every dial solved at the same time.
+# starts two turns away, and there is no glow hint — the wall glyph is
+# the only clue. The finale needs every dial solved at the same time.
 
 signal solved
+
+const TURN_SOUND: AudioStream = preload("res://sounds/stone_turn.wav")
 
 # How many quarter turns from the start until the target faces front.
 const TURNS_TO_TARGET: int = 2
@@ -19,8 +21,8 @@ var turns_done: int = 0
 var is_solved: bool = false
 
 var _drum: Node3D
-var _glyph: Node3D
 var _spinning: bool = false
+var _turn_player: AudioStreamPlayer3D
 
 
 func _ready() -> void:
@@ -69,8 +71,14 @@ func _ready() -> void:
 		glyph.position = Vector3(sin(angle) * 0.44, 0, cos(angle) * 0.44)
 		glyph.rotation.y = angle
 		_drum.add_child(glyph)
-		if slot == 0:
-			_glyph = glyph
+
+	_turn_player = AudioStreamPlayer3D.new()
+	_turn_player.stream = TURN_SOUND
+	_turn_player.bus = "Sfx"
+	_turn_player.volume_db = -10.0
+	_turn_player.max_distance = 16.0
+	_turn_player.position = Vector3(0, 1.25, 0)
+	add_child(_turn_player)
 
 
 func can_interact() -> bool:
@@ -81,6 +89,7 @@ func interact() -> void:
 	if _spinning:
 		return
 	_spinning = true
+	_turn_player.play()
 	var tween := create_tween()
 	tween.tween_property(_drum, "rotation:y", _drum.rotation.y + TAU / 4.0, 0.6) \
 			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
@@ -95,16 +104,5 @@ func _on_spin_finished() -> void:
 	turns_done += 1
 	var was_solved := is_solved
 	is_solved = (turns_done % 4) == TURNS_TO_TARGET
-	_set_glyph_glow(is_solved)
 	if is_solved and not was_solved:
 		solved.emit()
-
-
-# The solved position announces itself: the target glyph lights up.
-func _set_glyph_glow(lit: bool) -> void:
-	for child in _glyph.get_children():
-		var mesh_instance := child as MeshInstance3D
-		if mesh_instance != null and mesh_instance.mesh is PrimitiveMesh:
-			var material := (mesh_instance.mesh as PrimitiveMesh).material as StandardMaterial3D
-			if material != null:
-				material.emission_energy_multiplier = 2.6 if lit else 0.7

@@ -41,20 +41,23 @@ var music_enabled: bool = true
 
 var fullscreen: bool = false
 var window_size: Vector2i = Vector2i(1152, 648)
-# Master loudness, 0..1, applied to the Master audio bus. A tenth of
-# full scale is the out-of-the-box level; the options slider overrides it.
-var volume: float = 0.1
+# Separate loudness for effects and music (0..1), each on its own audio
+# bus; the options sliders override the defaults.
+var sound_volume: float = 1.0
+var music_volume: float = 0.1
 
 var _music_player: AudioStreamPlayer
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_create_buses()
 	_load_settings()
 	_apply_display()
-	_apply_volume()
+	_apply_volumes()
 	_music_player = AudioStreamPlayer.new()
 	_music_player.volume_db = -6.0
+	_music_player.bus = "Music"
 	add_child(_music_player)
 	# Fires only for non-looping tracks (the credits use it to end the game).
 	_music_player.finished.connect(func() -> void: music_finished.emit())
@@ -85,14 +88,34 @@ func _unhandled_input(event: InputEvent) -> void:
 		god_mode_changed.emit(god_mode)
 
 
-func set_volume(value: float) -> void:
-	volume = clampf(value, 0.0, 1.0)
-	_apply_volume()
+# Every sound effect plays on the "Sfx" bus and the music on "Music",
+# so the two sliders do not affect each other.
+func _create_buses() -> void:
+	for bus_name in ["Sfx", "Music"]:
+		if AudioServer.get_bus_index(bus_name) == -1:
+			var index := AudioServer.bus_count
+			AudioServer.add_bus(index)
+			AudioServer.set_bus_name(index, bus_name)
+			AudioServer.set_bus_send(index, "Master")
+
+
+func set_sound_volume(value: float) -> void:
+	sound_volume = clampf(value, 0.0, 1.0)
+	_apply_volumes()
 	_save_settings()
 
 
-func _apply_volume() -> void:
-	AudioServer.set_bus_volume_db(0, linear_to_db(maxf(volume, 0.001)))
+func set_music_volume(value: float) -> void:
+	music_volume = clampf(value, 0.0, 1.0)
+	_apply_volumes()
+	_save_settings()
+
+
+func _apply_volumes() -> void:
+	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Sfx"),
+			linear_to_db(maxf(sound_volume, 0.001)))
+	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Music"),
+			linear_to_db(maxf(music_volume, 0.001)))
 
 
 func set_fullscreen(enabled: bool) -> void:
@@ -147,7 +170,8 @@ func _save_settings() -> void:
 	config.load(SETTINGS_PATH)
 	config.set_value("display", "fullscreen", fullscreen)
 	config.set_value("display", "window_size", window_size)
-	config.set_value("audio", "volume", volume)
+	config.set_value("audio", "sound_volume", sound_volume)
+	config.set_value("audio", "music_volume", music_volume)
 	config.set_value("audio", "music", music_enabled)
 	config.save(SETTINGS_PATH)
 
@@ -158,7 +182,8 @@ func _load_settings() -> void:
 		return
 	fullscreen = config.get_value("display", "fullscreen", fullscreen)
 	window_size = config.get_value("display", "window_size", window_size)
-	volume = config.get_value("audio", "volume", volume)
+	sound_volume = config.get_value("audio", "sound_volume", sound_volume)
+	music_volume = config.get_value("audio", "music_volume", music_volume)
 	music_enabled = config.get_value("audio", "music", music_enabled)
 
 

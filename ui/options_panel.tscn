@@ -26,17 +26,29 @@ custom_minimum_size = Vector2(280, 34)
 layout_mode = 2
 text = "Music: On (M)"
 
-[node name="VolumeLabel" type="Label" parent="."]
+[node name="SoundLabel" type="Label" parent="."]
 layout_mode = 2
-text = "Volume"
+text = "Sound Volume"
 horizontal_alignment = 1
 
-[node name="VolumeSlider" type="HSlider" parent="."]
+[node name="SoundSlider" type="HSlider" parent="."]
 custom_minimum_size = Vector2(280, 24)
 layout_mode = 2
 max_value = 100.0
 step = 5.0
 value = 100.0
+
+[node name="MusicLabel" type="Label" parent="."]
+layout_mode = 2
+text = "Music Volume"
+horizontal_alignment = 1
+
+[node name="MusicSlider" type="HSlider" parent="."]
+custom_minimum_size = Vector2(280, 24)
+layout_mode = 2
+max_value = 100.0
+step = 5.0
+value = 10.0
 
 [node name="BackButton" type="Button" parent="."]
 custom_minimum_size = Vector2(280, 34)

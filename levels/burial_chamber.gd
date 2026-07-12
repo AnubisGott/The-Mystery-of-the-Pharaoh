@@ -17,6 +17,7 @@ const IntroTitle := preload("res://ui/intro_title.gd")
 const SARCOPHAGUS: PackedScene = preload("res://models/sarcophagus.glb")
 const ANUBIS: PackedScene = preload("res://models/anubis.glb")
 const CAT: PackedScene = preload("res://models/cat.glb")
+const RUMBLE_SOUND: AudioStream = preload("res://sounds/stone_rumble.wav")
 
 const INTRO_HOLD: float = 1.4
 const INTERACT_RANGE: float = 1.7
@@ -349,6 +350,12 @@ func _open_floor() -> void:
 	if floor_open:
 		return
 	floor_open = true
+	# The pit announces itself with a heavy stone rumble.
+	var rumble := AudioStreamPlayer.new()
+	rumble.stream = RUMBLE_SOUND
+	rumble.bus = "Sfx"
+	add_child(rumble)
+	rumble.play()
 	# A short beat, then the pit strip drops straight down like a
 	# trapdoor. Dropping (instead of sliding sideways) matters: a
 	# sideways-moving slab CARRIES whoever stands on it — that was the

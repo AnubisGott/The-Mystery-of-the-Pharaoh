@@ -383,6 +383,7 @@ func _start_ambient_pad() -> void:
 	if pad.stream is AudioStreamMP3:
 		pad.stream.loop = true
 	pad.volume_db = -16.0
+	pad.bus = "Sfx"
 	pad.autoplay = true
 	add_child(pad)
 

@@ -20,6 +20,7 @@ var _whoosh_player: AudioStreamPlayer
 func _ready() -> void:
 	_whoosh_player = AudioStreamPlayer.new()
 	_whoosh_player.volume_db = -6.0
+	_whoosh_player.bus = "Sfx"
 	add_child(_whoosh_player)
 
 

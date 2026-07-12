@@ -1,16 +1,17 @@
 extends VBoxContainer
 
-# The shared options controls — display mode, window size, music and
-# master volume — used by both the main menu and the in-game pause
-# menu. Emits `closed` when Back is pressed; the host decides what to
-# show instead.
+# The shared options controls — display mode, window size, music
+# on/off and the two loudness sliders (sound effects and music) — used
+# by both the main menu and the in-game pause menu. Emits `closed`
+# when Back is pressed; the host decides what to show instead.
 
 signal closed
 
 @onready var music_button: Button = $MusicButton
 @onready var display_button: Button = $DisplayButton
 @onready var size_button: Button = $SizeButton
-@onready var volume_slider: HSlider = $VolumeSlider
+@onready var sound_slider: HSlider = $SoundSlider
+@onready var music_slider: HSlider = $MusicSlider
 @onready var back_button: Button = $BackButton
 
 
@@ -19,8 +20,10 @@ func _ready() -> void:
 	display_button.pressed.connect(_on_display_pressed)
 	size_button.pressed.connect(_on_size_pressed)
 	back_button.pressed.connect(_on_back_pressed)
-	volume_slider.value = GameManager.volume * 100.0
-	volume_slider.value_changed.connect(_on_volume_changed)
+	sound_slider.value = GameManager.sound_volume * 100.0
+	sound_slider.value_changed.connect(_on_sound_volume_changed)
+	music_slider.value = GameManager.music_volume * 100.0
+	music_slider.value_changed.connect(_on_music_volume_changed)
 	GameManager.music_enabled_changed.connect(_on_music_enabled_changed)
 	GameManager.display_changed.connect(_update_display_labels)
 	_update_music_label()
@@ -47,8 +50,12 @@ func _update_music_label() -> void:
 	music_button.text = "Music: On (M)" if GameManager.music_enabled else "Music: Off (M)"
 
 
-func _on_volume_changed(value: float) -> void:
-	GameManager.set_volume(value / 100.0)
+func _on_sound_volume_changed(value: float) -> void:
+	GameManager.set_sound_volume(value / 100.0)
+
+
+func _on_music_volume_changed(value: float) -> void:
+	GameManager.set_music_volume(value / 100.0)
 
 
 func _on_display_pressed() -> void:

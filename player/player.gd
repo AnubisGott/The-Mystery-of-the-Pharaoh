@@ -73,6 +73,10 @@ func _ready() -> void:
 	# the model should freeze with the rest of the world.
 	visual.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_to_group("player")
+	# All effects live on the Sfx bus (its own volume slider).
+	for sound in [_footstep_player, _hit_player, _fall_player, _whistle_player]:
+		if sound != null:
+			sound.bus = "Sfx"
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	$CameraPivot/CameraArm.add_excluded_object(get_rid())
 	visual.position.y = -STAND_HEIGHT / 2.0 + visual_lift
@@ -171,7 +175,8 @@ func is_dying() -> bool:
 # flings it onto the back (Death_A). One tween chain, no awaits: a
 # coroutine suspended on a SceneTreeTimer leaks at exit if the game quits
 # mid-sequence.
-func die_and_reset(spawn: Transform3D, hit_high: bool = true, animate: bool = true) -> void:
+func die_and_reset(spawn: Transform3D, hit_high: bool = true, animate: bool = true,
+		hit_sound: bool = true) -> void:
 	if _is_dying:
 		return
 
@@ -183,8 +188,10 @@ func die_and_reset(spawn: Transform3D, hit_high: bool = true, animate: bool = tr
 		# Hit by a spear/pendulum: the impact sound, then the death clip.
 		# The forward slam is longer, play it faster so both deaths restart
 		# at a similar pace. The wait derives from the clip length (they
-		# differ per character), plus a beat on the ground.
-		_hit_player.play()
+		# differ per character), plus a beat on the ground. Levels with
+		# their own impact audio (the slide's bump) silence the cry.
+		if hit_sound:
+			_hit_player.play()
 		var clip := "Death_B" if hit_high else "Death_A"
 		var speed := 1.5 if hit_high else 1.0
 		_anim.speed_scale = speed

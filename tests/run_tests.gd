@@ -691,17 +691,25 @@ func test_menu_has_level_entries() -> void:
 	menu.get_node("Center/Panel/MenuItems/OptionsButton").pressed.emit()
 	_check(menu.get_node("Center/Panel/OptionsItems").visible, "options panel did not open")
 	_check(not menu.get_node("Center/Panel/MenuItems").visible, "menu stayed visible under options")
-	_check(menu.get_node("Center/Panel/OptionsItems/VolumeSlider") != null, "volume slider missing")
+	_check(menu.get_node("Center/Panel/OptionsItems/SoundSlider") != null, "sound slider missing")
+	_check(menu.get_node("Center/Panel/OptionsItems/MusicSlider") != null, "music slider missing")
 	menu.get_node("Center/Panel/OptionsItems/BackButton").pressed.emit()
 	_check(menu.get_node("Center/Panel/MenuItems").visible, "back did not return to the menu")
 
-	# The volume slider drives the master bus (and is restored after).
-	var orig_volume: float = GameManager.volume
-	menu.get_node("Center/Panel/OptionsItems/VolumeSlider").value = 50.0
-	_check(absf(GameManager.volume - 0.5) < 0.01, "slider did not set the volume")
-	_check(absf(AudioServer.get_bus_volume_db(0) - linear_to_db(0.5)) < 0.1,
-			"master bus not at half loudness")
-	GameManager.set_volume(orig_volume)
+	# The two sliders drive their own buses (and are restored after).
+	var orig_sound: float = GameManager.sound_volume
+	var orig_music: float = GameManager.music_volume
+	menu.get_node("Center/Panel/OptionsItems/SoundSlider").value = 50.0
+	_check(absf(GameManager.sound_volume - 0.5) < 0.01, "slider did not set the sound volume")
+	_check(absf(AudioServer.get_bus_volume_db(AudioServer.get_bus_index("Sfx"))
+			- linear_to_db(0.5)) < 0.1, "Sfx bus not at half loudness")
+	menu.get_node("Center/Panel/OptionsItems/MusicSlider").value = 30.0
+	_check(absf(GameManager.music_volume - 0.3) < 0.01, "slider did not set the music volume")
+	_check(absf(AudioServer.get_bus_volume_db(AudioServer.get_bus_index("Music"))
+			- linear_to_db(0.3)) < 0.1, "Music bus not at the set loudness")
+	_check(GameManager._music_player.bus == "Music", "music player not on the Music bus")
+	GameManager.set_sound_volume(orig_sound)
+	GameManager.set_music_volume(orig_music)
 
 	menu.queue_free()
 	await get_tree().physics_frame
@@ -970,6 +978,14 @@ func test_burial_dials_open_the_floor() -> void:
 	# The wheels keep turning forever, even after they are solved.
 	_check(chamber._dials[0].can_interact(),
 			"a solved dial refused further turns")
+	# Turning grinds, and the opening pit spawned its rumble player (the
+	# 1.8 s sound itself has already finished by now).
+	_check(chamber._dials[0]._turn_player.stream != null, "dial has no turn sound")
+	var rumble_found := false
+	for child in chamber.get_children():
+		if child is AudioStreamPlayer and child.stream == chamber.RUMBLE_SOUND:
+			rumble_found = true
+	_check(rumble_found, "the opening pit made no rumble")
 	_check(chamber._pit_slabs[0].position.y < -8.0, "pit trapdoor did not drop away")
 	for dial in chamber._dials:
 		_check(dial.position.y < -5.0, "dial socket did not fall into the pit")
@@ -1036,6 +1052,9 @@ func test_slide_obstacle_kills() -> void:
 			died = true
 			break
 	_check(died, "sliding into the block did not kill")
+	_check(slide._bump_player.playing, "hitting the block made no bump sound")
+	_check(not slide_player._hit_player.playing,
+			"the spear-hit cry played instead of the bump")
 	slide.queue_free()
 	await get_tree().physics_frame
 
@@ -1131,10 +1150,13 @@ func test_croc_backs_hold_the_player() -> void:
 		croc.frozen = true
 	crocs_player.global_position = crocs.to_global(
 			crocs._croc_positions[0] + Vector3(0, 1.2, 0))
+	var landing_heard := false
 	for i in 40:
 		await get_tree().physics_frame
+		landing_heard = landing_heard or crocs._land_player.playing
 	_check(not crocs_player.is_dying(), "standing on a surfaced croc killed the player")
 	_check(crocs_player.is_on_floor(), "player does not stand on the croc's back")
+	_check(landing_heard, "landing on the croc made no sound")
 	crocs.queue_free()
 	await get_tree().physics_frame
 
