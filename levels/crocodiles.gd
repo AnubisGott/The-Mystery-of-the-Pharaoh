@@ -404,16 +404,110 @@ func _on_end_zone_entered() -> void:
 	if DisplayServer.get_name() != "headless":
 		# body_entered fires while physics is flushing; the cutscene
 		# adds nodes, so it must wait for the flush to finish.
-		_play_outro.call_deferred()
+		# (_play_outro_run is the older run-only finale, kept as a
+		# drop-in replacement.)
+		_play_outro_jump.call_deferred()
 	else:
 		GameManager.complete_level()
 
 
-# The finale: the adventurer covers the last stretch of the dock in slow
-# motion, the camera gliding low over the water alongside, the steamer
-# towering over the planks — then the journey home begins. Any key or
-# click skips straight to Level 7.
-func _play_outro() -> void:
+# The finale: the adventurer sprints down the dock in slow motion,
+# veers to the edge and leaps for the steamer's open foredeck - the cut
+# to Level 7 comes right at the highest point of the jump, landing
+# unseen. Any key or click skips straight to Level 7.
+func _play_outro_jump() -> void:
+	_intro_skip = false
+	_intro_can_skip = true
+	player.set_physics_process(false)
+	player.set_process_unhandled_input(false)
+	var pause_menu: Node = get_node_or_null("PauseMenu")
+	if pause_menu:
+		pause_menu.set_process_unhandled_input(false)
+	get_node("ControlsHint").visible = false   # no HUD over the cutscene
+
+	var anim: AnimationPlayer = player.get_node("Visual/AnimationPlayer")
+	anim.speed_scale = 1.0
+	anim.play("Running_A", 0.2)
+	player.rotation.y = 0.0   # squarely down the dock
+
+	var cam := Camera3D.new()
+	cam.fov = 50.0
+	add_child(cam)
+	cam.make_current()
+
+	Engine.time_scale = 0.35
+	var tree := get_tree()
+	var y0 := player.global_position.y
+
+	# Three legs: down the dock, two veering steps to the dock edge,
+	# and the rising half of the leap. The apex hangs over the gap
+	# between the planks and the hull; the implied landing is the open
+	# main deck by the bow.
+	var run_to := to_global(Vector3(0.0, 0, _dock_end_z + 5.2))
+	var takeoff := to_global(Vector3(1.1, 0, _dock_end_z + 3.6))
+	var apex := to_global(Vector3(1.75, 0, _dock_end_z + 2.3))
+	run_to.y = y0
+	takeoff.y = y0
+	apex.y = y0 + 1.2
+
+	var cam_low := Vector3(-4.4, 0.35, -2.2)
+	var cam_mid := Vector3(-4.4, 0.8, -2.2)
+	var cam_high := Vector3(-5.2, 1.25, -2.8)
+	# Each leg: destination, stride speed, is-the-jump, camera from/to.
+	var legs: Array[Array] = [
+		[run_to, player.run_stride_speed, false, cam_low, cam_mid],
+		[takeoff, player.run_stride_speed, false, cam_mid, cam_mid],
+		[apex, 4.2, true, cam_mid, cam_high],
+	]
+	for leg in legs:
+		if _intro_skip:
+			break
+		var from := player.global_position
+		var to: Vector3 = leg[0]
+		var flat := Vector2(to.x - from.x, to.z - from.z)
+		var heading := atan2(-flat.x, -flat.y)
+		var start_yaw := player.rotation.y
+		var jumping: bool = leg[2]
+		if jumping:
+			anim.play("Jump_Start", 0.1)
+		var t := 0.0
+		while t < 1.0 and not _intro_skip:
+			if not is_inside_tree():
+				Engine.time_scale = 1.0
+				return
+			t = minf(t + get_process_delta_time() * leg[1] / maxf(flat.length(), 0.1), 1.0)
+			var pos := from.lerp(to, t)
+			if jumping:
+				# Only the rising half of the arc: the climb eases out
+				# so the vertical speed hits zero exactly at the apex.
+				pos.y = from.y + (to.y - from.y) * sin(t * PI / 2.0)
+				if anim.current_animation.is_empty():
+					anim.play("Jump_Idle", 0.2)   # takeoff clip finished
+			player.rotation.y = lerp_angle(start_yaw, heading, minf(t * 3.0, 1.0))
+			player.global_position = pos
+			var focus := pos + Vector3(0, 0.75, 0)
+			cam.global_position = focus + (leg[3] as Vector3).lerp(leg[4], t)
+			cam.look_at(focus + Vector3(1.2, 0.15, -1.0), Vector3.UP)
+			await tree.process_frame
+
+	# A short hang on the apex - then the journey home begins.
+	var hold := 0.0
+	while hold < 0.15 and not _intro_skip:
+		if not is_inside_tree():
+			Engine.time_scale = 1.0
+			return
+		await tree.process_frame
+		hold += get_process_delta_time()
+
+	Engine.time_scale = 1.0
+	GameManager.complete_level()
+
+
+# The older finale, kept as a drop-in replacement (swap the call in
+# _on_end_zone_entered): the adventurer covers the last stretch of the
+# dock in slow motion and pulls up facing the ship, without jumping
+# aboard. Any key or click skips straight to Level 7.
+func _play_outro_run() -> void:
 	_intro_skip = false
 	_intro_can_skip = true
 	player.set_physics_process(false)
