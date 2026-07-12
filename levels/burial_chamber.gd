@@ -13,6 +13,7 @@ const Torch := preload("res://levels/torch.gd")
 const FireBowl := preload("res://levels/fire_bowl.gd")
 const GlyphDial := preload("res://levels/glyph_dial.gd")
 const IntroTitle := preload("res://ui/intro_title.gd")
+const SARCOPHAGUS: PackedScene = preload("res://models/sarcophagus.glb")
 
 const INTRO_HOLD: float = 1.4
 const INTERACT_RANGE: float = 1.7
@@ -100,7 +101,7 @@ func _physics_process(delta: float) -> void:
 			best = node
 	prompt_label.visible = best != null
 	if best != null:
-		prompt_label.text = "F / E - %s" % best.prompt
+		prompt_label.text = "E or F - %s" % best.prompt
 		if Input.is_action_just_pressed("interact"):
 			best.interact()
 
@@ -198,33 +199,18 @@ func _build_furniture() -> void:
 		bowl.lit_changed.connect(_on_bowl_lit)
 		_bowls.append(bowl)
 
-	# Dais and the upright sarcophagus with the death mask; they stand
-	# clear of the pit and stay through the finale.
+	# Dais and the upright sarcophagus of Tut-Ench-Amun — a painted
+	# museum scan (CC-BY, see models/CREDITS.md); they stand clear of
+	# the pit and stay through the finale.
 	_add_box(Vector3(0, 0.25, -18.5), Vector3(4, 0.5, 2.6), FLOOR_MATERIAL)
 	var gold := StandardMaterial3D.new()
 	gold.albedo_color = Color(0.85, 0.66, 0.22)
 	gold.metallic = 0.7
 	gold.roughness = 0.3
-	var blue := StandardMaterial3D.new()
-	blue.albedo_color = Color(0.12, 0.25, 0.55)
-	blue.roughness = 0.5
-	var dark := StandardMaterial3D.new()
-	dark.albedo_color = Color(0.08, 0.07, 0.06)
 
-	var coffin := Node3D.new()
+	var coffin: Node3D = SARCOPHAGUS.instantiate()
 	coffin.position = Vector3(0, 0.5, -19.0)
 	add_child(coffin)
-	_prop_box(coffin, gold, Vector3(1.3, 2.7, 0.75), Vector3(0, 1.35, 0))
-	# Death mask: face plate, eyes, royal beard and nemes stripes.
-	_prop_box(coffin, gold, Vector3(0.85, 0.9, 0.12), Vector3(0, 1.95, 0.42))
-	_prop_box(coffin, dark, Vector3(0.16, 0.07, 0.03), Vector3(-0.2, 2.12, 0.5))
-	_prop_box(coffin, dark, Vector3(0.16, 0.07, 0.03), Vector3(0.2, 2.12, 0.5))
-	_prop_box(coffin, gold, Vector3(0.12, 0.34, 0.1), Vector3(0, 1.6, 0.46))
-	for i in 3:
-		_prop_box(coffin, blue, Vector3(1.34, 0.14, 0.79),
-				Vector3(0, 2.52 - i * 0.28, 0))
-	_prop_box(coffin, blue, Vector3(0.3, 0.75, 0.14), Vector3(-0.62, 1.85, 0.36))
-	_prop_box(coffin, blue, Vector3(0.3, 0.75, 0.14), Vector3(0.62, 1.85, 0.36))
 
 	# Anubis statue.
 	var anubis := Node3D.new()
