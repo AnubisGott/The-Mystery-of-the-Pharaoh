@@ -58,6 +58,38 @@ static func build_boat() -> Node3D:
 	for side: float in [-1.0, 1.0]:
 		_box(boat, red, Vector3(0.5, 2.0, 3.2), Vector3(side * 2.4, 1.1, 1.6))
 		_box(boat, dark, Vector3(0.55, 0.3, 3.3), Vector3(side * 2.4, 2.15, 1.6))
+
+	# Smoke from the funnel — part of the boat, so it steams identically
+	# at the Level-6 jetty and on the Level-7 journey.
+	var quad := QuadMesh.new()
+	quad.size = Vector2(0.9, 0.9)
+	var smoke_material := StandardMaterial3D.new()
+	smoke_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	smoke_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	smoke_material.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	smoke_material.vertex_color_use_as_albedo = true
+	quad.material = smoke_material
+	var fade := Curve.new()
+	fade.add_point(Vector2(0.0, 0.4))
+	fade.add_point(Vector2(1.0, 1.0))
+	var ramp := Gradient.new()
+	ramp.set_color(0, Color(0.3, 0.3, 0.3, 0.6))
+	ramp.set_color(1, Color(0.6, 0.6, 0.6, 0.0))
+	var smoke := CPUParticles3D.new()
+	smoke.mesh = quad
+	smoke.amount = 24
+	smoke.lifetime = 3.5
+	smoke.direction = Vector3(0.3, 1, 0)
+	smoke.spread = 10.0
+	smoke.gravity = Vector3.ZERO
+	smoke.initial_velocity_min = 0.8
+	smoke.initial_velocity_max = 1.4
+	smoke.scale_amount_min = 0.6
+	smoke.scale_amount_max = 1.0
+	smoke.scale_amount_curve = fade
+	smoke.color_ramp = ramp
+	smoke.position = Vector3(0, 6.4, -0.8)
+	boat.add_child(smoke)
 	return boat
 
 
