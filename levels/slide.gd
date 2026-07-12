@@ -6,6 +6,7 @@ extends Node3D
 # At the bottom the chute launches the player into the water.
 
 const LEVEL_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel05.mp3")
+const GLIDE_SOUND: AudioStreamWAV = preload("res://sounds/slide_glide.wav")
 const WALL_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_sphinx.tres")
 const FLOOR_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_pyramid.tres")
 const Torch := preload("res://levels/torch.gd")
@@ -49,6 +50,7 @@ const SLIDE_GRAVITY: float = 30.0
 @export var intro_enabled: bool = true
 
 var _spawn_transform: Transform3D
+var _glide_player: AudioStreamPlayer
 var _sliding: bool = false
 var _intro_running: bool = false
 var _intro_skip: bool = false
@@ -71,6 +73,15 @@ func _ready() -> void:
 	player.get_node("Visual/AnimationPlayer").play("Crouch_Idle")
 	player.respawned.connect(_on_player_respawned)
 
+	# The gliding loop, audible only while the player rides the chute.
+	var glide: AudioStreamWAV = GLIDE_SOUND
+	glide.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	glide.loop_end = glide.data.size() / 2   # 16-bit mono frames
+	_glide_player = AudioStreamPlayer.new()
+	_glide_player.stream = glide
+	_glide_player.volume_db = -6.0
+	add_child(_glide_player)
+
 	if intro_enabled and DisplayServer.get_name() != "headless":
 		_play_intro()
 	else:
@@ -79,6 +90,8 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	if _intro_running or not _sliding or player.is_dying():
+		if _glide_player.playing:
+			_glide_player.stop()
 		return
 
 	var lp := to_local(player.global_position)
@@ -113,6 +126,15 @@ func _physics_process(delta: float) -> void:
 		v.y -= SLIDE_GRAVITY * delta
 	player.velocity = v
 	player.move_and_slide()
+
+	# The glide sound follows ground contact: silent from the moment a
+	# jump (or a hole) takes the player off the chute until touchdown.
+	if player.is_on_floor():
+		_glide_player.pitch_scale = lerpf(0.9, 1.15, _progress(lp.z))
+		if not _glide_player.playing:
+			_glide_player.play()
+	elif _glide_player.playing:
+		_glide_player.stop()
 
 	# The camera rides the chute line rather than the jump arc: freezing
 	# it while airborne (the flat-level rule) let long forward jumps

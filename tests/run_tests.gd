@@ -1050,6 +1050,30 @@ func test_slide_jump_stays_low() -> void:
 	await get_tree().physics_frame
 
 
+func test_slide_glide_sound_follows_jumps() -> void:
+	var slide := await _spawn_slide()
+	var slide_player: CharacterBody3D = slide.get_node("Player")
+	for i in 30:
+		await get_tree().physics_frame
+	_check(slide._glide_player.playing, "glide sound silent while sliding")
+	Input.action_press("jump")
+	var silent_in_air := false
+	for i in 60:
+		await get_tree().physics_frame
+		if not slide_player.is_on_floor() and not slide._glide_player.playing:
+			silent_in_air = true
+	Input.action_release("jump")
+	_check(silent_in_air, "glide sound kept playing during the jump")
+	for i in 60:
+		await get_tree().physics_frame
+		if slide_player.is_on_floor():
+			break
+	_check(slide_player.is_on_floor(), "player did not land after the jump")
+	_check(slide._glide_player.playing, "glide sound did not resume after landing")
+	slide.queue_free()
+	await get_tree().physics_frame
+
+
 func test_slide_ends_in_water() -> void:
 	var slide := await _spawn_slide()
 	var end_zone: Area3D = slide.get_node("EndZone")
