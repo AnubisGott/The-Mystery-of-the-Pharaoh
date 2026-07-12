@@ -15,6 +15,7 @@ const GlyphDial := preload("res://levels/glyph_dial.gd")
 const IntroTitle := preload("res://ui/intro_title.gd")
 const SARCOPHAGUS: PackedScene = preload("res://models/sarcophagus.glb")
 const ANUBIS: PackedScene = preload("res://models/anubis.glb")
+const CAT: PackedScene = preload("res://models/cat.glb")
 
 const INTRO_HOLD: float = 1.4
 const INTERACT_RANGE: float = 1.7
@@ -199,6 +200,7 @@ func _build_furniture() -> void:
 		add_child(bowl)
 		bowl.lit_changed.connect(_on_bowl_lit)
 		_bowls.append(bowl)
+		_add_blocker(Vector3(side * 2.6, 0.55, -6.6), Vector3(0.8, 1.1, 0.8))
 
 	# Dais and the upright sarcophagus of Tut-Ench-Amun — a painted
 	# museum scan (CC-BY, see models/CREDITS.md); they stand clear of
@@ -208,12 +210,22 @@ func _build_furniture() -> void:
 	var coffin: Node3D = SARCOPHAGUS.instantiate()
 	coffin.position = Vector3(0, 0.5, -19.0)
 	add_child(coffin)
+	_add_blocker(Vector3(0, 2.1, -19.0), Vector3(1.1, 3.2, 0.9))
 
 	# Anubis statue — the jackal on its own gold pedestal, lofted from
 	# the four-view artwork (tools/blender/make_anubis.py).
 	var anubis: Node3D = ANUBIS.instantiate()
 	anubis.position = Vector3(-4.8, 0, -19.5)
 	add_child(anubis)
+	_add_blocker(Vector3(-4.8, 1.3, -19.5), Vector3(1.7, 2.6, 2.3))
+
+	# The Bastet cat guards the other flank on a plain stone dais like
+	# the sarcophagus's.
+	_add_box(Vector3(4.8, 0.25, -19.5), Vector3(2.2, 0.5, 2.2), FLOOR_MATERIAL)
+	var cat: Node3D = CAT.instantiate()
+	cat.position = Vector3(4.8, 0.5, -19.5)
+	add_child(cat)
+	_add_blocker(Vector3(4.8, 1.5, -19.5), Vector3(0.9, 2.0, 1.5))
 
 	# The two dials flanking the pit strip, and the wall glyphs.
 	var dial_data: Array = [
@@ -228,6 +240,9 @@ func _build_furniture() -> void:
 		add_child(dial)
 		dial.solved.connect(_on_dial_solved)
 		_dials.append(dial)
+		# The blocker rides inside the dial so it falls along with it.
+		var blocker := _make_blocker(Vector3(0, 0.8, 0), Vector3(0.9, 1.6, 0.9))
+		dial.add_child(blocker)
 
 	# Only the two puzzle glyphs appear in the room: the ankh and the
 	# djed, above their dials and flanking the door.
@@ -242,6 +257,22 @@ func _build_furniture() -> void:
 		glyph.position = data[0]
 		glyph.rotation.y = data[1]
 		add_child(glyph)
+
+
+# Invisible collision so statues and furniture cannot be walked through.
+func _make_blocker(center: Vector3, size: Vector3) -> StaticBody3D:
+	var body := StaticBody3D.new()
+	var collision := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = size
+	collision.shape = shape
+	body.add_child(collision)
+	body.position = center
+	return body
+
+
+func _add_blocker(center: Vector3, size: Vector3) -> void:
+	add_child(_make_blocker(center, size))
 
 
 func _prop_box(parent: Node3D, material: Material, size: Vector3, pos: Vector3) -> void:

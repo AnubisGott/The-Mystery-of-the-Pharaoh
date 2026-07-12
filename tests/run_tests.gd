@@ -962,6 +962,9 @@ func test_burial_dials_open_the_floor() -> void:
 	for i in 150:
 		await get_tree().physics_frame
 	_check(chamber.floor_open, "all dials turned but the floor stayed shut")
+	# The wheels keep turning forever, even after they are solved.
+	_check(chamber._dials[0].can_interact(),
+			"a solved dial refused further turns")
 	_check(chamber._pit_slabs[0].position.y < -8.0, "pit trapdoor did not drop away")
 	for dial in chamber._dials:
 		_check(dial.position.y < -5.0, "dial socket did not fall into the pit")

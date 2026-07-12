@@ -1,9 +1,10 @@
 extends Node3D
 
 # A stone dial in the burial chamber bearing a hieroglyph. Each F/E
-# turn rotates the drum a quarter turn; the dial is solved once it has
-# completed TWO full turns — its glyph then glows to show it sits in
-# the right position. The finale needs every dial solved.
+# turn rotates the drum a quarter turn, and the wheel can be turned
+# endlessly; the dial counts as solved once it has completed TWO full
+# turns — its glyph then glows to show it sits in the right position.
+# The finale needs every dial solved.
 
 signal solved
 
@@ -55,11 +56,11 @@ func _ready() -> void:
 
 
 func can_interact() -> bool:
-	return not _spinning and not is_solved
+	return not _spinning
 
 
 func interact() -> void:
-	if _spinning or is_solved:
+	if _spinning:
 		return
 	_spinning = true
 	var tween := create_tween()
