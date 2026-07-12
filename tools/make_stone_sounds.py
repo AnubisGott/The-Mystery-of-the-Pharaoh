@@ -52,28 +52,32 @@ def grind(duration: float, seed: int) -> list:
     return samples
 
 
-# A snappy stone clack: an instant noise burst with a fast decay, plus
-# a fainter echo-crack right after (the notch seating itself).
+# A snappy stone clack: an instant noise burst over a woody knock,
+# plus a fainter echo-crack right after (the notch seating itself).
 def crack(duration: float, seed: int) -> list:
     random.seed(seed)
     count = int(RATE * duration)
     hp_last = 0.0
+    phase = 0.0
     samples = []
     for i in range(count):
         t = i / RATE
         n = random.uniform(-1.0, 1.0)
         high = n - hp_last * 0.6   # crude high-pass: snappy, not rumbly
         hp_last = n
-        hit = math.exp(-t * 90.0)
-        echo = math.exp(-max(t - 0.06, 0.0) * 120.0) * (0.35 if t >= 0.06 else 0.0)
-        samples.append(high * (hit + echo))
+        hit = math.exp(-t * 60.0)
+        echo = math.exp(-max(t - 0.06, 0.0) * 90.0) * (0.45 if t >= 0.06 else 0.0)
+        # The knock gives the click a body the hiss alone lacks.
+        phase += math.tau * 220.0 / RATE
+        knock = math.sin(phase) * math.exp(-t * 45.0)
+        samples.append(high * (hit + echo) * 0.7 + knock * 0.8)
     return samples
 
 
 def main() -> None:
     os.makedirs("sounds", exist_ok=True)
 
-    write_wav("stone_turn.wav", crack(0.18, seed=11), 0.4)
+    write_wav("stone_turn.wav", crack(0.18, seed=11), 0.6)
 
     # The pitfall: a boom, then a long grinding decay.
     body = grind(1.8, seed=23)

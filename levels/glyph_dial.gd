@@ -75,7 +75,7 @@ func _ready() -> void:
 	_turn_player = AudioStreamPlayer3D.new()
 	_turn_player.stream = TURN_SOUND
 	_turn_player.bus = "Sfx"
-	_turn_player.volume_db = -10.0
+	_turn_player.volume_db = -2.0
 	_turn_player.max_distance = 16.0
 	_turn_player.position = Vector3(0, 1.25, 0)
 	add_child(_turn_player)
