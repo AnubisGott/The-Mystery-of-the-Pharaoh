@@ -946,8 +946,13 @@ func test_burial_dials_open_the_floor() -> void:
 	var chamber := await _spawn_burial()
 	var chamber_player: CharacterBody3D = chamber.get_node("Player")
 
+	# Every drum carries four symbols (plus the drum mesh itself), so
+	# each turn brings a different glyph to the front.
+	_check(chamber._dials[0]._drum.get_child_count() == 5,
+			"dial drum does not carry four symbols")
+
 	# One turn each is not enough: each wheel must complete TWO turns
-	# to sit in the right position.
+	# to bring the target symbol to the front.
 	for dial in chamber._dials:
 		dial.interact()
 	for i in 60:

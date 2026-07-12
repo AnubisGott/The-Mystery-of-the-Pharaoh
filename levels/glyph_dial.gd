@@ -1,14 +1,17 @@
 extends Node3D
 
-# A stone dial in the burial chamber bearing a hieroglyph. Each F/E
-# turn rotates the drum a quarter turn, and the wheel can be turned
-# endlessly; the dial counts as solved once it has completed TWO full
-# turns — its glyph then glows to show it sits in the right position.
-# The finale needs every dial solved.
+# A stone dial in the burial chamber bearing FOUR hieroglyphs, one per
+# drum quarter — every F/E press turns the next symbol to the front,
+# endlessly, like a combination lock. The dial is solved while its
+# TARGET glyph (matching the wall glyph above) faces the room; it
+# starts two turns away, and the glyph glows in the right position.
+# The finale needs every dial solved at the same time.
 
 signal solved
 
-const TURNS_REQUIRED: int = 2
+# How many quarter turns from the start until the target faces front.
+const TURNS_TO_TARGET: int = 2
+const GLYPH_KINDS: int = 4
 
 var prompt: String = "Turn the dial"
 var glyph_kind: int = 0
@@ -50,9 +53,24 @@ func _ready() -> void:
 	drum_mesh_instance.mesh = drum_mesh
 	_drum.add_child(drum_mesh_instance)
 
-	_glyph = Glyphs.build(glyph_kind, 0.42)
-	_glyph.position = Vector3(0, 0, 0.44)
-	_drum.add_child(_glyph)
+	# Four symbols around the drum. The target keeps the ORIGINAL
+	# single-glyph mount at local +Z (slot 0): the dial's room rotation
+	# points that slot at the wall, and after TURNS_TO_TARGET quarter
+	# turns it comes around to face the room. The other three slots
+	# carry the remaining glyph kinds.
+	var others: Array[int] = []
+	for kind in GLYPH_KINDS:
+		if kind != glyph_kind:
+			others.append(kind)
+	for slot in 4:
+		var kind: int = glyph_kind if slot == 0 else others.pop_front()
+		var glyph := Glyphs.build(kind, 0.42)
+		var angle := TAU / 4.0 * slot
+		glyph.position = Vector3(sin(angle) * 0.44, 0, cos(angle) * 0.44)
+		glyph.rotation.y = angle
+		_drum.add_child(glyph)
+		if slot == 0:
+			_glyph = glyph
 
 
 func can_interact() -> bool:
@@ -70,21 +88,23 @@ func interact() -> void:
 
 
 # A turn only counts once the quarter-turn has visibly completed — the
-# finale must not fire while a wheel is still spinning.
+# finale must not fire while a wheel is still spinning. Turning past
+# the target unsolves the dial again (the floor, once open, stays open).
 func _on_spin_finished() -> void:
 	_spinning = false
 	turns_done += 1
-	if not is_solved and turns_done >= TURNS_REQUIRED:
-		is_solved = true
-		_set_glyph_glow()
+	var was_solved := is_solved
+	is_solved = (turns_done % 4) == TURNS_TO_TARGET
+	_set_glyph_glow(is_solved)
+	if is_solved and not was_solved:
 		solved.emit()
 
 
-# The solved position announces itself: the glyph lights up.
-func _set_glyph_glow() -> void:
+# The solved position announces itself: the target glyph lights up.
+func _set_glyph_glow(lit: bool) -> void:
 	for child in _glyph.get_children():
 		var mesh_instance := child as MeshInstance3D
 		if mesh_instance != null and mesh_instance.mesh is PrimitiveMesh:
 			var material := (mesh_instance.mesh as PrimitiveMesh).material as StandardMaterial3D
 			if material != null:
-				material.emission_energy_multiplier = 2.6
+				material.emission_energy_multiplier = 2.6 if lit else 0.7

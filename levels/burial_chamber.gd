@@ -3,8 +3,9 @@ extends Node3D
 # Level 4: The Burial Chamber. The player lights the two fire bowls
 # flanking the locked door (F/E) to open it, then finds the burial
 # chamber: the sarcophagus of Tut-Ench-Amun, an Anubis statue and two
-# hieroglyph dials beside the pit strip. Turning both dials at least
-# once opens the floor — the player falls through, and the level ends.
+# hieroglyph dials beside the pit strip. Each dial carries four
+# symbols; when both dials show their wall glyph at the same time the
+# floor opens — the player falls through, and the level ends.
 
 const LEVEL_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel04.mp3")
 const WALL_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_sphinx.tres")
@@ -40,7 +41,6 @@ var _door: AnimatableBody3D
 var _bowls: Array[Node3D] = []
 var _dials: Array[Node3D] = []
 var _pit_slabs: Array[AnimatableBody3D] = []
-var _turned_count: int = 0
 var _pulling: bool = false
 var _intro_running: bool = false
 var _intro_skip: bool = false
@@ -338,9 +338,11 @@ func _open_door() -> void:
 
 
 func _on_dial_solved() -> void:
-	_turned_count += 1
-	if _turned_count >= _dials.size():
-		_open_floor()
+	# Every dial must show its target at the same time.
+	for dial in _dials:
+		if not dial.is_solved:
+			return
+	_open_floor()
 
 
 func _open_floor() -> void:
