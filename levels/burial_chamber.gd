@@ -245,13 +245,16 @@ func _build_furniture() -> void:
 		var blocker := _make_blocker(Vector3(0, 0.8, 0), Vector3(0.9, 1.6, 0.9))
 		dial.add_child(blocker)
 
-	# Only the two puzzle glyphs appear in the room: the ankh and the
-	# djed, above their dials and flanking the door.
+	# The two puzzle glyphs (ankh and djed) above their dials and
+	# flanking the door, plus the back-wall glyphs behind the statues:
+	# the ankh behind the cat, the pyramid behind Anubis.
 	var glyph_walls: Array = [
 		[Vector3(-6.9, 3.2, -12.0), -PI / 2.0, 0],
 		[Vector3(6.9, 3.2, -12.0), PI / 2.0, 1],
 		[Vector3(-1.9, 3.1, -7.7), 0.0, 0],
 		[Vector3(1.9, 3.1, -7.7), 0.0, 1],
+		[Vector3(4.8, 3.1, -21.9), 0.0, 0],
+		[Vector3(-4.8, 3.1, -21.9), 0.0, 3],
 	]
 	for data: Array in glyph_walls:
 		var glyph := Glyphs.build(data[2], 1.1)
