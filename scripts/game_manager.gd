@@ -41,9 +41,9 @@ var music_enabled: bool = true
 
 var fullscreen: bool = false
 var window_size: Vector2i = Vector2i(1152, 648)
-# Master loudness, 0..1, applied to the Master audio bus. A quarter of
+# Master loudness, 0..1, applied to the Master audio bus. A tenth of
 # full scale is the out-of-the-box level; the options slider overrides it.
-var volume: float = 0.25
+var volume: float = 0.1
 
 var _music_player: AudioStreamPlayer
 

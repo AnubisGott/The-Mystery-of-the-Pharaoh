@@ -15,10 +15,14 @@ const MENU_MUSIC: AudioStream = preload("res://soundAndMusic/music/Aztekenheraus
 @onready var options_items: VBoxContainer = $Center/Panel/OptionsItems
 @onready var options_button: Button = $Center/Panel/MenuItems/OptionsButton
 @onready var quit_button: Button = $Center/Panel/MenuItems/QuitButton
+@onready var version_label: Label = $VersionLabel
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	# The version lives in project.godot (application/config/version).
+	version_label.text = "v" + str(ProjectSettings.get_setting(
+			"application/config/version", "?"))
 	get_tree().paused = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	for i in level_buttons.size():

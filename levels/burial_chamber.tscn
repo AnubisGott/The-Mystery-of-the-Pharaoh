@@ -51,7 +51,7 @@ grow_horizontal = 0
 grow_vertical = 2
 text = "W A S D - Move
 Mouse - Look
-F E - Use
+F or E - Use
 M - Music on/off
 F11 - Fullscreen
 Esc - Menu"

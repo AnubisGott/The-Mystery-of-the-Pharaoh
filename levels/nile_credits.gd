@@ -24,7 +24,7 @@ const CREDITS: Array[Array] = [
 	["Anubis & Friends", 30],
 	["", 30],
 	["Music", 22],
-	["Suono", 30],
+	["Suno", 30],
 	["", 20],
 	["Sound Effects", 22],
 	["freesound.org & Claude Code", 30],
@@ -310,6 +310,22 @@ func _build_credits() -> void:
 	_scroll.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_scroll.add_theme_constant_override("separation", 10)
 	root.add_child(_scroll)
+
+	# The exit hint, right-aligned like the level control hints.
+	var hint := Label.new()
+	hint.text = "Esc - Main Menu"
+	hint.set_anchors_preset(Control.PRESET_CENTER_RIGHT)
+	hint.offset_left = -300.0
+	hint.offset_right = -24.0
+	hint.offset_top = -12.0
+	hint.offset_bottom = 12.0
+	hint.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hint.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.7))
+	hint.add_theme_constant_override("shadow_offset_x", 2)
+	hint.add_theme_constant_override("shadow_offset_y", 2)
+	root.add_child(hint)
 
 	for entry: Array in CREDITS:
 		var label := Label.new()

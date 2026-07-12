@@ -682,6 +682,11 @@ func test_menu_has_level_entries() -> void:
 		_check(button.text.contains(expected_names[i]),
 				"level %d entry missing its name" % (i + 1))
 
+	var version: Label = menu.get_node("VersionLabel")
+	_check(version.text == "v" + str(ProjectSettings.get_setting(
+			"application/config/version", "?")),
+			"version label does not show the project version")
+
 	# The Options button swaps to the options panel and back.
 	menu.get_node("Center/Panel/MenuItems/OptionsButton").pressed.emit()
 	_check(menu.get_node("Center/Panel/OptionsItems").visible, "options panel did not open")
