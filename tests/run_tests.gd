@@ -953,6 +953,11 @@ func test_burial_bowls_open_the_door() -> void:
 func test_burial_dials_open_the_floor() -> void:
 	var chamber := await _spawn_burial()
 	var chamber_player: CharacterBody3D = chamber.get_node("Player")
+	# Into the chamber's entry strip — NOT onto the pit strip, or the
+	# player rides the trapdoor straight into the end zone and the scene
+	# change kills the test run. (In play the door is open before the
+	# dials are reachable; this test never lights the bowls.)
+	chamber_player.global_position = chamber.to_global(Vector3(3.0, 0.5, -9.2))
 
 	# Every drum carries four symbols (plus the drum mesh, gold rims and
 	# the scarab), so each turn brings a different glyph to the front.
@@ -990,9 +995,22 @@ func test_burial_dials_open_the_floor() -> void:
 	for dial in chamber._dials:
 		_check(dial.position.y < -5.0, "dial socket did not fall into the pit")
 	# Whoever still stands beside the pit is dragged in: the antechamber
-	# test player is being pulled toward the pit right now.
-	_check(chamber._pulling or chamber.to_local(chamber_player.global_position).y < -1.0,
-			"the player is not being pulled into the pit")
+	# test player is being pulled toward the pit right now, stunned, and
+	# the dial blockers are gone (fallen into the pit they were invisible
+	# platforms that caught the player above the end zone).
+	_check(chamber._pulling, "the player is not being pulled into the pit")
+	_check(not chamber_player.is_physics_processing(),
+			"the player is not stunned during the pull")
+	for blocker in chamber._dial_blockers:
+		_check(not is_instance_valid(blocker), "a dial blocker survived into the pit")
+	# The pull must carry the player past the old y=-2 freeze point.
+	var lowest := 0.0
+	for i in 210:
+		await get_tree().physics_frame
+		lowest = minf(lowest, chamber.to_local(chamber_player.global_position).y)
+		if lowest < -5.0:
+			break
+	_check(lowest < -5.0, "the player froze mid-air instead of falling: y=%f" % lowest)
 
 	var end_zone: Area3D = chamber.get_node("EndZone")
 	_check(chamber.to_local(end_zone.global_position).y < -8.0,

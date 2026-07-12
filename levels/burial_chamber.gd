@@ -41,6 +41,7 @@ var _spawn_transform: Transform3D
 var _door: AnimatableBody3D
 var _bowls: Array[Node3D] = []
 var _dials: Array[Node3D] = []
+var _dial_blockers: Array[Node3D] = []
 var _pit_slabs: Array[AnimatableBody3D] = []
 var _pulling: bool = false
 var _intro_running: bool = false
@@ -73,7 +74,11 @@ func _physics_process(delta: float) -> void:
 		player._whistle_player.play()
 		player._whistle_played = true
 	if _pulling:
-		# Walk the player into the open pit, wherever they stand.
+		# Walk the stunned player into the open pit, wherever they
+		# stand. The pull stays active until the level ends: the
+		# player's own physics is off, so this loop is also what keeps
+		# gravity flowing — cutting it early froze the player mid-air
+		# and the next level never came.
 		var target := to_global(Vector3(0, 0, (PIT_FROM_Z + PIT_TO_Z) / 2.0))
 		var direction := target - player.global_position
 		direction.y = 0.0
@@ -89,8 +94,6 @@ func _physics_process(delta: float) -> void:
 			v.y -= 9.8 * delta
 		player.velocity = v
 		player.move_and_slide()
-		if to_local(player.global_position).y < -2.0:
-			_pulling = false
 		return
 	var best: Node3D = null
 	var best_distance := INTERACT_RANGE
@@ -241,9 +244,9 @@ func _build_furniture() -> void:
 		add_child(dial)
 		dial.solved.connect(_on_dial_solved)
 		_dials.append(dial)
-		# The blocker rides inside the dial so it falls along with it.
 		var blocker := _make_blocker(Vector3(0, 0.8, 0), Vector3(0.9, 1.6, 0.9))
 		dial.add_child(blocker)
+		_dial_blockers.append(blocker)
 
 	# The two puzzle glyphs (ankh and djed) above their dials and
 	# flanking the door, plus the back-wall glyphs behind the statues:
@@ -373,6 +376,11 @@ func _open_floor() -> void:
 	# dragged in — the fall comes no matter where the player was.
 	tween.tween_callback(_start_pull)
 
+	# The dial blockers must not ride along: fallen into the pit they
+	# were invisible platforms that caught the player above the end zone.
+	for blocker in _dial_blockers:
+		blocker.queue_free()
+
 	# The dial sockets ride the trapdoor down, toppling as they go;
 	# Anubis and the sarcophagus stand clear of the pit and stay.
 	var fall := create_tween()
@@ -386,10 +394,11 @@ func _open_floor() -> void:
 
 
 func _start_pull() -> void:
-	if to_local(player.global_position).y < -1.0:
-		return   # already falling
+	# Solving the puzzle stuns the player: controls are off and the
+	# pull owns the body until the level ends.
 	_pulling = true
 	player.set_physics_process(false)
+	player.get_node("Visual/AnimationPlayer").play("Idle", 0.2)
 
 
 func _on_god_mode_changed(enabled: bool) -> void:
