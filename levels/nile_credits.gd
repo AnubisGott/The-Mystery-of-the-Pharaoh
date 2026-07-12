@@ -18,7 +18,7 @@ const CREDITS: Array[Array] = [
 	["Anubis", 30],
 	["", 20],
 	["Level Design", 22],
-	["Claude Code", 30],
+	["Anubis", 30],
 	["", 20],
 	["Programming", 22],
 	["Claude Code", 30],
