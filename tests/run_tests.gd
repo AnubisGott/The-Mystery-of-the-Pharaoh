@@ -1180,6 +1180,24 @@ func test_croc_backs_hold_the_player() -> void:
 	await get_tree().physics_frame
 
 
+# In god mode the river carries the player: an invisible walkway lets
+# them stroll over the water to the jetty.
+func test_croc_god_mode_walks_on_water() -> void:
+	var crocs := await _spawn_crocs()
+	var crocs_player: CharacterBody3D = crocs.get_node("Player")
+	GameManager.god_mode = true
+	GameManager.god_mode_changed.emit(true)
+	crocs_player.global_position = crocs.to_global(Vector3(4.0, 0.5, -20.0))
+	for i in 40:
+		await get_tree().physics_frame
+	_check(not crocs_player.is_dying(), "god mode player drowned on the water")
+	_check(crocs_player.is_on_floor(), "god mode player does not stand on the water")
+	GameManager.god_mode = false
+	GameManager.god_mode_changed.emit(false)
+	crocs.queue_free()
+	await get_tree().physics_frame
+
+
 func test_croc_water_kills_and_resets() -> void:
 	var crocs := await _spawn_crocs()
 	var crocs_player: CharacterBody3D = crocs.get_node("Player")

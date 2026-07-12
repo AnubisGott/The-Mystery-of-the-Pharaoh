@@ -38,6 +38,7 @@ const GAP_FAR: float = 3.4
 var _spawn_transform: Transform3D
 var _croc_positions: Array[Vector3] = []
 var _splash_player: AudioStreamPlayer
+var _god_walkway: CollisionShape3D
 var _intro_running: bool = false
 var _intro_skip: bool = false
 var _intro_can_skip: bool = false
@@ -56,6 +57,18 @@ func _ready() -> void:
 	_splash_player.volume_db = -4.0
 	_splash_player.bus = "Sfx"
 	add_child(_splash_player)
+
+	# God mode turns the river into solid ground: an invisible walkway
+	# just above the water carries the player all the way to the jetty.
+	var walkway := StaticBody3D.new()
+	_god_walkway = CollisionShape3D.new()
+	var walkway_shape := BoxShape3D.new()
+	walkway_shape.size = Vector3(RIVER_HALF_WIDTH * 2.0, 0.3, 150.0)
+	_god_walkway.shape = walkway_shape
+	_god_walkway.disabled = not GameManager.god_mode
+	walkway.add_child(_god_walkway)
+	walkway.position = Vector3(0, WATER_Y - 0.1, -55.0)
+	add_child(walkway)
 
 	god_label.visible = GameManager.god_mode
 	GameManager.god_mode_changed.connect(_on_god_mode_changed)
@@ -304,6 +317,7 @@ func _add_box(center: Vector3, size: Vector3, material: Material,
 
 func _on_god_mode_changed(enabled: bool) -> void:
 	god_label.visible = enabled
+	_god_walkway.set_deferred("disabled", not enabled)
 
 
 # ---------------------------------------------------------------- intro
