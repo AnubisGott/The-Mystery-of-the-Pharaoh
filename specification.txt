@@ -68,6 +68,12 @@ todo-list:
 - linux
 
 - Release nach github with exe file
+- prepare release 1.0.110 to github with windows exe 
+
+Release:
+https://github.com/AnubisGott/The-Mystery-of-the-Pharaoh/releases/tag/v1.0.110
 
 d:\daten\development\gaming\The Mystery of the Pharaoh>
 claude --resume fd78c720-01da-4e29-bade-78fe84af8184
+
+
