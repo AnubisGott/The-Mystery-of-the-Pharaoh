@@ -14,6 +14,7 @@ const FireBowl := preload("res://levels/fire_bowl.gd")
 const GlyphDial := preload("res://levels/glyph_dial.gd")
 const IntroTitle := preload("res://ui/intro_title.gd")
 const SARCOPHAGUS: PackedScene = preload("res://models/sarcophagus.glb")
+const ANUBIS: PackedScene = preload("res://models/anubis.glb")
 
 const INTRO_HOLD: float = 1.4
 const INTERACT_RANGE: float = 1.7
@@ -203,30 +204,16 @@ func _build_furniture() -> void:
 	# museum scan (CC-BY, see models/CREDITS.md); they stand clear of
 	# the pit and stay through the finale.
 	_add_box(Vector3(0, 0.25, -18.5), Vector3(4, 0.5, 2.6), FLOOR_MATERIAL)
-	var gold := StandardMaterial3D.new()
-	gold.albedo_color = Color(0.85, 0.66, 0.22)
-	gold.metallic = 0.7
-	gold.roughness = 0.3
 
 	var coffin: Node3D = SARCOPHAGUS.instantiate()
 	coffin.position = Vector3(0, 0.5, -19.0)
 	add_child(coffin)
 
-	# Anubis statue.
-	var anubis := Node3D.new()
+	# Anubis statue — the jackal on its own gold pedestal, lofted from
+	# the four-view artwork (tools/blender/make_anubis.py).
+	var anubis: Node3D = ANUBIS.instantiate()
 	anubis.position = Vector3(-4.8, 0, -19.5)
 	add_child(anubis)
-	var black := StandardMaterial3D.new()
-	black.albedo_color = Color(0.05, 0.05, 0.06)
-	black.roughness = 0.4
-	black.metallic = 0.2
-	_prop_box(anubis, FLOOR_MATERIAL, Vector3(1.5, 0.5, 1.5), Vector3(0, 0.25, 0))
-	_prop_box(anubis, black, Vector3(0.85, 1.7, 0.6), Vector3(0, 1.35, 0))
-	_prop_box(anubis, gold, Vector3(0.9, 0.16, 0.65), Vector3(0, 2.1, 0))
-	_prop_box(anubis, black, Vector3(0.5, 0.45, 0.55), Vector3(0, 2.45, 0.05))
-	_prop_box(anubis, black, Vector3(0.16, 0.14, 0.45), Vector3(0, 2.4, 0.42))
-	_prop_box(anubis, black, Vector3(0.14, 0.55, 0.08), Vector3(-0.16, 2.85, -0.1))
-	_prop_box(anubis, black, Vector3(0.14, 0.55, 0.08), Vector3(0.16, 2.85, -0.1))
 
 	# The two dials flanking the pit strip, and the wall glyphs.
 	var dial_data: Array = [
