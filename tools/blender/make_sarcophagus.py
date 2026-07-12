@@ -149,15 +149,19 @@ def build_mesh(front: Trace, side: Trace) -> bmesh.types.BMesh:
     return bm
 
 
-# Every face projects from the view it points at: flank faces from the
-# side half, the rest from the front half (the back gets the mirrored
-# front). One shared texture, so the seams stay quiet.
+# Every face projects from the view it points at: only front-pointing
+# faces get the front half (mirroring it onto the back would put the
+# face there twice). Flank AND back faces project from the side half —
+# back faces sit at the side view's back edge, so they pick up the
+# banded back colors and the pattern wraps around. One shared texture,
+# so the seams stay quiet.
 def project_uvs(bm: bmesh.types.BMesh, front: Trace, side: Trace,
         size: tuple) -> None:
     uv_layer = bm.loops.layers.uv.new("UVMap")
     for face in bm.faces:
-        # Flank faces point along X (the statue faces -Y).
-        sideways = abs(face.normal.x) > abs(face.normal.y)
+        # Flanks point along X, the back along +Y (the statue faces -Y).
+        sideways = abs(face.normal.x) > abs(face.normal.y) \
+                or face.normal.y > 0.0
         for loop in face.loops:
             co = loop.vert.co
             frac = co.z / TARGET_HEIGHT
