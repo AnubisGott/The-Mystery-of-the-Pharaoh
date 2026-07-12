@@ -104,18 +104,11 @@ func _physics_process(delta: float) -> void:
 		return
 
 	var lp := to_local(player.global_position)
-	# The bomb whistle for hole falls, like the Level-2 pits (the
-	# player's own whistle logic is off with its physics).
-	if player._whistle_player != null:
-		if player.is_on_floor():
-			player._whistle_played = false
-		elif not player._whistle_played and lp.z > SLIDE_END_Z + 2.0 \
-				and lp.y < _ramp_y(lp.z) - 1.2:
-			player._whistle_player.play()
-			player._whistle_played = true
 	# Fell into a hole (only while still over the chute; past its end
-	# the drop into the water is the intended exit).
+	# the drop into the water is the intended exit). No whistle on the
+	# way down — just the landing thud at the bottom.
 	if lp.z > SLIDE_END_Z + 2.0 and lp.y < _ramp_y(lp.z) - 5.0:
+		player._land_player.play()
 		if GameManager.god_mode:
 			player.reset_to_start(_spawn_transform)
 		else:
