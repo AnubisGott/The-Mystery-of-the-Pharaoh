@@ -3,9 +3,12 @@ extends Node3D
 # A standing fire bowl beside the burial-chamber door. Starts cold;
 # light() ignites it: glowing coals, an emissive flame core, rising
 # fire particles and a flickering light — the torch recipe on a
-# pedestal. Interactable via the level's prompt system.
+# sandstone pedestal with gold trim. Interactable via the level's
+# prompt system.
 
 signal lit_changed
+
+const STONE_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_sphinx.tres")
 
 var prompt: String = "Light the fire bowl"
 var is_lit: bool = false
@@ -21,9 +24,15 @@ func _ready() -> void:
 	add_to_group("interactables")
 	_phase = randf() * TAU
 
-	var stone := StandardMaterial3D.new()
-	stone.albedo_color = Color(0.45, 0.38, 0.3)
-	stone.roughness = 0.95
+	# The weathered wall sandstone, rescaled for a prop and pinned to
+	# the object (the wall material tiles at world scale).
+	var stone: StandardMaterial3D = STONE_MATERIAL.duplicate()
+	stone.uv1_scale = Vector3(1.0, 1.0, 1.0)
+	stone.uv1_world_triplanar = false
+	var gold := StandardMaterial3D.new()
+	gold.albedo_color = Color(0.85, 0.66, 0.22)
+	gold.metallic = 0.7
+	gold.roughness = 0.3
 
 	var pedestal := MeshInstance3D.new()
 	var pedestal_mesh := CylinderMesh.new()
@@ -34,6 +43,17 @@ func _ready() -> void:
 	pedestal.mesh = pedestal_mesh
 	pedestal.position = Vector3(0, 0.5, 0)
 	add_child(pedestal)
+	# A stepped foot so the stand reads carved, not turned.
+	var foot := MeshInstance3D.new()
+	var foot_mesh := CylinderMesh.new()
+	foot_mesh.top_radius = 0.36
+	foot_mesh.bottom_radius = 0.42
+	foot_mesh.height = 0.14
+	foot_mesh.material = stone
+	foot.mesh = foot_mesh
+	foot.position = Vector3(0, 0.07, 0)
+	add_child(foot)
+	_add_ring(gold, 0.23, Vector3(0, 0.94, 0))
 
 	var bowl := MeshInstance3D.new()
 	var bowl_mesh := CylinderMesh.new()
@@ -44,6 +64,8 @@ func _ready() -> void:
 	bowl.mesh = bowl_mesh
 	bowl.position = Vector3(0, 1.15, 0)
 	add_child(bowl)
+	# A gold lip around the bowl's rim.
+	_add_ring(gold, 0.48, Vector3(0, 1.31, 0))
 
 	# Cold coals; they start glowing when lit.
 	var coal := StandardMaterial3D.new()
@@ -57,6 +79,17 @@ func _ready() -> void:
 	_coals.mesh = coals_mesh
 	_coals.position = Vector3(0, 1.32, 0)
 	add_child(_coals)
+
+
+func _add_ring(material: Material, radius: float, pos: Vector3) -> void:
+	var ring := MeshInstance3D.new()
+	var torus := TorusMesh.new()
+	torus.inner_radius = radius - 0.035
+	torus.outer_radius = radius + 0.035
+	torus.material = material
+	ring.mesh = torus
+	ring.position = pos
+	add_child(ring)
 
 
 func _process(delta: float) -> void:

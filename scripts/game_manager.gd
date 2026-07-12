@@ -155,6 +155,9 @@ func _apply_display() -> void:
 		return
 	var window := get_window()
 	if fullscreen:
+		# Match the screen size while still windowed: a stale small size
+		# carried into fullscreen shows a cut-off picture on some setups.
+		window.size = DisplayServer.screen_get_size(window.current_screen)
 		window.mode = Window.MODE_FULLSCREEN
 	else:
 		window.mode = Window.MODE_WINDOWED
