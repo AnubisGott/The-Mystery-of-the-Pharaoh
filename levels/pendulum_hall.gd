@@ -36,6 +36,9 @@ const LEGS := [
 const CORNER_DS := [37.0, 87.0, 114.0, 137.0]
 const END_D: float = 167.0
 
+# How far down the corridor the touch-mode auto-steering looks (meters).
+const STEER_LOOKAHEAD: float = 4.0
+
 # Solid floor as (d_from, d_to); the gaps are holes and crumble fields.
 const FLOOR_D_SEGMENTS := [
 	[0.0, 12.0],    # intro: first normal stretch
@@ -240,15 +243,18 @@ func _show_run_hint(duration: float = 2.5) -> void:
 
 
 # Android port scheme for Level 2: the corridor turns four times, so the
-# adventurer faces along the leg he is on by himself; the buttons walk
-# him forward or back and jump.
+# adventurer walks the corners by himself; the buttons only move him
+# forward or back and jump.
 func _setup_touch_mode() -> void:
 	get_node("ControlsHint").visible = false
 	var touch: CanvasLayer = TouchControls.new()
 	add_child(touch)
-	touch.add_button("^", "move_forward", false, 0, 1)
-	touch.add_button("v", "move_back", false, 0, 0)
-	touch.add_button(tr("JUMP"), "jump", true)
+	# Forward and back as a pair on the left, jump on the right - all
+	# centered on the sides, like the auto-run levels, and a size up: this
+	# is the only level where a thumb rests on a button the whole way.
+	touch.add_button("^", "move_forward", false, 0, 0.5, touch.BIG_PAIR_RADIUS, true)
+	touch.add_button("v", "move_back", false, 0, -0.5, touch.BIG_PAIR_RADIUS, true)
+	touch.add_button(tr("JUMP"), "jump", true, 0, 0, touch.BIG_SIDE_RADIUS, true)
 	touch.add_pause_button()
 
 
@@ -268,11 +274,36 @@ func _leg_at(p: Vector3) -> int:
 	return best
 
 
+# The distance d the player has walked down the corridor.
+func _d_at(p: Vector3) -> float:
+	var leg := _leg_at(p)
+	var u: float = (p - (LEGS[leg]["origin"] as Vector3)).dot(LEGS[leg]["dir"])
+	return clampf((0.0 if leg == 0 else CORNER_DS[leg - 1]) + u, 0.0, END_D)
+
+
+# The centerline point at distance d, in world space.
+func _center_at_d(d: float) -> Vector3:
+	var clamped := clampf(d, 0.0, END_D)
+	var leg := _leg_for(clamped)
+	return to_global(_pos(leg, _leg_u(clamped, leg), 0.0, 0.0))
+
+
+# On a phone there is no mouse to look with, so the adventurer steers
+# himself: he aims at the centerline a few meters ahead, which walks him
+# around each of the four corners on its own and pulls him back to the
+# middle of the corridor when he drifts. The buttons only push him along
+# that heading (or back down it).
 func _face_along_corridor(delta: float) -> void:
 	if _intro_running or player.is_dying():
 		return
-	var yaw: float = LEGS[_leg_at(to_local(player.global_position))]["yaw"]
-	player.rotation.y = lerp_angle(player.rotation.y, yaw, minf(delta * 5.0, 1.0))
+	var d := _d_at(to_local(player.global_position))
+	var ahead := _center_at_d(d + STEER_LOOKAHEAD)
+	var direction := ahead - player.global_position
+	direction.y = 0.0
+	if direction.length_squared() < 0.01:
+		return
+	var heading := atan2(-direction.x, -direction.z)
+	player.rotation.y = lerp_angle(player.rotation.y, heading, minf(delta * 5.0, 1.0))
 	player._yaw = player.rotation.y
 
 

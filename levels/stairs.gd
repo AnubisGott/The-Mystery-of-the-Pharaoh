@@ -29,20 +29,21 @@ const WALL_HEIGHT: float = 4.5
 const TOP_Y: float = (STAIRS_START_Z - STAIRS_END_Z) * SLOPE
 
 const LANES: Array[float] = [-1.4, 0.0, 1.4]
+# On a phone the climb is dodged left and right like on the desktop, but
+# with two lanes instead of three: one boulder always leaves a free side,
+# and the two buttons map cleanly onto them.
+const LANES_TOUCH: Array[float] = [-1.3, 1.3]
 const BOULDER_SPEED: float = 7.5
+# With two lanes the boulders are heftier: half the corridor wide, against
+# a third of it on the desktop's three-lane climb.
+const BOULDER_RADIUS_TOUCH: float = CORRIDOR_WIDTH / 4.0
 # The spawn interval ramps from busy to relentless with climb progress.
 const INTERVAL_EASY: float = 1.0
 const INTERVAL_HARD: float = 0.4
-# The touch scheme dodges by jumping instead of side-stepping, which
-# needs more air between waves: the ramp tops out gentler and twin
-# boulders stay rare (the Android port design).
+# Thumbs are slower than fingers on a keyboard: the touch ramp tops out
+# gentler, and with only two lanes a twin wave would wall the stairs off
+# completely, so there is never one.
 const INTERVAL_HARD_TOUCH: float = 0.75
-const TWIN_CHANCE_TOUCH: float = 0.2
-# Climbing at 5 m/s the stairs rise 1.75 m/s under the player, so the
-# normal jump (3.8) lifts him barely 0.2 m clear of the steps - far too
-# low for a 1.5 m boulder. The touch scheme hurdles them instead: this
-# leap clears the boulder by a good margin.
-const JUMP_VELOCITY_TOUCH: float = 7.6
 # A wave is one boulder, sometimes two — never all three lanes at once,
 # so there is always a way through.
 const TWIN_CHANCE: float = 0.4
@@ -93,16 +94,26 @@ func _ready() -> void:
 		_boulder_timer.start(FIRST_BOULDER_DELAY)
 
 
-# Android port scheme for Level 3: the adventurer climbs the middle of
-# the staircase on his own; the buttons hurdle the boulders and duck.
+# Android port scheme for Level 3: the adventurer climbs on his own and
+# the two buttons dodge the boulders left and right - the desktop's
+# gameplay, on two lanes.
 func _setup_touch_mode() -> void:
 	get_node("ControlsHint").visible = false
-	player.jump_velocity = JUMP_VELOCITY_TOUCH
 	var touch: CanvasLayer = TouchControls.new()
 	add_child(touch)
-	touch.add_button(tr("JUMP"), "jump", true, 0, 0, touch.SIDE_RADIUS, true)
-	touch.add_button(tr("DUCK"), "duck", false, 0, 0, touch.SIDE_RADIUS, true)
+	touch.add_button("<", "move_left", false, 0, 0, touch.BIG_SIDE_RADIUS, true)
+	touch.add_button(">", "move_right", true, 0, 0, touch.BIG_SIDE_RADIUS, true)
 	touch.add_pause_button()
+
+
+# The boulders the level rolls: fat two-lane ones on a phone.
+func _boulder_radius() -> float:
+	return BOULDER_RADIUS_TOUCH if GameManager.touch_mode else Boulder.RADIUS
+
+
+# The lanes the boulders roll down: three on the desktop, two on a phone.
+func _lanes() -> Array:
+	return LANES_TOUCH if GameManager.touch_mode else LANES
 
 
 # Keeps the player climbing straight up the stairs (toward -Z).
@@ -292,25 +303,28 @@ func _on_boulder_timer_timeout() -> void:
 	# never cheap-shotted from point-blank range.
 	if _progress() < CALM_PROGRESS:
 		# One boulder, sometimes a twin in a DIFFERENT lane: a wave can
-		# never wall off all three lanes.
-		var lane := randi() % LANES.size()
+		# never wall off all three lanes. On a phone there are only two
+		# lanes, so a wave is always a single boulder.
+		var lanes := _lanes()
+		var lane := randi() % lanes.size()
 		_spawn_boulder(lane)
-		var twin_chance := TWIN_CHANCE_TOUCH if GameManager.touch_mode else TWIN_CHANCE
-		if randf() < twin_chance:
-			_spawn_boulder((lane + 1 + randi() % 2) % LANES.size())
+		if not GameManager.touch_mode and randf() < TWIN_CHANCE:
+			_spawn_boulder((lane + 1 + randi() % 2) % lanes.size())
 	_boulder_timer.start(_spawn_interval(_progress()) * randf_range(0.85, 1.15))
 
 
 func _spawn_boulder(lane: int = -1) -> Node3D:
-	if lane < 0:
-		lane = randi() % LANES.size()
+	var lanes := _lanes()
+	if lane < 0 or lane >= lanes.size():
+		lane = randi() % lanes.size()
 	var boulder: Node3D = Boulder.new()
 	boulder.direction = Vector3(0, -SLOPE, 1).normalized()
 	boulder.speed = BOULDER_SPEED
+	boulder.radius = _boulder_radius()
 	boulder.flatten_z = STAIRS_START_Z
 	boulder.despawn_z = 5.5
 	var z := maxf(STAIRS_END_Z, to_local(player.global_position).z - SPAWN_AHEAD_Z)
-	boulder.position = Vector3(LANES[lane], _ramp_y(z) + Boulder.RADIUS, z)
+	boulder.position = Vector3(lanes[lane], _ramp_y(z) + boulder.radius, z)
 	add_child(boulder)
 	boulder.player_hit.connect(_on_boulder_hit)
 	return boulder
@@ -378,7 +392,7 @@ func _play_intro(duration: float = 4.0) -> void:
 		var t := elapsed / duration
 		# The boulder rolls a short stretch in slow motion.
 		var z := lerpf(-38.0, -27.0, t)
-		boulder.position = Vector3(0, _ramp_y(z) + Boulder.RADIUS, z)
+		boulder.position = Vector3(0, _ramp_y(z) + boulder.radius, z)
 		(boulder.get_child(0) as Node3D).rotation.x = z * 2.0
 		# One smooth zoom in and back out over the whole sequence.
 		cam.fov = 66.0 - 22.0 * sin(PI * t)

@@ -24,8 +24,8 @@ func _ready() -> void:
 	options_items.closed.connect(_on_options_closed)
 
 	if GameManager.touch_mode:
-		GameManager.scale_menu_for_touch(items)
-		GameManager.scale_menu_for_touch(options_items)
+		GameManager.scale_menu_for_touch(items, 2.0)
+		GameManager.scale_menu_for_touch(options_items, 2.0)
 
 
 func _unhandled_input(event: InputEvent) -> void:

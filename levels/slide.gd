@@ -36,6 +36,21 @@ const OBSTACLES: Array[Vector2] = [
 	Vector2(-1.4, -95.0), Vector2(0.6, -98.5), Vector2(1.2, -102.0),
 ]
 
+# On a phone the ride is watched from higher up and further back, looking
+# down the slope: the blocks and holes come into view a good second
+# earlier, which is most of what makes the chute readable with thumbs.
+# The chute gets matching headroom so the spring arm never hits ceiling.
+# The arm stays close to the desktop's 3.5: any further back and the
+# camera starts the ride outside the chute mouth, looking into the void.
+# The height and the tilt are what open up the view down the slope.
+const CAM_PITCH_TOUCH: float = -20.0     # degrees, negative looks down
+const CAM_ARM_TOUCH: float = 4.2
+const CAM_HEIGHT_TOUCH: float = 2.4      # over the chute, against 1.55
+const WALL_HEIGHT_TOUCH: float = 6.5
+const CHUTE_TOP_EXTRA_TOUCH: float = 8.0   # shell length above the start
+# ... and the blocks are thinned out to at least this far apart.
+const MIN_OBSTACLE_GAP_TOUCH: float = 10.0
+
 const SPEED_START: float = 8.0
 const SPEED_END: float = 12.5
 const STEER_SPEED: float = 4.5
@@ -107,10 +122,41 @@ func _setup_touch_mode() -> void:
 	get_node("ControlsHint").visible = false
 	var touch: CanvasLayer = TouchControls.new()
 	add_child(touch)
-	touch.add_button("<", "move_left", false)
-	touch.add_button(">", "move_right", false, 1)
-	touch.add_button(tr("JUMP"), "jump", true)
+	# Steering pair on the left, jump on the right - centered on the sides
+	# like the other levels.
+	touch.add_button("<", "move_left", false, 0, 0.0, touch.BIG_PAIR_RADIUS, true)
+	touch.add_button(">", "move_right", false, 1, 0.0, touch.BIG_PAIR_RADIUS, true)
+	touch.add_button(tr("JUMP"), "jump", true, 0, 0.0, touch.BIG_SIDE_RADIUS, true)
 	touch.add_pause_button()
+	_apply_touch_camera()
+
+
+# The over-the-shoulder view, tilted down the slope. Every respawn resets
+# the player's own camera (pitch 0, short arm), so this is applied again
+# from _on_player_respawned.
+func _apply_touch_camera() -> void:
+	player._pitch = deg_to_rad(CAM_PITCH_TOUCH)
+	player.camera_pivot.rotation.x = player._pitch
+	var arm: SpringArm3D = player.get_node("CameraPivot/CameraArm")
+	arm.spring_length = CAM_ARM_TOUCH
+
+
+# The blocks to steer around: on a phone every one that crowds its
+# predecessor is dropped, which stretches the gaps between them.
+func _obstacles() -> Array[Vector2]:
+	if not GameManager.touch_mode:
+		return OBSTACLES
+	var kept: Array[Vector2] = []
+	var last_z: float = 0.0
+	for obstacle in OBSTACLES:
+		if kept.is_empty() or absf(obstacle.y - last_z) >= MIN_OBSTACLE_GAP_TOUCH:
+			kept.append(obstacle)
+			last_z = obstacle.y
+	return kept
+
+
+func _wall_height() -> float:
+	return WALL_HEIGHT_TOUCH if GameManager.touch_mode else WALL_HEIGHT
 
 
 func _physics_process(delta: float) -> void:
@@ -157,13 +203,16 @@ func _physics_process(delta: float) -> void:
 	# The camera rides the chute line rather than the jump arc: freezing
 	# it while airborne (the flat-level rule) let long forward jumps
 	# carry it into the ceiling as the chute dropped away beneath.
-	var chute_head: float = to_global(Vector3(0, _ramp_y(lp.z), lp.z)).y + 1.55
+	var head: float = CAM_HEIGHT_TOUCH if GameManager.touch_mode else 1.55
+	var chute_head: float = to_global(Vector3(0, _ramp_y(lp.z), lp.z)).y + head
 	player._camera_base_y = lerpf(player._camera_base_y, chute_head, minf(delta * 10.0, 1.0))
 	player.camera_pivot.global_position.y = player._camera_base_y
 
 
 func _on_player_respawned() -> void:
 	player.get_node("Visual/AnimationPlayer").play("Crouch_Idle", 0.1)
+	if GameManager.touch_mode:
+		_apply_touch_camera()
 
 
 func _progress(z: float) -> float:
@@ -180,9 +229,16 @@ func _build_geometry() -> void:
 	var pitch := -atan(SLOPE_TAN)
 	var normal := Vector3(0, cos(pitch), sin(pitch))
 
-	# Start platform under the pit the player fell through.
-	_add_box(Vector3(0, -0.2, 2.25), Vector3(CORRIDOR_WIDTH, 0.4, 4.5), FLOOR_MATERIAL)
-	_add_box(Vector3(0, 2.1, 4.4), Vector3(5.2, 5.0, 0.4), WALL_MATERIAL)
+	# Start platform under the pit the player fell through. On a phone the
+	# camera starts the ride higher and further back, so the platform, its
+	# back wall and the chute shell below all reach further up-slope -
+	# otherwise the first second is spent looking at the tunnel from
+	# outside, with nothing but black around it.
+	var extra: float = CHUTE_TOP_EXTRA_TOUCH if GameManager.touch_mode else 0.0
+	_add_box(Vector3(0, -0.2, 2.25 + extra * 0.5),
+			Vector3(CORRIDOR_WIDTH, 0.4, 4.5 + extra), FLOOR_MATERIAL)
+	_add_box(Vector3(0, 2.1 + extra * 0.25, 4.4 + extra),
+			Vector3(5.2, 5.0 + extra * 0.5, 0.4), WALL_MATERIAL)
 
 	# The chute surface, split around the holes.
 	var edges: Array[float] = [SLIDE_START_Z]
@@ -198,19 +254,23 @@ func _build_geometry() -> void:
 		_add_box(mid - normal * 0.25, Vector3(CORRIDOR_WIDTH, 0.5, length),
 				FLOOR_MATERIAL, pitch)
 
-	# Walls and ceiling along the chute.
-	var mid_y := END_Y * 0.5
-	var mid_z := (SLIDE_START_Z + SLIDE_END_Z) * 0.5
-	var slope_len := (SLIDE_START_Z - SLIDE_END_Z) / cos(pitch) + 2.0
+	# Walls and ceiling along the chute, the shell stretched up-slope by the
+	# same `extra` as the platform above.
+	var up_slope := Vector3(0.0, SLOPE_TAN, 1.0).normalized()
+	var shell := Vector3(0.0, END_Y * 0.5, (SLIDE_START_Z + SLIDE_END_Z) * 0.5) \
+			+ up_slope * (extra * 0.5)
+	var slope_len := (SLIDE_START_Z - SLIDE_END_Z) / cos(pitch) + 2.0 + extra
+	# The walls have to reach the ceiling - raising it for the phone view
+	# would otherwise leave a strip of void between the two.
 	for side: float in [-1.0, 1.0]:
 		var x: float = side * (CORRIDOR_WIDTH * 0.5 + 0.2)
-		_add_box(Vector3(x, mid_y, mid_z) + normal * 0.25,
-				Vector3(0.4, WALL_HEIGHT + 6.0, slope_len), WALL_MATERIAL, pitch)
-	_add_box(Vector3(0, mid_y, mid_z) + normal * WALL_HEIGHT,
+		_add_box(shell + Vector3(x, 0.0, 0.0) + normal * 0.25,
+				Vector3(0.4, _wall_height() + 6.0, slope_len), WALL_MATERIAL, pitch)
+	_add_box(shell + normal * _wall_height(),
 			Vector3(5.2, 0.4, slope_len), WALL_MATERIAL, pitch)
 
 	# Stone blocks to steer around; a brushing hit is deadly.
-	for data in OBSTACLES:
+	for data in _obstacles():
 		var block := StaticBody3D.new()
 		var collision := CollisionShape3D.new()
 		var shape := BoxShape3D.new()

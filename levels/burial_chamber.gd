@@ -22,9 +22,9 @@ const RUMBLE_SOUND: AudioStream = preload("res://sounds/stone_rumble.wav")
 
 const INTRO_HOLD: float = 1.4
 const INTERACT_RANGE: float = 1.7
-# The touch direction pad: smaller buttons (they sit in a cross) and how
-# fast its left/right turn the adventurer (rad/s).
-const DPAD_RADIUS: float = 46.0
+# The touch direction pad: smaller buttons than the side ones (they sit
+# in a cross) and how fast its left/right turn the adventurer (rad/s).
+const DPAD_RADIUS: float = 96.0
 const TURN_SPEED: float = 2.2
 
 # Chamber frame: antechamber (8 wide) in front of the burial chamber
@@ -76,14 +76,31 @@ func _ready() -> void:
 # Android port scheme for Level 4: a direction pad (walk forward/back,
 # turn left/right - there is no mouse to look with) and one Use button.
 func _setup_touch_mode() -> void:
-	get_node("ControlsHint").visible = false
+	# Only the keyboard hints go. The prompt lives in the same layer and
+	# has to stay: on a phone it is the sole cue that a thing can be used
+	# at all, so it is also big and hard to miss.
+	get_node("ControlsHint/Root/HintLabel").visible = false
+	prompt_label.add_theme_font_size_override("font_size", 40)
+	prompt_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
+	prompt_label.add_theme_constant_override("shadow_offset_x", 3)
+	prompt_label.add_theme_constant_override("shadow_offset_y", 3)
+	prompt_label.add_theme_color_override("font_outline_color", Color(0.15, 0.09, 0.03))
+	prompt_label.add_theme_constant_override("outline_size", 6)
+	# ... and wide enough for the long sentence the big font makes.
+	prompt_label.offset_left = -560.0
+	prompt_label.offset_right = 560.0
+	prompt_label.offset_top = -36.0
+	prompt_label.offset_bottom = 36.0
+
 	var touch: CanvasLayer = TouchControls.new()
 	add_child(touch)
-	touch.add_button("^", "move_forward", false, 1, 2, DPAD_RADIUS)
-	touch.add_button("v", "move_back", false, 1, 0, DPAD_RADIUS)
-	_touch_turn_left = touch.add_button("<", "", false, 0, 1, DPAD_RADIUS)
-	_touch_turn_right = touch.add_button(">", "", false, 2, 1, DPAD_RADIUS)
-	touch.add_button(tr("USE"), "interact", true)
+	# The pad as a cross on the left, Use on the right - both centered on
+	# their side of the screen, under the thumbs.
+	touch.add_button("^", "move_forward", false, 1, 1.0, DPAD_RADIUS, true)
+	touch.add_button("v", "move_back", false, 1, -1.0, DPAD_RADIUS, true)
+	_touch_turn_left = touch.add_button("<", "", false, 0, 0.0, DPAD_RADIUS, true)
+	_touch_turn_right = touch.add_button(">", "", false, 2, 0.0, DPAD_RADIUS, true)
+	touch.add_button(tr("USE"), "interact", true, 0, 0.0, touch.BIG_SIDE_RADIUS, true)
 	touch.add_pause_button()
 
 
@@ -151,9 +168,10 @@ func _physics_process(delta: float) -> void:
 	prompt_label.visible = best != null
 	if best != null:
 		# On a phone the Use button does it - naming keyboard keys there
-		# would be nonsense.
+		# would be nonsense. The button's own word leads, so the cue reads
+		# like an instruction: "USE - Turn the dial".
 		if GameManager.touch_mode:
-			prompt_label.text = tr(best.prompt)
+			prompt_label.text = "%s - %s" % [tr("USE"), tr(best.prompt)]
 		else:
 			prompt_label.text = tr("E or F - %s") % tr(best.prompt)
 		if Input.is_action_just_pressed("interact"):

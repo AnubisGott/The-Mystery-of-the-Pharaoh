@@ -152,37 +152,52 @@ func _drive_hops(delta: float) -> void:
 		_hop_request = Vector3.ZERO
 
 
-# One leap in `direction`, aimed at the nearest surfaced croc that way.
+# One leap in `direction`, aimed at the nearest croc that way which the
+# feet can land on.
 func _hop(direction: Vector3) -> void:
 	var from: Vector3 = player.global_position
-	var target: Vector3 = _hop_target(direction, from)
+	var air_time: float = _hop_air_time()
+	var target: Vector3 = _hop_target(direction, from, air_time)
 	var flat := Vector2(target.x - from.x, target.z - from.z)
-	var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
-	var air_time: float = 2.0 * HOP_JUMP_VELOCITY / gravity
 	var speed: float = minf(flat.length() / air_time, HOP_MAX_SPEED)
 	var course := flat.normalized() * speed
 
 	player.velocity = Vector3(course.x, HOP_JUMP_VELOCITY, course.y)
 	player.external_motion = true
 	_hopping = true
-	# Leap facing the way he is going.
-	player.rotation.y = atan2(-direction.x, -direction.z)
-	player._yaw = player.rotation.y
+	# He keeps facing down the river through every hop: turning him would
+	# swing the camera with him, and a sideways hop would leave the player
+	# looking at the bank instead of the crossing.
 	var anim: AnimationPlayer = player.get_node("Visual/AnimationPlayer")
 	anim.speed_scale = 1.0
 	anim.play("Jump_Start", 0.1)
 
 
-# The nearest surfaced croc within reach in `direction`; a plain leap
-# when there is nothing to aim at (into the water, most likely).
-func _hop_target(direction: Vector3, from: Vector3) -> Vector3:
+# How long a hop hangs in the air.
+func _hop_air_time() -> float:
+	var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
+	return 2.0 * HOP_JUMP_VELOCITY / gravity
+
+
+# A croc is worth aiming at when its back carries the feet either now or
+# at the end of the hop: one that is still climbing out of the water when
+# the button is tapped has surfaced by the time the player comes down, and
+# skipping it turned the hop into a blind leap into the river.
+func _hop_landable(croc: Node3D, air_time: float) -> bool:
+	var floor_y: float = croc.surface_y - CROC_SUNK_MARGIN
+	return croc.position.y > floor_y or croc.height_in(air_time) > floor_y
+
+
+# The nearest croc within reach in `direction` the hop can land on; a
+# plain leap when there is nothing to aim at (into the water, most likely).
+func _hop_target(direction: Vector3, from: Vector3, air_time: float = 0.0) -> Vector3:
 	var best: Node3D = null
 	var best_distance := INF
 	for croc in get_tree().get_nodes_in_group("crocodiles"):
 		if not is_ancestor_of(croc):
 			continue
-		if croc.position.y < croc.surface_y - CROC_SUNK_MARGIN:
-			continue   # under water: no landing spot
+		if not _hop_landable(croc, air_time):
+			continue
 		var to_croc: Vector3 = croc.global_position - from
 		to_croc.y = 0.0
 		var distance := to_croc.length()

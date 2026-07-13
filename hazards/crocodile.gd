@@ -55,37 +55,54 @@ func cycle_length() -> float:
 	return _up_time + SINK_TIME + UNDER_TIME + SINK_TIME
 
 
+# Where the back will be `ahead` seconds from now. A hop is a second in
+# the air, so Level 6 aims with this: a croc still climbing out of the
+# water when the button is tapped is a landing spot by the time the feet
+# come down.
+func height_in(ahead: float) -> float:
+	if frozen:
+		return surface_y
+	return surface_y + _offset_at(fmod(_time + ahead, cycle_length()))
+
+
+# The back's height over its waterline at cycle time t.
+func _offset_at(t: float) -> float:
+	if t < _up_time:
+		var offset := 0.04 * sin(TAU * t / 1.9)   # idle bobbing
+		var warn := t - (_up_time - WARN_TIME)
+		if warn > 0.0:
+			# The dip of the tell before the dive. It ramps in gently — any
+			# sudden or trembling platform motion makes is_on_floor()
+			# flicker and eats the escape jump.
+			offset -= 0.08 * minf(warn / 0.25, 1.0)
+		return offset
+	if t < _up_time + SINK_TIME:
+		# Ease into the dive: the first tenths are slow, so a well-timed
+		# jump still gets off the sinking back.
+		var k := (t - _up_time) / SINK_TIME
+		return -0.08 - (SINK_DEPTH - 0.08) * k * k
+	if t < _up_time + SINK_TIME + UNDER_TIME:
+		return -SINK_DEPTH
+	return -SINK_DEPTH * (1.0 - (t - _up_time - SINK_TIME - UNDER_TIME) / SINK_TIME)
+
+
 func _physics_process(delta: float) -> void:
 	if frozen:
 		position.y = surface_y
 		return
 	_time += delta
 	var t := fmod(_time, cycle_length())
-	var offset := 0.0
 	var pitch := 0.0
 	var warning := false
 	if t < _up_time:
-		offset = 0.04 * sin(TAU * t / 1.9)   # idle bobbing
 		var warn := t - (_up_time - WARN_TIME)
 		if warn > 0.0:
-			# The tell before the dive: a dipped snout and glowing red
-			# eyes. The dip ramps in gently — any sudden or trembling
-			# platform motion makes is_on_floor() flicker and eats the
-			# escape jump.
-			offset -= 0.08 * minf(warn / 0.25, 1.0)
+			# The tell before the dive: a dipped snout and glowing red eyes.
 			pitch = -0.1 * minf(warn / 0.25, 1.0)
 			warning = true
 	elif t < _up_time + SINK_TIME:
-		# Ease into the dive: the first tenths are slow, so a well-timed
-		# jump still gets off the sinking back.
-		var k := (t - _up_time) / SINK_TIME
-		offset = -0.08 - (SINK_DEPTH - 0.08) * k * k
 		pitch = -0.12
-	elif t < _up_time + SINK_TIME + UNDER_TIME:
-		offset = -SINK_DEPTH
-	else:
-		offset = -SINK_DEPTH * (1.0 - (t - _up_time - SINK_TIME - UNDER_TIME) / SINK_TIME)
-	position.y = surface_y + offset
+	position.y = surface_y + _offset_at(t)
 	rotation.x = pitch
 	if _eye_material.emission_enabled != warning:
 		_eye_material.emission_enabled = warning

@@ -42,10 +42,16 @@ func _ready() -> void:
 	select_level_button.grab_focus()
 
 	if GameManager.touch_mode:
+		# The long lists need the taller box, or their last entries would
+		# fall off the bottom of the phone.
+		var center: Control = $Center
+		center.anchor_top = 0.14
 		# Only three entries up front: they get to be twice as big.
 		GameManager.scale_menu_for_touch(menu_items, 2.0)
-		GameManager.scale_menu_for_touch(level_items)
-		GameManager.scale_menu_for_touch(options_items)
+		# The level list is the one long list: it has to stay smaller or
+		# its eighth entry falls off the screen.
+		GameManager.scale_menu_for_touch(level_items, 1.5)
+		GameManager.scale_menu_for_touch(options_items, 2.0)
 
 	GameManager.play_music(MENU_MUSIC)
 

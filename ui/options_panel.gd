@@ -29,6 +29,13 @@ func _ready() -> void:
 	GameManager.music_enabled_changed.connect(_on_music_enabled_changed)
 	GameManager.display_changed.connect(_update_display_labels)
 	GameManager.language_changed.connect(_on_language_changed)
+
+	# A phone has one window and one resolution: its screen. Windowed
+	# mode and the size list only make sense on a desktop.
+	if GameManager.touch_mode:
+		display_button.visible = false
+		size_button.visible = false
+
 	_update_music_label()
 	_update_language_label()
 	_update_display_labels()
@@ -51,7 +58,11 @@ func _on_music_enabled_changed(_enabled: bool) -> void:
 
 
 func _update_music_label() -> void:
-	music_button.text = "Music: On (M)" if GameManager.music_enabled else "Music: Off (M)"
+	# No M key on a phone, so no point naming one.
+	if GameManager.touch_mode:
+		music_button.text = tr("Music: On") if GameManager.music_enabled else tr("Music: Off")
+	else:
+		music_button.text = "Music: On (M)" if GameManager.music_enabled else "Music: Off (M)"
 
 
 # Cycle through the supported languages.
@@ -98,6 +109,8 @@ func _on_size_pressed() -> void:
 
 
 func _update_display_labels() -> void:
+	if GameManager.touch_mode:
+		return   # both buttons are hidden on a phone
 	if GameManager.fullscreen:
 		display_button.text = "Display: Fullscreen (F11)"
 		size_button.text = "Size: Desktop"

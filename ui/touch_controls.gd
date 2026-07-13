@@ -9,8 +9,14 @@ extends CanvasLayer
 
 const RADIUS: float = 64.0
 # The auto-run levels have only two buttons: they sit big and centered
-# on either side, under the thumbs.
-const SIDE_RADIUS: float = 92.0
+# on either side, under the thumbs. PAIR_RADIUS is for a stacked pair
+# (Level 2's forward/back) that shares one side.
+const SIDE_RADIUS: float = 112.0
+const PAIR_RADIUS: float = 88.0
+# A size up again, for the levels a thumb rests on the whole way (the
+# corridor walk and the stairs) and for the direction pad.
+const BIG_SIDE_RADIUS: float = 144.0
+const BIG_PAIR_RADIUS: float = 112.0
 const PAUSE_RADIUS: float = 40.0
 const MARGIN: float = 26.0
 const GAP: float = 20.0
@@ -31,7 +37,10 @@ func _ready() -> void:
 # A round action button. `right` picks the screen side; `col` counts
 # button widths inward from that side, `row` upward from the bottom.
 # An empty `action` makes a button the level polls itself (is_pressed).
-func add_button(text: String, action: String, right: bool, col: int = 0, row: int = 0,
+# With `center_v` the row counts from the middle of the screen instead of
+# the bottom, and may be fractional: rows +0.5 / -0.5 place a pair
+# symmetrically around the centre.
+func add_button(text: String, action: String, right: bool, col: int = 0, row: float = 0.0,
 		radius: float = RADIUS, center_v: bool = false) -> TouchScreenButton:
 	var button := _make_round_button(text, radius, 30 if radius >= RADIUS else 22)
 	button.action = action
@@ -42,9 +51,10 @@ func add_button(text: String, action: String, right: bool, col: int = 0, row: in
 
 
 # Small pause toggle in the top-right corner. Routed through a real
-# input event so the pause menu's _unhandled_input sees the action.
-func add_pause_button() -> void:
-	var button := _make_round_button("II", PAUSE_RADIUS, 24)
+# input event so the pause menu's _unhandled_input sees the action. The
+# credits have no pause menu and label it "X": there it means "leave".
+func add_pause_button(label: String = "II") -> void:
+	var button := _make_round_button(label, PAUSE_RADIUS, 24)
 	button.pressed.connect(_emit_pause)
 	_anchors.append({"node": button, "right": true, "col": 0, "row": 0, "top": true,
 			"center_v": false})
@@ -107,11 +117,12 @@ func _layout() -> void:
 			x = size.x - MARGIN - diameter - anchor["col"] * step
 		else:
 			x = MARGIN + anchor["col"] * step
+		var row: float = anchor["row"]
 		var y: float
 		if anchor.get("center_v", false):
-			y = (size.y - diameter) / 2.0
+			y = (size.y - diameter) / 2.0 - row * step
 		elif anchor["top"]:
-			y = MARGIN + anchor["row"] * step
+			y = MARGIN + row * step
 		else:
-			y = size.y - MARGIN - diameter - anchor["row"] * step
+			y = size.y - MARGIN - diameter - row * step
 		button.position = Vector2(x, y)

@@ -18,6 +18,8 @@ Display: Fullscreen (F11),Display: Fullscreen (F11),Anzeige: Vollbild (F11),Affi
 Display: Windowed (F11),Display: Windowed (F11),Anzeige: Fenster (F11),Affichage : Fenêtré (F11),Pantalla: Ventana (F11),Schermo: Finestra (F11),Tela: Janela (F11),Ekran: Okno (F11),Экран: Оконный (F11),Ekran: Pencere (F11),画面：ウィンドウ (F11),显示：窗口 (F11),화면: 창 모드 (F11)
 Size: Desktop,Size: Desktop,Größe: Desktop,Taille : Bureau,Tamaño: Escritorio,Dimensioni: Desktop,Tamanho: Desktop,Rozmiar: Pulpit,Размер: Рабочий стол,Boyut: Masaüstü,サイズ：デスクトップ,尺寸：桌面,크기: 데스크톱
 Size: %d x %d,Size: %d x %d,Größe: %d x %d,Taille : %d x %d,Tamaño: %d x %d,Dimensioni: %d x %d,Tamanho: %d x %d,Rozmiar: %d x %d,Размер: %d x %d,Boyut: %d x %d,サイズ：%d x %d,尺寸：%d x %d,크기: %d x %d
+Music: On,Music: On,Musik: An,Musique : Activée,Música: Activada,Musica: Attiva,Música: Ligada,Muzyka: Wł.,Музыка: Вкл.,Müzik: Açık,音楽：オン,音乐：开,음악: 켬
+Music: Off,Music: Off,Musik: Aus,Musique : Désactivée,Música: Desactivada,Musica: Disattiva,Música: Desligada,Muzyka: Wył.,Музыка: Выкл.,Müzik: Kapalı,音楽：オフ,音乐：关,음악: 끔
 Music: On (M),Music: On (M),Musik: An (M),Musique : Activée (M),Música: Activada (M),Musica: Attiva (M),Música: Ligada (M),Muzyka: Wł. (M),Музыка: Вкл. (M),Müzik: Açık (M),音楽：オン (M),音乐：开 (M),음악: 켬 (M)
 Music: Off (M),Music: Off (M),Musik: Aus (M),Musique : Désactivée (M),Música: Desactivada (M),Musica: Disattiva (M),Música: Desligada (M),Muzyka: Wył. (M),Музыка: Выкл. (M),Müzik: Kapalı (M),音楽：オフ (M),音乐：关 (M),음악: 끔 (M)
 Sound Volume,Sound Volume,Sound-Lautstärke,Volume des effets,Volumen de efectos,Volume effetti,Volume dos efeitos,Głośność dźwięków,Громкость звуков,Efekt Ses Düzeyi,効果音の音量,音效音量,효과음 볼륨

@@ -8,6 +8,7 @@ signal player_hit
 const RADIUS: float = 0.75
 
 var speed: float = 7.0
+var radius: float = RADIUS              # set before the boulder enters the tree
 var direction: Vector3 = Vector3.ZERO   # unit vector, downhill, level-local
 var flatten_z: float = 1000000.0        # roll horizontally past this z
 var despawn_z: float = 1000000.0        # free itself past this z
@@ -25,8 +26,8 @@ func _ready() -> void:
 	material.roughness = 0.95
 
 	var sphere := SphereMesh.new()
-	sphere.radius = RADIUS
-	sphere.height = RADIUS * 2.0
+	sphere.radius = radius
+	sphere.height = radius * 2.0
 	sphere.material = material
 	_mesh = MeshInstance3D.new()
 	_mesh.mesh = sphere
@@ -35,7 +36,7 @@ func _ready() -> void:
 	var area := Area3D.new()
 	var shape := CollisionShape3D.new()
 	var ball := SphereShape3D.new()
-	ball.radius = RADIUS * 0.9
+	ball.radius = radius * 0.9
 	shape.shape = ball
 	area.add_child(shape)
 	add_child(area)
@@ -47,7 +48,7 @@ func _physics_process(delta: float) -> void:
 		direction = Vector3(0, 0, 1)
 	position += direction * speed * delta
 	# Roll around the lateral axis at matching surface speed.
-	_mesh.rotate_x(speed * delta / RADIUS)
+	_mesh.rotate_x(speed * delta / radius)
 	if position.z > despawn_z:
 		queue_free()
 

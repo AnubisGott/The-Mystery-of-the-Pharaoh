@@ -6,6 +6,7 @@ extends Node3D
 
 const LEVEL_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel07.mp3")
 const CHARACTER: PackedScene = preload("res://models/adventurer_realistic.glb")
+const TouchControls := preload("res://ui/touch_controls.gd")
 
 const SCROLL_TIME: float = 38.0
 const CREDITS: Array[Array] = [
@@ -87,6 +88,13 @@ func _ready() -> void:
 	_build_scene()
 	_build_credits()
 
+	# On a phone the ride needs its own way out: an X in the corner (the
+	# Back gesture leaves too - see _unhandled_input).
+	if GameManager.touch_mode:
+		var touch: CanvasLayer = TouchControls.new()
+		add_child(touch)
+		touch.add_pause_button("X")
+
 
 func _process(delta: float) -> void:
 	_time += delta
@@ -118,10 +126,16 @@ func _on_music_finished() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	# ESC leaves for the menu — a fresh press only, ignoring key repeats
-	# left over from the sprint onto the boat.
-	if _time > 1.0 and event is InputEventKey and event.is_pressed() \
+	if _time <= 1.0:
+		return   # ignore keys left over from the sprint onto the boat
+	# ESC leaves for the menu - a fresh press only, ignoring key repeats.
+	if event is InputEventKey and event.is_pressed() \
 			and not event.is_echo() and event.physical_keycode == KEY_ESCAPE:
+		GameManager.show_main_menu()
+		return
+	# The same for Android's Back gesture and the on-screen button: there
+	# is no pause menu on the credits ride, so "pause" means "leave".
+	if event.is_action_pressed("pause"):
 		GameManager.show_main_menu()
 
 
@@ -318,8 +332,10 @@ func _build_credits() -> void:
 	_scroll.add_theme_constant_override("separation", 10)
 	root.add_child(_scroll)
 
-	# The exit hint, right-aligned like the level control hints.
+	# The exit hint, right-aligned like the level control hints. A phone
+	# has no Esc key - it gets the X button instead.
 	var hint := Label.new()
+	hint.visible = not GameManager.touch_mode
 	hint.text = "Esc - Main Menu"
 	hint.set_anchors_preset(Control.PRESET_CENTER_RIGHT)
 	hint.offset_left = -300.0

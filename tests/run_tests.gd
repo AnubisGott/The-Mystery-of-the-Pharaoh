@@ -822,62 +822,39 @@ func test_touch_mode_level1_auto_runs() -> void:
 	await get_tree().physics_frame
 
 
-func test_touch_mode_stairs_hurdles_boulders() -> void:
-	# The touch scheme dodges boulders by jumping, so a timed hurdle MUST
-	# clear one - the climb rises under the player, which eats most of a
-	# normal jump.
+func test_touch_mode_stairs_dodge_two_lanes() -> void:
+	# On a phone the climb is dodged left and right, on two lanes - and a
+	# wave is always a single boulder, so a free side always remains.
 	GameManager.touch_mode = true
 	var stairs := await _spawn_stairs()
-	var stairs_player: CharacterBody3D = stairs.get_node("Player")
 	stairs._boulder_timer.stop()
 
-	var survived: bool = await _hurdle_attempt(stairs, stairs_player, true)
-	_check(survived, "a timed hurdle did not clear the boulder")
+	var actions: Array[String] = _touch_actions(stairs)
+	_check(actions.has("move_left") and actions.has("move_right"),
+			"the stairs have no left/right buttons (found: %s)" % [actions])
+	_check(not actions.has("jump") and not actions.has("duck"),
+			"the stairs still offer jump/duck on a phone")
 
-	# ...and without jumping the boulder still kills (no free ride).
-	var survived_idle: bool = await _hurdle_attempt(stairs, stairs_player, false)
-	_check(not survived_idle, "the boulder rolled through the player harmlessly")
+	_check(stairs._lanes().size() == 2, "the phone stairs do not run on two lanes")
 
+	# Fifty waves, never a twin: two lanes must always leave a way past.
+	for i in 50:
+		for boulder in get_tree().get_nodes_in_group("boulders"):
+			boulder.queue_free()
+		await get_tree().physics_frame
+		stairs._on_boulder_timer_timeout()
+		stairs._boulder_timer.stop()
+		var wave: int = get_tree().get_nodes_in_group("boulders").size()
+		if wave > 1:
+			_check(false, "a wave of %d boulders blocked both lanes" % wave)
+			break
+
+	for boulder in get_tree().get_nodes_in_group("boulders"):
+		boulder.queue_free()
 	GameManager.touch_mode = false
 	Input.action_release("move_forward")
-	Input.action_release("jump")
 	stairs.queue_free()
 	await get_tree().physics_frame
-
-
-# Sends a boulder down the player's lane; jumps when it is 8 m away if
-# `jump` is set. Returns true when the player is still alive afterwards.
-func _hurdle_attempt(stairs: Node3D, stairs_player: CharacterBody3D, jump: bool) -> bool:
-	for i in 120:
-		await get_tree().physics_frame
-		if not stairs_player.is_dying():
-			break
-	stairs_player.global_position = stairs.to_global(
-			Vector3(0.0, stairs._ramp_y(-10.0) + 1.2, -10.0))
-	await get_tree().physics_frame
-
-	var boulder: Node3D = stairs._spawn_boulder(1)
-	boulder.position = Vector3(0.0, stairs._ramp_y(-28.0) + 0.75, -28.0)
-	var jumped := false
-	for i in 240:
-		await get_tree().physics_frame
-		if not is_instance_valid(boulder):
-			break
-		var pz: float = stairs.to_local(stairs_player.global_position).z
-		if jump and not jumped and pz - boulder.position.z <= 8.0:
-			Input.action_press("jump")
-			jumped = true
-		elif jumped and pz - boulder.position.z < -3.0:
-			Input.action_release("jump")
-			break
-		if stairs_player.is_dying():
-			break
-	Input.action_release("jump")
-	var alive: bool = not stairs_player.is_dying()
-	if is_instance_valid(boulder):
-		boulder.queue_free()
-	await get_tree().physics_frame
-	return alive
 
 
 func test_touch_mode_hall_and_chamber_controls() -> void:
@@ -897,6 +874,23 @@ func test_touch_mode_hall_and_chamber_controls() -> void:
 	_check(absf(angle_difference(hall_player.rotation.y, yaw_leg2)) < 0.2,
 			"the adventurer did not face along corridor leg 2 (yaw %.2f, want %.2f)"
 			% [hall_player.rotation.y, yaw_leg2])
+
+	# And the corners walk themselves: holding forward alone, from the
+	# straight before the first turn, has to carry him around it.
+	hall_player.global_position = hall.to_global(Vector3(0.0, 1.0, -28.0))
+	hall_player.velocity = Vector3.ZERO
+	hall_player.rotation.y = 0.0
+	hall_player._yaw = 0.0
+	for i in 10:
+		await get_tree().physics_frame
+	Input.action_press("move_forward")
+	for i in 150:
+		await get_tree().physics_frame
+	Input.action_release("move_forward")
+	var turned: Vector3 = hall.to_local(hall_player.global_position)
+	_check(turned.x < -4.0,
+			"the adventurer did not round corner 1 on his own (x %.1f)" % turned.x)
+	_check(turned.y > -2.0, "the adventurer fell while rounding corner 1")
 	await _free_hall(hall)
 
 	# Level 4: direction pad plus one Use button.
@@ -918,6 +912,29 @@ func test_touch_mode_hall_and_chamber_controls() -> void:
 		chamber._turn_with_pad(1.0 / 60.0)
 	_check(absf(angle_difference(chamber_player.rotation.y, yaw_before)) < 0.01,
 			"the direction pad turned the adventurer with nothing pressed")
+
+	# The Use prompt is the phone's only cue that a thing can be used, so
+	# its layer must survive touch mode - only the keyboard hint goes.
+	_check(chamber.get_node("ControlsHint").visible,
+			"touch mode hid the layer the Use prompt lives in")
+	_check(not chamber.get_node("ControlsHint/Root/HintLabel").visible,
+			"the keyboard hint is still shown on a phone")
+	var usable: Node3D = null
+	for node in get_tree().get_nodes_in_group("interactables"):
+		if chamber.is_ancestor_of(node) and node.can_interact():
+			usable = node
+			break
+	_check(usable != null, "the chamber has nothing to use")
+	if usable != null:
+		chamber_player.global_position = usable.global_position + Vector3.UP * 1.2 \
+				+ Vector3.RIGHT * 0.8
+		for i in 4:
+			await get_tree().physics_frame
+		_check(chamber.prompt_label.visible,
+				"no Use prompt next to a usable thing on a phone")
+		_check(chamber.prompt_label.text.begins_with(tr("USE")),
+				"the touch Use prompt does not lead with the button's word: '%s'"
+				% chamber.prompt_label.text)
 
 	GameManager.touch_mode = false
 	chamber.queue_free()
@@ -964,6 +981,30 @@ func test_run_hint_shows_once_per_session() -> void:
 
 	GameManager.run_hint_shown = before
 	await _free_hall(hall)
+
+
+func test_touch_options_drop_the_desktop_only_entries() -> void:
+	# A phone has one window and one resolution: its screen.
+	GameManager.touch_mode = true
+	var menu: Control = load("res://ui/main_menu.tscn").instantiate()
+	add_child(menu)
+	await get_tree().physics_frame
+
+	var options: Node = menu.get_node("Center/Panel/OptionsItems")
+	_check(not options.get_node("DisplayButton").visible,
+			"the windowed/fullscreen toggle is offered on a phone")
+	_check(not options.get_node("SizeButton").visible,
+			"the resolution list is offered on a phone")
+	# What is left must still be there.
+	for name in ["MusicButton", "LanguageButton", "SoundSlider", "MusicSlider", "BackButton"]:
+		_check(options.get_node(name).visible, "%s vanished from the phone options" % name)
+	# ...and the music button no longer names a keyboard key.
+	_check(not options.get_node("MusicButton").text.contains("(M)"),
+			"the phone music button still names the M key")
+
+	GameManager.touch_mode = false
+	menu.queue_free()
+	await get_tree().physics_frame
 
 
 func test_touch_mode_croc_hops() -> void:
@@ -1017,6 +1058,45 @@ func test_touch_mode_croc_hops() -> void:
 	await get_tree().physics_frame
 
 
+# A croc that is still under water when the button is tapped, but breaks
+# the surface while the player is in the air, is a landing spot: aiming
+# past it turned the hop into a blind leap into the river.
+func test_touch_hop_aims_at_a_croc_surfacing_mid_flight() -> void:
+	GameManager.touch_mode = true
+	var crocs := await _spawn_crocs()
+	crocs.set_physics_process(false)   # no drowning while we place the player
+
+	# Leave a single croc to aim at, and dunk it: under water now, back up
+	# in about a second - mid-hop.
+	var target_croc: Node3D = null
+	for croc in get_tree().get_nodes_in_group("crocodiles"):
+		if not crocs.is_ancestor_of(croc):
+			continue
+		if target_croc == null:
+			target_croc = croc
+		else:
+			croc.remove_from_group("crocodiles")
+	_check(target_croc != null, "the river has no crocodiles")
+	var air_time: float = crocs._hop_air_time()
+	target_croc._time = target_croc.cycle_length() - 0.9
+	await get_tree().physics_frame
+	_check(target_croc.position.y < target_croc.surface_y - crocs.CROC_SUNK_MARGIN,
+			"the test croc is not under water")
+	_check(target_croc.height_in(air_time) > target_croc.surface_y - crocs.CROC_SUNK_MARGIN,
+			"the test croc has not surfaced again by the end of a hop")
+
+	var from: Vector3 = target_croc.global_position + Vector3(0.0, 1.0, 4.5)
+	var target: Vector3 = crocs._hop_target(Vector3(0, 0, -1), from, air_time)
+	var missed := Vector2(target.x - target_croc.global_position.x,
+			target.z - target_croc.global_position.z).length()
+	_check(missed < 0.5,
+			"the hop ignored a croc surfacing mid-flight (aimed %.1f m off it)" % missed)
+
+	GameManager.touch_mode = false
+	crocs.queue_free()
+	await get_tree().physics_frame
+
+
 func test_touch_mode_slide_buttons() -> void:
 	GameManager.touch_mode = true
 	var slide := await _spawn_slide()
@@ -1031,6 +1111,27 @@ func test_touch_mode_slide_buttons() -> void:
 		_check(actions.has(action), "slide button for %s missing" % action)
 	_check(not slide.get_node("ControlsHint").visible,
 			"keyboard hints still visible on the touch slide")
+
+	# The phone ride is the gentler one: fewer blocks, none of them
+	# crowding the one before it.
+	var blocks: Array = slide._obstacles()
+	_check(blocks.size() < slide.OBSTACLES.size(),
+			"the touch chute has just as many blocks as the desktop one")
+	for i in range(1, blocks.size()):
+		var gap: float = absf(blocks[i].y - blocks[i - 1].y)
+		_check(gap >= slide.MIN_OBSTACLE_GAP_TOUCH - 0.01,
+				"only %.1f m between touch blocks %d and %d" % [gap, i - 1, i])
+
+	# ... and it is watched from higher up, looking down the slope, with
+	# ceiling enough that the camera arm never hits it.
+	var slide_player: CharacterBody3D = slide.get_node("Player")
+	var arm: SpringArm3D = slide_player.get_node("CameraPivot/CameraArm")
+	_check(slide_player.camera_pivot.rotation.x < deg_to_rad(-15.0),
+			"the touch slide camera does not look down the chute")
+	_check(arm.spring_length > 3.5, "the touch slide camera did not pull back")
+	_check(slide._wall_height() > slide.WALL_HEIGHT,
+			"the touch chute has no extra headroom for the raised camera")
+
 	GameManager.touch_mode = false
 	slide.queue_free()
 	await get_tree().physics_frame
