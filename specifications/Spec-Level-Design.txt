@@ -1,0 +1,227 @@
+Level 2: The Pendulum's Journey
+
+The level remains linear:
+
+Start
+→ Single pendulum
+→ Two pendulums in succession
+→ Jump over a hole
+→ Broken floor
+→ Pendulum over broken floor
+→ Final combination
+→ Entrance to the chamber
+Section 1: The First Pendulum
+
+The player sees a large pendulum swinging across the passage.
+
+The player learns:
+
+Observe the pendulum.
+
+Wait until it has swung past.
+
+Run through quickly.
+
+The floor should still be safe here. The player can therefore stand for as long as they like and learn the timing.
+
+The pendulum's rhythm should begin slowly, for example:
+
+Approximately two seconds from one side to the other,
+
+a short safe phase after each swing,
+
+a large, clearly visible blade.
+
+On contact, the player dies or is reset to the checkpoint.
+
+Section 2: Two Pendulums
+
+Next, two pendulums appear in succession.
+
+Simple Version
+
+Both swing in the same rhythm:
+
+Pendulum 1: left → right
+
+Pendulum 2: left → right
+
+The player can walk through both in one go.
+
+More Interesting Version
+
+They swing in opposite directions:
+
+Pendulum 1: left → right
+
+Pendulum 2: right → left
+
+A safe platform lies between the two pendulums. The player can:
+
+walk past the first pendulum,
+wait on the safe platform,
+walk through the second pendulum.
+
+This is fairer than two pendulums without a gap.
+
+Section 3: Hole in the Ground
+
+After the pendulums, there is another hole.
+
+Safe ground → hole → safe ground
+
+The player must:
+
+take a running start,
+
+possibly hold Shift,
+
+jump.
+
+This briefly switches the level from timing to movement.
+
+I wouldn't place a hole directly behind a pendulum. First, give the player a short, safe section of the course so they can learn the obstacles separately.
+
+Section 4: Cracked Floor
+
+Now comes the planned floor mechanism.
+
+The player must not stand on certain tiles for long:
+
+Stepping on them
+→ short cracking sound
+→ cracks become visible
+→ tile sinks slightly
+→ tile falls
+
+Recommended time:
+
+0.0 s: Step on the tile
+0.6 s: first cracking sound
+1.0 s: tile wobbles
+1.4 s: tile falls
+
+This is long enough to react, but short enough to build up pressure.
+
+Safe areas should be placed between the cracked tiles:
+
+safe | cracked | cracked | safe | cracked | safe
+
+The player may stand on the safe tiles.
+
+Section 5: Pendulum plus Cracked Floor
+
+This will be the climax of the level.
+
+The player cannot simply stand still in front of the pendulum, because the floor panel beneath them will collapse.
+
+Pendulum
+
+↓
+
+[Crumbling] [Crumbling] [Safe] [Crumbling] [Exit]
+
+The sequence:
+
+The player enters the crumbling area.
+
+The floor begins to crack.
+
+The pendulum blocks the path.
+
+The player must judge the right moment.
+
+They sprint through before the panels collapse.
+
+This creates a good decision:
+
+Run immediately and risk being hit by the pendulum – or wait and risk the floor collapsing?
+
+Important for fairness
+
+The pendulum must always be in a predictable position when entering the section.
+
+Bad scenario:
+
+The player arrives.
+
+The pendulum happens to be directly in front of them.
+
+The floor is already collapsing.
+
+No reaction is possible.
+
+Better scenario:
+
+When entering, the pendulum starts on a fixed side.
+
+The player has at least one clear, safe running moment.
+
+Sound and shadows clearly indicate the pendulum's movement.
+
+Final Combination
+
+For the ending, I would use this sequence:
+
+Safe checkpoint
+
+↓
+First pendulum
+
+↓
+Two brittle plates
+
+↓
+Safe middle platform
+↓
+Second pendulum
+↓
+Wide hole
+↓
+Sprint + jump
+↓
+Entrance to Level 3
+
+The safe middle platform is important. Without it, the passage would be too frustrating.
+
+On the platform, the player can catch their breath and observe the second pendulum.
+
+Level 3 Up the Stairs: 
+
+The player runs up stairs inside the pyramid while dodging rolling boulders. It starts off easy, but the frequency of the rolling boulders increases as you go. Sometimes there’s also a hole in the floor, and you have to jump over it as well.
+
+
+Level 4: The Burial Chamber
+
+The Burial Chamber:
+
+The player stands in front of the locked burial chamber. After lighting the two fire bowls on the right and left with the F or E key, the door opens.
+
+The player enters the burial chamber. There is a sarcophagus bearing the death mask of Tut-Ench-Amun. A statue of Anubis stands in the room.
+
+The goal is to open the coffin. To do this, you must turn three dials. The dials are marked with Egyptian hieroglyphs. The same hieroglyphs can be seen in the room.
+
+After the player has turned each dial at least once (use it with key F or E), the floor opens and the player falls down. 
+
+End of level.
+
+
+Level 5: Slide
+
+The player slides down a slope, still inside the pyramid.
+
+The player uses the A and D keys to steer the character to the right and left to avoid obstacles.
+
+Sometimes the player must also press the Space bar to jump over a hole.
+
+At the end, the player falls into the water.
+
+End of level.
+
+
+Level 6: Crocodiles
+
+The player must run on the crocodiles. Every now and then, a crocodile sinks, so the player must jump onto the next crocodile before it sinks. There are many crocodiles at the beginning, but by the end of the level, there are fewer of them, making it more difficult. During the level, you leave the pyramid because the river running beneath it flows out into the open. There, you’ll see a Nile steamboat—sprint toward it, and the level ends. The landscape is the river Nil, dunes from the first level and some palmes.3
+
+
+Level 7: just sitting on the Nile steam boat and the game's credits roll over it.
