@@ -9,6 +9,12 @@ exports/
 *.exe
 *.pck
 *.zip
+*.apk
+*.aab
+
+# Android build folder (Godot's gradle template, machine-local)
+/Android/
+android/
 
 # Logs and temporary files
 *.log
