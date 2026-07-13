@@ -63,17 +63,18 @@ https://github.com/AnubisGott/The-Mystery-of-the-Pharaoh
 
 todo-list:
 
-- Languages/translation, just use System language, if not possible then English
-- Wieso steht da Debug version am Fensterrand?
-- linux
+- Schwierigkeitsgrad?
+- Port to Android:
+UI Changes/Control Changes: 
+- the normal windows version have to be untouched with the original control and look, I run the windows version and it has changed to. Please fix this.
 
-- Release nach github with exe file
-- prepare release 1.0.110 to github with windows exe 
+c:\Users\anubi\AppData\Local\Temp\claude\d--daten-development-gaming-The-Mystery-of-the-Pharaoh\fd78c720-01da-4e29-bade-78fe84af8184\scratchpad\
 
-Release:
-https://github.com/AnubisGott/The-Mystery-of-the-Pharaoh/releases/tag/v1.0.110
+https://github.com/AnubisGott/The-Mystery-of-the-Pharaoh/releases/tag/v1.2.0
 
 d:\daten\development\gaming\The Mystery of the Pharaoh>
 claude --resume fd78c720-01da-4e29-bade-78fe84af8184
+
+
 
 
