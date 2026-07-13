@@ -40,7 +40,9 @@ func _make_label(text: String, size: int, max_width: float = 0.0) -> Label:
 	label.text = text
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var font := SystemFont.new()
-	font.font_names = PackedStringArray(["Arial Black", "Arial", "Segoe UI"])
+	# Liberation Sans is the Linux stand-in for Arial (weight 900 picks
+	# its bold face).
+	font.font_names = PackedStringArray(["Arial Black", "Arial", "Liberation Sans", "Segoe UI"])
 	font.font_weight = 900
 	font.fallbacks = GameManager.cjk_fallback_fonts(900)
 	# Long titles (Level 1!) would spill past the window edges.

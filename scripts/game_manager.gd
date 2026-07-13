@@ -148,14 +148,19 @@ func _extend_font_fallbacks() -> void:
 	ThemeDB.fallback_font.fallbacks = cjk_fallback_fonts()
 
 
-# One SystemFont per family (not one font with three names: only the
-# first available name would ever be used, and no single family covers
-# all three scripts).
+# One SystemFont per script family (no single family covers all three
+# scripts). Each lists the Windows font first and its Linux equivalent
+# (Noto, preinstalled on most distros) second - SystemFont picks the
+# first name available on the machine.
 static func cjk_fallback_fonts(weight: int = 400) -> Array[Font]:
 	var chain: Array[Font] = []
-	for family in ["Yu Gothic UI", "Microsoft YaHei UI", "Malgun Gothic"]:
+	for family: Array in [
+		["Yu Gothic UI", "Noto Sans CJK JP"],
+		["Microsoft YaHei UI", "Noto Sans CJK SC"],
+		["Malgun Gothic", "Noto Sans CJK KR"],
+	]:
 		var font := SystemFont.new()
-		font.font_names = PackedStringArray([family])
+		font.font_names = PackedStringArray(family)
 		font.font_weight = weight
 		chain.append(font)
 	return chain
