@@ -34,7 +34,7 @@ const GAP_FAR: float = 3.4
 # in its direction. Late in the river the backs lie up to ~5.4 m apart,
 # too far to aim by eye, so a hop locks onto the nearest surfaced croc
 # in that direction and flies a ballistic arc to it.
-const HOP_RADIUS: float = 52.0
+const HOP_RADIUS: float = 80.0
 const HOP_JUMP_VELOCITY: float = 5.2
 const HOP_MAX_DISTANCE: float = 6.2
 const HOP_MIN_DISTANCE: float = 0.6
@@ -106,13 +106,18 @@ func _setup_touch_mode() -> void:
 	get_node("ControlsHint").visible = false
 	var touch: CanvasLayer = TouchControls.new()
 	add_child(touch)
-	# A cross under the right thumb: forward up, back down, left and
-	# right beside them (col counts inward from the right edge).
+	# A cross under the right thumb, centered on that side of the screen:
+	# forward up, back down, left and right beside them (col counts inward
+	# from the right edge, row from the middle).
 	_hop_buttons = [
-		{"dir": Vector3(0, 0, -1), "node": touch.add_button("^", "", true, 1, 2, HOP_RADIUS)},
-		{"dir": Vector3(0, 0, 1), "node": touch.add_button("v", "", true, 1, 0, HOP_RADIUS)},
-		{"dir": Vector3(-1, 0, 0), "node": touch.add_button("<", "", true, 2, 1, HOP_RADIUS)},
-		{"dir": Vector3(1, 0, 0), "node": touch.add_button(">", "", true, 0, 1, HOP_RADIUS)},
+		{"dir": Vector3(0, 0, -1),
+				"node": touch.add_button("^", "", true, 1, 1.0, HOP_RADIUS, true)},
+		{"dir": Vector3(0, 0, 1),
+				"node": touch.add_button("v", "", true, 1, -1.0, HOP_RADIUS, true)},
+		{"dir": Vector3(-1, 0, 0),
+				"node": touch.add_button("<", "", true, 2, 0.0, HOP_RADIUS, true)},
+		{"dir": Vector3(1, 0, 0),
+				"node": touch.add_button(">", "", true, 0, 0.0, HOP_RADIUS, true)},
 	]
 	# Edge-triggered: a quick tap can begin and end between two physics
 	# frames, and polling the button would never see it.

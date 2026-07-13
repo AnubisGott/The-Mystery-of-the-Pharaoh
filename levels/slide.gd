@@ -23,7 +23,6 @@ const SLIDE_END_Z: float = -110.0
 const END_Y: float = SLIDE_END_Z * SLOPE_TAN   # -60.5
 const CORRIDOR_WIDTH: float = 4.4
 const WALL_HEIGHT: float = 4.5
-const WATER_Y: float = -70.0
 
 # Holes in the chute (upper edge z, HOLE_LEN long) and stone blocks.
 const HOLES: Array[float] = [-30.0, -55.0, -80.0]
@@ -34,6 +33,15 @@ const OBSTACLES: Array[Vector2] = [
 	Vector2(0.9, -52.0), Vector2(-1.2, -63.0), Vector2(0.2, -67.0),
 	Vector2(1.4, -71.0), Vector2(-0.8, -85.0), Vector2(0.0, -88.0),
 	Vector2(-1.4, -95.0), Vector2(0.6, -98.5), Vector2(1.2, -102.0),
+]
+
+# The phone ride dodges fewer blocks, so it rides further instead: the
+# chute runs on past the desktop's end, with two more holes and a last
+# handful of blocks - all beyond z = -110, where the desktop chute stops.
+const SLIDE_END_Z_TOUCH: float = -150.0
+const HOLES_TOUCH_EXTRA: Array[float] = [-108.0, -132.0]
+const OBSTACLES_TOUCH_EXTRA: Array[Vector2] = [
+	Vector2(-1.2, -116.0), Vector2(0.9, -126.0), Vector2(-0.6, -140.0),
 ]
 
 # On a phone the ride is watched from higher up and further back, looking
@@ -142,7 +150,8 @@ func _apply_touch_camera() -> void:
 
 
 # The blocks to steer around: on a phone every one that crowds its
-# predecessor is dropped, which stretches the gaps between them.
+# predecessor is dropped, which stretches the gaps between them, and the
+# extension past the desktop's end carries a few more.
 func _obstacles() -> Array[Vector2]:
 	if not GameManager.touch_mode:
 		return OBSTACLES
@@ -152,7 +161,32 @@ func _obstacles() -> Array[Vector2]:
 		if kept.is_empty() or absf(obstacle.y - last_z) >= MIN_OBSTACLE_GAP_TOUCH:
 			kept.append(obstacle)
 			last_z = obstacle.y
+	kept.append_array(OBSTACLES_TOUCH_EXTRA)
 	return kept
+
+
+# The holes to jump; the longer phone chute has two more.
+func _holes() -> Array[float]:
+	if not GameManager.touch_mode:
+		return HOLES
+	var holes: Array[float] = HOLES.duplicate()
+	holes.append_array(HOLES_TOUCH_EXTRA)
+	return holes
+
+
+# Where the chute ends, how deep that is, and where the water sits under
+# it. The phone ride runs on past the desktop's end, so the cavern below
+# has to follow it down.
+func _end_z() -> float:
+	return SLIDE_END_Z_TOUCH if GameManager.touch_mode else SLIDE_END_Z
+
+
+func _end_y() -> float:
+	return _end_z() * SLOPE_TAN
+
+
+func _water_y() -> float:
+	return _end_y() - 9.5   # -70.0 under the desktop chute
 
 
 func _wall_height() -> float:
@@ -169,7 +203,7 @@ func _physics_process(delta: float) -> void:
 	# Fell into a hole (only while still over the chute; past its end
 	# the drop into the water is the intended exit). No whistle on the
 	# way down — just the landing thud at the bottom.
-	if lp.z > SLIDE_END_Z + 2.0 and lp.y < _ramp_y(lp.z) - 5.0:
+	if lp.z > _end_z() + 2.0 and lp.y < _ramp_y(lp.z) - 5.0:
 		player._land_player.play()
 		if GameManager.god_mode:
 			player.reset_to_start(_spawn_transform)
@@ -216,11 +250,11 @@ func _on_player_respawned() -> void:
 
 
 func _progress(z: float) -> float:
-	return clampf((SLIDE_START_Z - z) / (SLIDE_START_Z - SLIDE_END_Z), 0.0, 1.0)
+	return clampf((SLIDE_START_Z - z) / (SLIDE_START_Z - _end_z()), 0.0, 1.0)
 
 
 func _ramp_y(z: float) -> float:
-	return clampf(SLOPE_TAN * z, END_Y, 0.0)
+	return clampf(SLOPE_TAN * z, _end_y(), 0.0)
 
 
 # ------------------------------------------------------------- geometry
@@ -242,10 +276,10 @@ func _build_geometry() -> void:
 
 	# The chute surface, split around the holes.
 	var edges: Array[float] = [SLIDE_START_Z]
-	for hole in HOLES:
+	for hole in _holes():
 		edges.append(hole)
 		edges.append(hole - HOLE_LEN)
-	edges.append(SLIDE_END_Z)
+	edges.append(_end_z())
 	for i in range(0, edges.size(), 2):
 		var z_a: float = edges[i]
 		var z_b: float = edges[i + 1]
@@ -257,9 +291,9 @@ func _build_geometry() -> void:
 	# Walls and ceiling along the chute, the shell stretched up-slope by the
 	# same `extra` as the platform above.
 	var up_slope := Vector3(0.0, SLOPE_TAN, 1.0).normalized()
-	var shell := Vector3(0.0, END_Y * 0.5, (SLIDE_START_Z + SLIDE_END_Z) * 0.5) \
+	var shell := Vector3(0.0, _end_y() * 0.5, (SLIDE_START_Z + _end_z()) * 0.5) \
 			+ up_slope * (extra * 0.5)
-	var slope_len := (SLIDE_START_Z - SLIDE_END_Z) / cos(pitch) + 2.0 + extra
+	var slope_len := (SLIDE_START_Z - _end_z()) / cos(pitch) + 2.0 + extra
 	# The walls have to reach the ceiling - raising it for the phone view
 	# would otherwise leave a strip of void between the two.
 	for side: float in [-1.0, 1.0]:
@@ -299,7 +333,7 @@ func _build_geometry() -> void:
 	# Torches down the shaft.
 	var side := 1.0
 	var z := -6.0
-	while z > SLIDE_END_Z + 4.0:
+	while z > _end_z() + 4.0:
 		var torch := Torch.new()
 		torch.basis = Basis.looking_at(Vector3(-side, 0, 0))
 		torch.position = Vector3(side * (CORRIDOR_WIDTH * 0.5 - 0.05),
@@ -321,15 +355,20 @@ func _build_geometry() -> void:
 	pool_mesh.size = Vector3(26, 0.5, 30)
 	pool_mesh.material = water
 	pool.mesh = pool_mesh
-	pool.position = Vector3(0, WATER_Y - 0.25, -123.0)
+	pool.position = Vector3(0, _water_y() - 0.25, _end_z() - 13.0)
 	add_child(pool)
 
 	var glow := OmniLight3D.new()
 	glow.light_color = Color(0.3, 0.7, 0.9)
 	glow.light_energy = 1.4
 	glow.omni_range = 22.0
-	glow.position = Vector3(0, WATER_Y + 4.0, -120.0)
+	glow.position = Vector3(0, _water_y() + 4.0, _end_z() - 10.0)
 	add_child(glow)
+
+	# The exit zone sits in the water, so the longer phone chute takes it
+	# down the slope with everything else.
+	if GameManager.touch_mode:
+		$EndZone.position = Vector3(0.0, _water_y() + 1.0, _end_z() - 13.0)
 
 
 func _add_box(center: Vector3, size: Vector3, material: Material,

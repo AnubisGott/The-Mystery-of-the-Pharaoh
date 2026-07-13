@@ -23,6 +23,10 @@ signal respawned
 # Level 6 fly a ballistic arc). Gravity, collisions and landing stay with
 # the player. Never set on desktop.
 var external_motion: bool = false
+# Widens the sideways step without touching the forward pace. Level 3's
+# phone climb dodges with two buttons instead of a keyboard, and needs to
+# cross a lane faster than it walks. 1.0 everywhere else.
+var strafe_multiplier: float = 1.0
 
 const STAND_HEIGHT: float = 1.8
 const DUCK_HEIGHT: float = 1.3
@@ -145,8 +149,13 @@ func _physics_process(delta: float) -> void:
 
 	# A hop in flight keeps the velocity the level gave it.
 	if not external_motion:
-		velocity.x = direction.x * speed
-		velocity.z = direction.z * speed
+		var move := direction * speed
+		if strafe_multiplier != 1.0:
+			# Scale only the part of the step that goes sideways.
+			var right := global_transform.basis.x
+			move += right * right.dot(move) * (strafe_multiplier - 1.0)
+		velocity.x = move.x
+		velocity.z = move.z
 
 	if not is_on_floor():
 		velocity.y -= _gravity * delta

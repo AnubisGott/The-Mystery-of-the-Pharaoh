@@ -54,6 +54,12 @@ const FLOOR_D_SEGMENTS := [
 	[132.0, 143.0], # landing, corner 4, finale first pendulum
 	[160.0, 167.0], # finale landing and chamber entrance
 ]
+# The last hole (157-160) is taken off a crumbling tile, and on a phone
+# the run-up is a walk - there is no sprint key to hold. The landing
+# platform reaches this much further back there, which is the whole
+# difference between a sprint jump and a standing one.
+const LAST_HOLE_SHRINK_TOUCH: float = 1.5
+
 # The intro gauntlet: hole 2 (d 23-26), crumbling tiles (26-30),
 # hole 3 (30-33) with no solid ground between them. The finale leg has
 # no solid middle at all: tiles (143-147), hole (147-150), a long tile
@@ -388,8 +394,19 @@ func _leg_box(leg: int, u: float, v: float, y: float, size_v: float, size_y: flo
 
 # ------------------------------------------------------------- building
 
+# The solid floor of the corridor; on a phone the finale's landing starts
+# earlier, which shortens the last hole.
+func _floor_segments() -> Array:
+	if not GameManager.touch_mode:
+		return FLOOR_D_SEGMENTS
+	var segments: Array = FLOOR_D_SEGMENTS.duplicate(true)
+	var last: Array = segments[segments.size() - 1]
+	last[0] -= LAST_HOLE_SHRINK_TOUCH
+	return segments
+
+
 func _build_geometry() -> void:
-	for segment in FLOOR_D_SEGMENTS:
+	for segment in _floor_segments():
 		for piece in _split_at_corners(segment[0], segment[1]):
 			var leg := _leg_for((piece[0] + piece[1]) / 2.0)
 			var u_a := _leg_u(piece[0], leg)

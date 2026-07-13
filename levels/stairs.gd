@@ -37,6 +37,8 @@ const BOULDER_SPEED: float = 7.5
 # With two lanes the boulders are heftier: half the corridor wide, against
 # a third of it on the desktop's three-lane climb.
 const BOULDER_RADIUS_TOUCH: float = CORRIDOR_WIDTH / 4.0
+# How much quicker the phone climb steps sideways than it walks.
+const STRAFE_BOOST_TOUCH: float = 2.2
 # The spawn interval ramps from busy to relentless with climb progress.
 const INTERVAL_EASY: float = 1.0
 const INTERVAL_HARD: float = 0.4
@@ -99,6 +101,9 @@ func _ready() -> void:
 # gameplay, on two lanes.
 func _setup_touch_mode() -> void:
 	get_node("ControlsHint").visible = false
+	# A thumb dodges later than a finger on a key, so the sideways step is
+	# the quicker one: the climb keeps its pace, the lane change doubles.
+	player.strafe_multiplier = STRAFE_BOOST_TOUCH
 	var touch: CanvasLayer = TouchControls.new()
 	add_child(touch)
 	touch.add_button("<", "move_left", false, 0, 0, touch.BIG_SIDE_RADIUS, true)

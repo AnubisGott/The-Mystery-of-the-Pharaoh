@@ -837,6 +837,24 @@ func test_touch_mode_stairs_dodge_two_lanes() -> void:
 
 	_check(stairs._lanes().size() == 2, "the phone stairs do not run on two lanes")
 
+	# The dodge is the quick move: half a second has to cover the whole
+	# lane change, boulders come down fast.
+	var stairs_player: CharacterBody3D = stairs.get_node("Player")
+	_check(stairs_player.strafe_multiplier > 1.0,
+			"the phone stairs dodge at plain walking speed")
+	var lanes: Array = stairs._lanes()
+	var here: Vector3 = stairs.to_local(stairs_player.global_position)
+	stairs_player.global_position = stairs.to_global(Vector3(lanes[0], here.y, here.z))
+	await get_tree().physics_frame
+	Input.action_press("move_right")
+	for i in 30:   # 0.5 s
+		await get_tree().physics_frame
+	Input.action_release("move_right")
+	var landed_x: float = stairs.to_local(stairs_player.global_position).x
+	_check(landed_x >= lanes[1] - 0.2,
+			"half a second of dodging got from lane %.1f only to %.1f, not %.1f"
+			% [lanes[0], landed_x, lanes[1]])
+
 	# Fifty waves, never a twin: two lanes must always leave a way past.
 	for i in 50:
 		for boulder in get_tree().get_nodes_in_group("boulders"):
@@ -891,6 +909,18 @@ func test_touch_mode_hall_and_chamber_controls() -> void:
 	_check(turned.x < -4.0,
 			"the adventurer did not round corner 1 on his own (x %.1f)" % turned.x)
 	_check(turned.y > -2.0, "the adventurer fell while rounding corner 1")
+
+	# The finale's last hole is jumped off a crumbling tile at a walk (no
+	# sprint key on a phone), so its landing reaches further back.
+	var touch_floor: Array = hall._floor_segments()
+	var desktop_floor: Array = hall.FLOOR_D_SEGMENTS
+	var touch_last: float = touch_floor[touch_floor.size() - 1][0]
+	var desktop_last: float = desktop_floor[desktop_floor.size() - 1][0]
+	_check(is_equal_approx(desktop_last - touch_last, hall.LAST_HOLE_SHRINK_TOUCH),
+			"the touch finale's last hole was not shortened (%.1f vs %.1f)"
+			% [touch_last, desktop_last])
+	_check(is_equal_approx(desktop_last, 160.0),
+			"the desktop finale's last hole moved: %.1f" % desktop_last)
 	await _free_hall(hall)
 
 	# Level 4: direction pad plus one Use button.
@@ -1018,9 +1048,20 @@ func test_touch_mode_croc_hops() -> void:
 	var crocs := await _spawn_crocs()
 	var crocs_player: CharacterBody3D = crocs.get_node("Player")
 
-	# Four hop buttons, one per direction.
+	# Four hop buttons, one per direction, as a cross centered on the right
+	# half of the screen.
 	_check(crocs._hop_buttons.size() == 4, "level 6 has %d hop buttons, want 4"
 			% crocs._hop_buttons.size())
+	var screen_middle: float = get_viewport().get_visible_rect().size.y / 2.0
+	var cross_middle := 0.0
+	for entry in crocs._hop_buttons:
+		var hop_button: TouchScreenButton = entry["node"]
+		var diameter: float = hop_button.texture_normal.width
+		_check(diameter > 120.0, "the hop buttons are only %.0f px across" % diameter)
+		cross_middle += (hop_button.position.y + diameter / 2.0) / 4.0
+	_check(absf(cross_middle - screen_middle) < 2.0,
+			"the hop cross sits at %.0f px, not centered on %.0f"
+			% [cross_middle, screen_middle])
 
 	# Freeze the crocs surfaced and stand on the first one.
 	for croc in get_tree().get_nodes_in_group("crocodiles"):
@@ -1112,15 +1153,41 @@ func test_touch_mode_slide_buttons() -> void:
 	_check(not slide.get_node("ControlsHint").visible,
 			"keyboard hints still visible on the touch slide")
 
-	# The phone ride is the gentler one: fewer blocks, none of them
-	# crowding the one before it.
+	# The phone ride spaces its blocks out - and rides further to make up
+	# for it: a longer chute, with the cavern and the exit zone following
+	# it down.
 	var blocks: Array = slide._obstacles()
-	_check(blocks.size() < slide.OBSTACLES.size(),
-			"the touch chute has just as many blocks as the desktop one")
 	for i in range(1, blocks.size()):
 		var gap: float = absf(blocks[i].y - blocks[i - 1].y)
 		_check(gap >= slide.MIN_OBSTACLE_GAP_TOUCH - 0.01,
 				"only %.1f m between touch blocks %d and %d" % [gap, i - 1, i])
+	_check(slide._end_z() < slide.SLIDE_END_Z - 20.0,
+			"the touch chute is not longer than the desktop one (%.0f)" % slide._end_z())
+	_check(slide._holes().size() > slide.HOLES.size(),
+			"the longer touch chute got no extra holes")
+	for hole in slide._holes():
+		_check(hole > slide._end_z() + 6.0, "a hole sits at the very end of the chute")
+	for block in blocks:
+		_check(block.y > slide._end_z() + 4.0, "a block sits past the end of the chute")
+	var slide_end: Area3D = slide.get_node("EndZone")
+	var end_local: Vector3 = slide.to_local(slide_end.global_position)
+	_check(end_local.z < slide._end_z(), "the touch exit zone stayed at the old chute end")
+	_check(end_local.y < slide._end_y() - 4.0, "the touch exit zone is not down in the water")
+
+	# And the new stretch is real chute: set down in it, he keeps riding
+	# instead of dropping through the world.
+	var far_z := -137.0
+	var rider: CharacterBody3D = slide.get_node("Player")
+	rider.global_position = slide.to_global(Vector3(1.5, slide._ramp_y(far_z) + 1.0, far_z))
+	slide._sliding = true
+	for i in 30:
+		await get_tree().physics_frame
+	var late: Vector3 = slide.to_local(rider.global_position)
+	_check(late.z < far_z, "the ride stalled in the extended chute")
+	_check(late.y > slide._ramp_y(late.z) - 1.5,
+			"no floor under the extended chute at z=%.0f (y %.1f, chute %.1f)"
+			% [late.z, late.y, slide._ramp_y(late.z)])
+	_check(not rider.is_dying(), "the extended chute killed the rider on its own")
 
 	# ... and it is watched from higher up, looking down the slope, with
 	# ceiling enough that the camera arm never hits it.
