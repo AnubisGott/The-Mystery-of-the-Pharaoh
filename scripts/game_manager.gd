@@ -5,6 +5,7 @@ signal god_mode_changed(enabled: bool)
 signal music_enabled_changed(enabled: bool)
 signal music_finished
 signal display_changed
+signal language_changed
 
 const MAIN_MENU_SCENE: String = "res://ui/main_menu.tscn"
 const WIN_SCREEN_SCENE: String = "res://ui/win_screen.tscn"
@@ -19,6 +20,24 @@ const LEVEL_SCENES: Array[String] = [
 ]
 
 const SETTINGS_PATH: String = "user://settings.cfg"
+
+# Supported locales in menu order, each with its own native name (shown
+# untranslated on the language button). Must match the columns of
+# localization/strings.csv.
+const LANGUAGES: Array[Array] = [
+	["en", "English"],
+	["de", "Deutsch"],
+	["fr", "Français"],
+	["es", "Español"],
+	["it", "Italiano"],
+	["pt_BR", "Português (Brasil)"],
+	["pl", "Polski"],
+	["ru", "Русский"],
+	["tr", "Türkçe"],
+	["ja", "日本語"],
+	["zh_CN", "简体中文"],
+	["ko", "한국어"],
+]
 
 # Window size presets: common 16:9 steps (HD, Full HD, QHD, 4K) plus two
 # 21:9 widescreen sizes. The menu only offers those fitting the screen.
@@ -41,6 +60,9 @@ var music_enabled: bool = true
 
 var fullscreen: bool = false
 var window_size: Vector2i = Vector2i(1152, 648)
+# Locale code from LANGUAGES; empty until resolved (saved setting, or the
+# OS language on first launch).
+var language: String = ""
 # Separate loudness for effects and music (0..1), each on its own audio
 # bus; the options sliders override the defaults.
 var sound_volume: float = 0.5
@@ -52,7 +74,9 @@ var _music_player: AudioStreamPlayer
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_create_buses()
+	_extend_font_fallbacks()
 	_load_settings()
+	_apply_language()
 	_apply_display()
 	_apply_volumes()
 	_music_player = AudioStreamPlayer.new()
@@ -118,6 +142,54 @@ func _apply_volumes() -> void:
 			linear_to_db(maxf(music_volume, 0.001)))
 
 
+# The built-in UI font has no CJK glyphs; chain the Windows system fonts
+# behind it so Japanese, Chinese and Korean render without bundled fonts.
+func _extend_font_fallbacks() -> void:
+	ThemeDB.fallback_font.fallbacks = cjk_fallback_fonts()
+
+
+# One SystemFont per family (not one font with three names: only the
+# first available name would ever be used, and no single family covers
+# all three scripts).
+static func cjk_fallback_fonts(weight: int = 400) -> Array[Font]:
+	var chain: Array[Font] = []
+	for family in ["Yu Gothic UI", "Microsoft YaHei UI", "Malgun Gothic"]:
+		var font := SystemFont.new()
+		font.font_names = PackedStringArray([family])
+		font.font_weight = weight
+		chain.append(font)
+	return chain
+
+
+func set_language(code: String) -> void:
+	if language == code:
+		return
+	language = code
+	TranslationServer.set_locale(code)
+	_save_settings()
+	language_changed.emit()
+
+
+func _apply_language() -> void:
+	if language.is_empty():
+		language = _default_language()
+	TranslationServer.set_locale(language)
+
+
+# The supported locale matching the OS language, or English.
+func _default_language() -> String:
+	var os_lang: String = OS.get_locale_language()
+	match os_lang:
+		"zh":
+			return "zh_CN"
+		"pt":
+			return "pt_BR"
+	for entry in LANGUAGES:
+		if entry[0] == os_lang:
+			return os_lang
+	return "en"
+
+
 func set_fullscreen(enabled: bool) -> void:
 	if fullscreen == enabled:
 		return
@@ -173,6 +245,7 @@ func _save_settings() -> void:
 	config.load(SETTINGS_PATH)
 	config.set_value("display", "fullscreen", fullscreen)
 	config.set_value("display", "window_size", window_size)
+	config.set_value("general", "language", language)
 	config.set_value("audio", "sound_volume", sound_volume)
 	config.set_value("audio", "music_volume", music_volume)
 	config.set_value("audio", "music", music_enabled)
@@ -185,6 +258,7 @@ func _load_settings() -> void:
 		return
 	fullscreen = config.get_value("display", "fullscreen", fullscreen)
 	window_size = config.get_value("display", "window_size", window_size)
+	language = str(config.get_value("general", "language", language))
 	sound_volume = config.get_value("audio", "sound_volume", sound_volume)
 	music_volume = config.get_value("audio", "music_volume", music_volume)
 	music_enabled = config.get_value("audio", "music", music_enabled)

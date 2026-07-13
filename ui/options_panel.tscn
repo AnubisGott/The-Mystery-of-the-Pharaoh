@@ -26,6 +26,11 @@ custom_minimum_size = Vector2(280, 34)
 layout_mode = 2
 text = "Music: On (M)"
 
+[node name="LanguageButton" type="Button" parent="."]
+custom_minimum_size = Vector2(280, 34)
+layout_mode = 2
+text = "Language: English"
+
 [node name="SoundLabel" type="Label" parent="."]
 layout_mode = 2
 text = "Sound Volume"

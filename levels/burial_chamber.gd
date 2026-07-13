@@ -107,7 +107,7 @@ func _physics_process(delta: float) -> void:
 			best = node
 	prompt_label.visible = best != null
 	if best != null:
-		prompt_label.text = "E or F - %s" % best.prompt
+		prompt_label.text = tr("E or F - %s") % tr(best.prompt)
 		if Input.is_action_just_pressed("interact"):
 			best.interact()
 
@@ -423,7 +423,7 @@ func _play_intro(duration: float = 4.0) -> void:
 	var cam := Camera3D.new()
 	add_child(cam)
 	var title := IntroTitle.new()
-	title.setup("Level 4", "The Burial Chamber")
+	title.setup(tr("Level %d") % 4, tr("The Burial Chamber"))
 	title.visible = false
 	add_child(title)
 

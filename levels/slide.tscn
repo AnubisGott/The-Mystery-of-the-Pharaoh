@@ -49,11 +49,7 @@ offset_right = -24.0
 offset_bottom = 70.0
 grow_horizontal = 0
 grow_vertical = 2
-text = "A D - Steer
-Space - Jump holes
-M - Music on/off
-F11 - Fullscreen
-Esc - Menu"
+text = "HINT_SLIDE"
 horizontal_alignment = 2
 
 [node name="GodLabel" type="Label" parent="ControlsHint/Root"]

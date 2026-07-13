@@ -751,6 +751,59 @@ func test_display_settings_cycle_and_persist() -> void:
 	await get_tree().physics_frame
 
 
+func test_translation_csv_complete() -> void:
+	var file := FileAccess.open("res://localization/strings.csv", FileAccess.READ)
+	_check(file != null, "localization/strings.csv missing")
+	if file == null:
+		return
+
+	var header := file.get_csv_line()
+	var expected := PackedStringArray(["keys"])
+	for entry in GameManager.LANGUAGES:
+		expected.append(entry[0])
+	_check(header == expected, "CSV columns do not match GameManager.LANGUAGES")
+
+	var rows := 0
+	while not file.eof_reached():
+		var row := file.get_csv_line()
+		if row.size() == 1 and row[0].is_empty():
+			continue
+		rows += 1
+		_check(row.size() == header.size(),
+				"row '%s' has %d of %d cells" % [row[0], row.size(), header.size()])
+		for i in mini(row.size(), header.size()):
+			_check(not row[i].strip_edges().is_empty(),
+					"empty %s cell in row '%s'" % [header[i], row[0]])
+	_check(rows >= 50, "unexpectedly few translation rows: %d" % rows)
+
+
+func test_language_switch_and_persistence() -> void:
+	var prev_language: String = GameManager.language
+	var prev_config := ConfigFile.new()
+	prev_config.load(GameManager.SETTINGS_PATH)
+	var had_key: bool = prev_config.has_section_key("general", "language")
+
+	GameManager.set_language("de")
+	_check(TranslationServer.get_locale().begins_with("de"), "locale did not switch to de")
+	_check(tr("Resume") == "Fortsetzen", "German translation missing for 'Resume'")
+	var saved := ConfigFile.new()
+	saved.load(GameManager.SETTINGS_PATH)
+	_check(str(saved.get_value("general", "language", "")) == "de", "language not persisted")
+
+	GameManager.set_language("ja")
+	_check(tr("Options") == "オプション", "Japanese translation missing for 'Options'")
+	_check(tr("GOD MODE") == "GOD MODE", "untranslated strings must fall through unchanged")
+
+	# Restore the player's language and, on a first-launch settings file
+	# (no language key yet), the pristine auto-detect state.
+	GameManager.set_language(prev_language)
+	if not had_key:
+		var cleanup := ConfigFile.new()
+		cleanup.load(GameManager.SETTINGS_PATH)
+		cleanup.erase_section_key("general", "language")
+		cleanup.save(GameManager.SETTINGS_PATH)
+
+
 func test_level1_intro_hands_off_to_gameplay() -> void:
 	# The intro autoplay is gated off headless; drive it directly with a
 	# short duration and check that gameplay starts afterwards.

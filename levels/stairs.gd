@@ -316,7 +316,7 @@ func _play_intro(duration: float = 4.0) -> void:
 	var cam := Camera3D.new()
 	add_child(cam)
 	var title := IntroTitle.new()
-	title.setup("Level 3", "Up the Stairs")
+	title.setup(tr("Level %d") % 3, tr("Up the Stairs"))
 	title.visible = false
 	add_child(title)
 

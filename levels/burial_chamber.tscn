@@ -49,12 +49,7 @@ offset_right = -24.0
 offset_bottom = 70.0
 grow_horizontal = 0
 grow_vertical = 2
-text = "W A S D - Move
-Mouse - Look
-F or E - Use
-M - Music on/off
-F11 - Fullscreen
-Esc - Menu"
+text = "HINT_BURIAL"
 horizontal_alignment = 2
 
 [node name="PromptLabel" type="Label" parent="ControlsHint/Root"]

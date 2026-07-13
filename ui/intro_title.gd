@@ -33,11 +33,16 @@ func set_opacity(alpha: float) -> void:
 
 func _make_label(text: String, size: int, max_width: float = 0.0) -> Label:
 	var label := Label.new()
+	# Callers pass already-translated titles; translating again could
+	# collide with an unrelated key, and the width math below needs the
+	# final string anyway.
+	label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	label.text = text
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var font := SystemFont.new()
 	font.font_names = PackedStringArray(["Arial Black", "Arial", "Segoe UI"])
 	font.font_weight = 900
+	font.fallbacks = GameManager.cjk_fallback_fonts(900)
 	# Long titles (Level 1!) would spill past the window edges.
 	if max_width > 0.0:
 		var line_width := font.get_string_size(text,

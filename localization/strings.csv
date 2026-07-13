@@ -1,0 +1,399 @@
+keys,en,de,fr,es,it,pt_BR,pl,ru,tr,ja,zh_CN,ko
+Level 1 - The Path of the Sphinx,Level 1 - The Path of the Sphinx,Level 1 - Der Pfad der Sphinx,Niveau 1 - Le Sentier du Sphinx,Nivel 1 - El Sendero de la Esfinge,Livello 1 - Il Sentiero della Sfinge,Nível 1 - A Trilha da Esfinge,Poziom 1 - Ścieżka Sfinksa,Уровень 1 - Тропа Сфинкса,Bölüm 1 - Sfenksin Yolu,レベル1 - スフィンクスの道,第 1 关 - 狮身人面像之路,레벨 1 - 스핑크스의 길
+Level 2 - The Pendulum's Journey,Level 2 - The Pendulum's Journey,Level 2 - Die Reise des Pendels,Niveau 2 - Le Voyage du Pendule,Nivel 2 - El Viaje del Péndulo,Livello 2 - Il Viaggio del Pendolo,Nível 2 - A Jornada do Pêndulo,Poziom 2 - Podróż Wahadła,Уровень 2 - Путь Маятника,Bölüm 2 - Sarkacın Yolculuğu,レベル2 - 振り子の旅,第 2 关 - 钟摆之旅,레벨 2 - 진자의 여정
+Level 3 - Up the Stairs,Level 3 - Up the Stairs,Level 3 - Die Treppe hinauf,Niveau 3 - En Haut de l'Escalier,Nivel 3 - Escaleras Arriba,Livello 3 - Su per le Scale,Nível 3 - Escada Acima,Poziom 3 - W Górę Schodów,Уровень 3 - Вверх по лестнице,Bölüm 3 - Merdivenlerden Yukarı,レベル3 - 階段を上へ,第 3 关 - 拾级而上,레벨 3 - 계단 위로
+Level 4 - The Burial Chamber,Level 4 - The Burial Chamber,Level 4 - Die Grabkammer,Niveau 4 - La Chambre Funéraire,Nivel 4 - La Cámara Funeraria,Livello 4 - La Camera Sepolcrale,Nível 4 - A Câmara Mortuária,Poziom 4 - Komora Grobowa,Уровень 4 - Погребальная камера,Bölüm 4 - Mezar Odası,レベル4 - 埋葬の間,第 4 关 - 墓室,레벨 4 - 묘실
+Level 5 - The Slide,Level 5 - The Slide,Level 5 - Die Rutsche,Niveau 5 - Le Toboggan,Nivel 5 - El Tobogán,Livello 5 - Lo Scivolo,Nível 5 - O Escorregador,Poziom 5 - Zjeżdżalnia,Уровень 5 - Спуск,Bölüm 5 - Kaydırak,レベル5 - 滑り台,第 5 关 - 滑道,레벨 5 - 미끄럼틀
+Level 6 - Crocodiles,Level 6 - Crocodiles,Level 6 - Krokodile,Niveau 6 - Les Crocodiles,Nivel 6 - Cocodrilos,Livello 6 - Coccodrilli,Nível 6 - Crocodilos,Poziom 6 - Krokodyle,Уровень 6 - Крокодилы,Bölüm 6 - Timsahlar,レベル6 - ワニ,第 6 关 - 鳄鱼,레벨 6 - 악어
+Level 7 - The Journey Home,Level 7 - The Journey Home,Level 7 - Die Heimreise,Niveau 7 - Le Voyage du Retour,Nivel 7 - El Viaje a Casa,Livello 7 - Il Ritorno a Casa,Nível 7 - A Viagem de Volta,Poziom 7 - Podróż do Domu,Уровень 7 - Путь домой,Bölüm 7 - Eve Dönüş,レベル7 - 帰路,第 7 关 - 归途,레벨 7 - 귀향
+Options,Options,Optionen,Options,Opciones,Opzioni,Opções,Opcje,Настройки,Seçenekler,オプション,选项,옵션
+Quit,Quit,Beenden,Quitter,Salir,Esci,Sair,Wyjdź,Выход,Çıkış,終了,退出,종료
+Paused,Paused,Pausiert,Pause,Pausa,In pausa,Pausado,Pauza,Пауза,Duraklatıldı,一時停止,已暂停,일시 정지
+Resume,Resume,Fortsetzen,Reprendre,Continuar,Riprendi,Continuar,Wznów,Продолжить,Devam Et,再開,继续,계속하기
+Reset Level,Reset Level,Level neu starten,Recommencer le niveau,Reiniciar nivel,Riavvia livello,Reiniciar nível,Zresetuj poziom,Уровень заново,Bölümü Sıfırla,レベルをやり直す,重置关卡,레벨 다시 시작
+Main Menu,Main Menu,Hauptmenü,Menu principal,Menú principal,Menu principale,Menu principal,Menu główne,Главное меню,Ana Menü,メインメニュー,主菜单,메인 메뉴
+Quit Game,Quit Game,Spiel beenden,Quitter le jeu,Salir del juego,Esci dal gioco,Sair do jogo,Zakończ grę,Выйти из игры,Oyundan Çık,ゲームを終了,退出游戏,게임 종료
+Display: Fullscreen (F11),Display: Fullscreen (F11),Anzeige: Vollbild (F11),Affichage : Plein écran (F11),Pantalla: Completa (F11),Schermo: Intero (F11),Tela: Cheia (F11),Ekran: Pełny (F11),Экран: Полный (F11),Ekran: Tam Ekran (F11),画面：フルスクリーン (F11),显示：全屏 (F11),화면: 전체 화면 (F11)
+Display: Windowed (F11),Display: Windowed (F11),Anzeige: Fenster (F11),Affichage : Fenêtré (F11),Pantalla: Ventana (F11),Schermo: Finestra (F11),Tela: Janela (F11),Ekran: Okno (F11),Экран: Оконный (F11),Ekran: Pencere (F11),画面：ウィンドウ (F11),显示：窗口 (F11),화면: 창 모드 (F11)
+Size: Desktop,Size: Desktop,Größe: Desktop,Taille : Bureau,Tamaño: Escritorio,Dimensioni: Desktop,Tamanho: Desktop,Rozmiar: Pulpit,Размер: Рабочий стол,Boyut: Masaüstü,サイズ：デスクトップ,尺寸：桌面,크기: 데스크톱
+Size: %d x %d,Size: %d x %d,Größe: %d x %d,Taille : %d x %d,Tamaño: %d x %d,Dimensioni: %d x %d,Tamanho: %d x %d,Rozmiar: %d x %d,Размер: %d x %d,Boyut: %d x %d,サイズ：%d x %d,尺寸：%d x %d,크기: %d x %d
+Music: On (M),Music: On (M),Musik: An (M),Musique : Activée (M),Música: Activada (M),Musica: Attiva (M),Música: Ligada (M),Muzyka: Wł. (M),Музыка: Вкл. (M),Müzik: Açık (M),音楽：オン (M),音乐：开 (M),음악: 켬 (M)
+Music: Off (M),Music: Off (M),Musik: Aus (M),Musique : Désactivée (M),Música: Desactivada (M),Musica: Disattiva (M),Música: Desligada (M),Muzyka: Wył. (M),Музыка: Выкл. (M),Müzik: Kapalı (M),音楽：オフ (M),音乐：关 (M),음악: 끔 (M)
+Sound Volume,Sound Volume,Sound-Lautstärke,Volume des effets,Volumen de efectos,Volume effetti,Volume dos efeitos,Głośność dźwięków,Громкость звуков,Efekt Ses Düzeyi,効果音の音量,音效音量,효과음 볼륨
+Music Volume,Music Volume,Musiklautstärke,Volume de la musique,Volumen de la música,Volume musica,Volume da música,Głośność muzyki,Громкость музыки,Müzik Ses Düzeyi,音楽の音量,音乐音量,음악 볼륨
+Back,Back,Zurück,Retour,Atrás,Indietro,Voltar,Wstecz,Назад,Geri,戻る,返回,뒤로
+Language: %s,Language: %s,Sprache: %s,Langue : %s,Idioma: %s,Lingua: %s,Idioma: %s,Język: %s,Язык: %s,Dil: %s,言語：%s,语言：%s,언어: %s
+Won!,Won!,Gewonnen!,Gagné !,¡Ganaste!,Vittoria!,Você venceu!,Wygrana!,Победа!,Kazandın!,クリア！,胜利！,승리!
+You reached the goal and solved the mystery of the pharaoh.,You reached the goal and solved the mystery of the pharaoh.,Du hast das Ziel erreicht und das Geheimnis des Pharaos gelüftet.,Tu as atteint le but et résolu le mystère du pharaon.,Has llegado a la meta y resuelto el misterio del faraón.,Hai raggiunto la meta e risolto il mistero del faraone.,Você chegou ao objetivo e desvendou o mistério do faraó.,Dotarłeś do celu i rozwiązałeś zagadkę faraona.,Ты добрался до цели и разгадал тайну фараона.,Hedefe ulaştın ve firavunun gizemini çözdün.,ゴールに到達し、ファラオの謎を解き明かした。,你到达了终点，解开了法老之谜。,목표에 도달하여 파라오의 미스터리를 풀었습니다.
+Play Again,Play Again,Nochmal spielen,Rejouer,Jugar de nuevo,Gioca ancora,Jogar novamente,Zagraj ponownie,Играть снова,Tekrar Oyna,もう一度遊ぶ,再玩一次,다시 하기
+Level %d,Level %d,Level %d,Niveau %d,Nivel %d,Livello %d,Nível %d,Poziom %d,Уровень %d,Bölüm %d,レベル%d,第 %d 关,레벨 %d
+The Path of the Sphinx,The Path of the Sphinx,Der Pfad der Sphinx,Le Sentier du Sphinx,El Sendero de la Esfinge,Il Sentiero della Sfinge,A Trilha da Esfinge,Ścieżka Sfinksa,Тропа Сфинкса,Sfenksin Yolu,スフィンクスの道,狮身人面像之路,스핑크스의 길
+The Pendulum's Journey,The Pendulum's Journey,Die Reise des Pendels,Le Voyage du Pendule,El Viaje del Péndulo,Il Viaggio del Pendolo,A Jornada do Pêndulo,Podróż Wahadła,Путь Маятника,Sarkacın Yolculuğu,振り子の旅,钟摆之旅,진자의 여정
+Up the Stairs,Up the Stairs,Die Treppe hinauf,En Haut de l'Escalier,Escaleras Arriba,Su per le Scale,Escada Acima,W Górę Schodów,Вверх по лестнице,Merdivenlerden Yukarı,階段を上へ,拾级而上,계단 위로
+The Burial Chamber,The Burial Chamber,Die Grabkammer,La Chambre Funéraire,La Cámara Funeraria,La Camera Sepolcrale,A Câmara Mortuária,Komora Grobowa,Погребальная камера,Mezar Odası,埋葬の間,墓室,묘실
+The Slide,The Slide,Die Rutsche,Le Toboggan,El Tobogán,Lo Scivolo,O Escorregador,Zjeżdżalnia,Спуск,Kaydırak,滑り台,滑道,미끄럼틀
+Crocodiles,Crocodiles,Krokodile,Les Crocodiles,Cocodrilos,Coccodrilli,Crocodilos,Krokodyle,Крокодилы,Timsahlar,ワニ,鳄鱼,악어
+The Journey Home,The Journey Home,Die Heimreise,Le Voyage du Retour,El Viaje a Casa,Il Ritorno a Casa,A Viagem de Volta,Podróż do Domu,Путь домой,Eve Dönüş,帰路,归途,귀향
+E or F - %s,E or F - %s,E oder F - %s,E ou F - %s,E o F - %s,E o F - %s,E ou F - %s,E lub F - %s,E или F - %s,E veya F - %s,E / F - %s,E 或 F - %s,E 또는 F - %s
+Turn the dial,Turn the dial,Drehscheibe drehen,Tourner le cadran,Girar el disco,Ruota il disco,Girar o disco,Obróć tarczę,Повернуть диск,Kadranı çevir,ダイヤルを回す,转动转盘,다이얼 돌리기
+Light the fire bowl,Light the fire bowl,Feuerschale entzünden,Allumer la vasque de feu,Encender el brasero,Accendi il braciere,Acender o braseiro,Rozpal misę ognia,Зажечь чашу огня,Ateş çanağını yak,火鉢に火をつける,点燃火盆,화로에 불 붙이기
+Esc - Main Menu,Esc - Main Menu,Esc - Hauptmenü,Échap - Menu principal,Esc - Menú principal,Esc - Menu principale,Esc - Menu principal,Esc - Menu główne,Esc - Главное меню,Esc - Ana Menü,Esc - メインメニュー,Esc - 主菜单,Esc - 메인 메뉴
+HINT_PATH,"W A S D - Move
+Mouse - Look
+Space - Jump low spears
+Ctrl - Duck high spears
+M - Music on/off
+F11 - Fullscreen
+Esc - Menu","W A S D - Bewegen
+Maus - Umsehen
+Leertaste - Springen (tiefe Speere)
+Strg - Ducken (hohe Speere)
+M - Musik an/aus
+F11 - Vollbild
+Esc - Menü","Z Q S D - Se déplacer
+Souris - Regarder
+Espace - Sauter (lances basses)
+Ctrl - Se baisser (lances hautes)
+M - Musique on/off
+F11 - Plein écran
+Échap - Menu","W A S D - Moverse
+Ratón - Mirar
+Espacio - Saltar (lanzas bajas)
+Ctrl - Agacharse (lanzas altas)
+M - Música on/off
+F11 - Pantalla completa
+Esc - Menú","W A S D - Muoversi
+Mouse - Guardare
+Spazio - Salto (lance basse)
+Ctrl - Abbassarsi (lance alte)
+M - Musica on/off
+F11 - Schermo intero
+Esc - Menu","W A S D - Mover
+Mouse - Olhar
+Espaço - Pular (lanças baixas)
+Ctrl - Abaixar (lanças altas)
+M - Música liga/desliga
+F11 - Tela cheia
+Esc - Menu","W A S D - Ruch
+Mysz - Rozglądanie
+Spacja - Skok (niskie włócznie)
+Ctrl - Kucanie (wysokie włócznie)
+M - Muzyka wł./wył.
+F11 - Pełny ekran
+Esc - Menu","W A S D - Движение
+Мышь - Обзор
+Пробел - Прыжок (низкие копья)
+Ctrl - Пригнуться (высокие копья)
+M - Музыка вкл/выкл
+F11 - Полный экран
+Esc - Меню","W A S D - Hareket
+Fare - Bakış
+Boşluk - Zıpla (alçak mızraklar)
+Ctrl - Eğil (yüksek mızraklar)
+M - Müzik aç/kapat
+F11 - Tam ekran
+Esc - Menü","W A S D - 移動
+マウス - 視点
+スペース - ジャンプ（低い槍）
+Ctrl - しゃがむ（高い槍）
+M - 音楽 オン/オフ
+F11 - フルスクリーン
+Esc - メニュー","W A S D - 移动
+鼠标 - 视角
+空格 - 跳过低矛
+Ctrl - 蹲避高矛
+M - 音乐开/关
+F11 - 全屏
+Esc - 菜单","W A S D - 이동
+마우스 - 시점
+스페이스 - 점프(낮은 창)
+Ctrl - 숙이기(높은 창)
+M - 음악 켬/끔
+F11 - 전체 화면
+Esc - 메뉴"
+HINT_STANDARD,"W A S D - Move
+Mouse - Look
+Shift - Sprint
+Space - Jump
+M - Music on/off
+F11 - Fullscreen
+Esc - Menu","W A S D - Bewegen
+Maus - Umsehen
+Shift - Sprinten
+Leertaste - Springen
+M - Musik an/aus
+F11 - Vollbild
+Esc - Menü","Z Q S D - Se déplacer
+Souris - Regarder
+Maj - Sprinter
+Espace - Sauter
+M - Musique on/off
+F11 - Plein écran
+Échap - Menu","W A S D - Moverse
+Ratón - Mirar
+Shift - Correr
+Espacio - Saltar
+M - Música on/off
+F11 - Pantalla completa
+Esc - Menú","W A S D - Muoversi
+Mouse - Guardare
+Shift - Scatto
+Spazio - Salto
+M - Musica on/off
+F11 - Schermo intero
+Esc - Menu","W A S D - Mover
+Mouse - Olhar
+Shift - Correr
+Espaço - Pular
+M - Música liga/desliga
+F11 - Tela cheia
+Esc - Menu","W A S D - Ruch
+Mysz - Rozglądanie
+Shift - Sprint
+Spacja - Skok
+M - Muzyka wł./wył.
+F11 - Pełny ekran
+Esc - Menu","W A S D - Движение
+Мышь - Обзор
+Shift - Бег
+Пробел - Прыжок
+M - Музыка вкл/выкл
+F11 - Полный экран
+Esc - Меню","W A S D - Hareket
+Fare - Bakış
+Shift - Koşu
+Boşluk - Zıpla
+M - Müzik aç/kapat
+F11 - Tam ekran
+Esc - Menü","W A S D - 移動
+マウス - 視点
+Shift - ダッシュ
+スペース - ジャンプ
+M - 音楽 オン/オフ
+F11 - フルスクリーン
+Esc - メニュー","W A S D - 移动
+鼠标 - 视角
+Shift - 冲刺
+空格 - 跳跃
+M - 音乐开/关
+F11 - 全屏
+Esc - 菜单","W A S D - 이동
+마우스 - 시점
+Shift - 달리기
+스페이스 - 점프
+M - 음악 켬/끔
+F11 - 전체 화면
+Esc - 메뉴"
+HINT_STAIRS,"W A S D - Move
+Mouse - Look
+Shift - Sprint
+Space - Jump
+A D - Dodge boulders
+M - Music on/off
+F11 - Fullscreen
+Esc - Menu","W A S D - Bewegen
+Maus - Umsehen
+Shift - Sprinten
+Leertaste - Springen
+A D - Felsen ausweichen
+M - Musik an/aus
+F11 - Vollbild
+Esc - Menü","Z Q S D - Se déplacer
+Souris - Regarder
+Maj - Sprinter
+Espace - Sauter
+Q D - Éviter les rochers
+M - Musique on/off
+F11 - Plein écran
+Échap - Menu","W A S D - Moverse
+Ratón - Mirar
+Shift - Correr
+Espacio - Saltar
+A D - Esquivar rocas
+M - Música on/off
+F11 - Pantalla completa
+Esc - Menú","W A S D - Muoversi
+Mouse - Guardare
+Shift - Scatto
+Spazio - Salto
+A D - Schiva i massi
+M - Musica on/off
+F11 - Schermo intero
+Esc - Menu","W A S D - Mover
+Mouse - Olhar
+Shift - Correr
+Espaço - Pular
+A D - Desviar das pedras
+M - Música liga/desliga
+F11 - Tela cheia
+Esc - Menu","W A S D - Ruch
+Mysz - Rozglądanie
+Shift - Sprint
+Spacja - Skok
+A D - Unikaj głazów
+M - Muzyka wł./wył.
+F11 - Pełny ekran
+Esc - Menu","W A S D - Движение
+Мышь - Обзор
+Shift - Бег
+Пробел - Прыжок
+A D - Уклонение от валунов
+M - Музыка вкл/выкл
+F11 - Полный экран
+Esc - Меню","W A S D - Hareket
+Fare - Bakış
+Shift - Koşu
+Boşluk - Zıpla
+A D - Kayalardan kaç
+M - Müzik aç/kapat
+F11 - Tam ekran
+Esc - Menü","W A S D - 移動
+マウス - 視点
+Shift - ダッシュ
+スペース - ジャンプ
+A D - 岩をよける
+M - 音楽 オン/オフ
+F11 - フルスクリーン
+Esc - メニュー","W A S D - 移动
+鼠标 - 视角
+Shift - 冲刺
+空格 - 跳跃
+A D - 躲避巨石
+M - 音乐开/关
+F11 - 全屏
+Esc - 菜单","W A S D - 이동
+마우스 - 시점
+Shift - 달리기
+스페이스 - 점프
+A D - 바위 피하기
+M - 음악 켬/끔
+F11 - 전체 화면
+Esc - 메뉴"
+HINT_BURIAL,"W A S D - Move
+Mouse - Look
+F or E - Use
+M - Music on/off
+F11 - Fullscreen
+Esc - Menu","W A S D - Bewegen
+Maus - Umsehen
+F oder E - Benutzen
+M - Musik an/aus
+F11 - Vollbild
+Esc - Menü","Z Q S D - Se déplacer
+Souris - Regarder
+F ou E - Utiliser
+M - Musique on/off
+F11 - Plein écran
+Échap - Menu","W A S D - Moverse
+Ratón - Mirar
+F o E - Usar
+M - Música on/off
+F11 - Pantalla completa
+Esc - Menú","W A S D - Muoversi
+Mouse - Guardare
+F o E - Usa
+M - Musica on/off
+F11 - Schermo intero
+Esc - Menu","W A S D - Mover
+Mouse - Olhar
+F ou E - Usar
+M - Música liga/desliga
+F11 - Tela cheia
+Esc - Menu","W A S D - Ruch
+Mysz - Rozglądanie
+F lub E - Użyj
+M - Muzyka wł./wył.
+F11 - Pełny ekran
+Esc - Menu","W A S D - Движение
+Мышь - Обзор
+F или E - Использовать
+M - Музыка вкл/выкл
+F11 - Полный экран
+Esc - Меню","W A S D - Hareket
+Fare - Bakış
+F veya E - Kullan
+M - Müzik aç/kapat
+F11 - Tam ekran
+Esc - Menü","W A S D - 移動
+マウス - 視点
+F / E - 使う
+M - 音楽 オン/オフ
+F11 - フルスクリーン
+Esc - メニュー","W A S D - 移动
+鼠标 - 视角
+F 或 E - 使用
+M - 音乐开/关
+F11 - 全屏
+Esc - 菜单","W A S D - 이동
+마우스 - 시점
+F 또는 E - 사용
+M - 음악 켬/끔
+F11 - 전체 화면
+Esc - 메뉴"
+HINT_SLIDE,"A D - Steer
+Space - Jump holes
+M - Music on/off
+F11 - Fullscreen
+Esc - Menu","A D - Lenken
+Leertaste - Über Löcher springen
+M - Musik an/aus
+F11 - Vollbild
+Esc - Menü","Q D - Diriger
+Espace - Sauter les trous
+M - Musique on/off
+F11 - Plein écran
+Échap - Menu","A D - Dirigir
+Espacio - Saltar agujeros
+M - Música on/off
+F11 - Pantalla completa
+Esc - Menú","A D - Sterzare
+Spazio - Salta i buchi
+M - Musica on/off
+F11 - Schermo intero
+Esc - Menu","A D - Dirigir
+Espaço - Pular buracos
+M - Música liga/desliga
+F11 - Tela cheia
+Esc - Menu","A D - Sterowanie
+Spacja - Przeskakuj dziury
+M - Muzyka wł./wył.
+F11 - Pełny ekran
+Esc - Menu","A D - Управление
+Пробел - Прыжок через дыры
+M - Музыка вкл/выкл
+F11 - Полный экран
+Esc - Меню","A D - Yönlendir
+Boşluk - Deliklerden atla
+M - Müzik aç/kapat
+F11 - Tam ekran
+Esc - Menü","A D - 操作
+スペース - 穴をジャンプ
+M - 音楽 オン/オフ
+F11 - フルスクリーン
+Esc - メニュー","A D - 转向
+空格 - 跳过洞口
+M - 音乐开/关
+F11 - 全屏
+Esc - 菜单","A D - 조종
+스페이스 - 구멍 점프
+M - 음악 켬/끔
+F11 - 전체 화면
+Esc - 메뉴"
+A game by,A game by,Ein Spiel von,Un jeu de,Un juego de,Un gioco di,Um jogo de,Gra od,Игра от,Hazırlayan,制作,游戏制作,제작
+Creative Director,Creative Director,Creative Director,Directeur créatif,Director creativo,Direttore creativo,Diretor criativo,Dyrektor kreatywny,Креативный директор,Kreatif Direktör,クリエイティブディレクター,创意总监,크리에이티브 디렉터
+Level Design,Level Design,Leveldesign,Conception des niveaux,Diseño de niveles,Level design,Design de níveis,Projekt poziomów,Дизайн уровней,Bölüm Tasarımı,レベルデザイン,关卡设计,레벨 디자인
+Programming,Programming,Programmierung,Programmation,Programación,Programmazione,Programação,Programowanie,Программирование,Programlama,プログラミング,程序,프로그래밍
+Testing,Testing,Test,Tests,Pruebas,Test,Testes,Testy,Тестирование,Test,テスト,测试,테스트
+Music,Music,Musik,Musique,Música,Musica,Música,Muzyka,Музыка,Müzik,音楽,音乐,음악
+Sound Effects,Sound Effects,Soundeffekte,Effets sonores,Efectos de sonido,Effetti sonori,Efeitos sonoros,Efekty dźwiękowe,Звуковые эффекты,Ses Efektleri,効果音,音效,음향 효과
+Artwork,Artwork,Grafik,Illustrations,Arte,Grafica,Arte,Grafika,Графика,Görseller,アートワーク,美术,아트워크
+Game Engine,Game Engine,Game Engine,Moteur de jeu,Motor del juego,Motore di gioco,Motor de jogo,Silnik gry,Игровой движок,Oyun Motoru,ゲームエンジン,游戏引擎,게임 엔진
+Character,Character,Charakter,Personnage,Personaje,Personaggio,Personagem,Postać,Персонаж,Karakter,キャラクター,角色,캐릭터
+Animations,Animations,Animationen,Animations,Animaciones,Animazioni,Animações,Animacje,Анимации,Animasyonlar,アニメーション,动画,애니메이션
+Sphinx head scan,Sphinx head scan,Sphinxkopf-Scan,Scan de la tête du sphinx,Escaneo de la cabeza de la esfinge,Scansione della testa della sfinge,Escaneamento da cabeça da esfinge,Skan głowy sfinksa,Скан головы сфинкса,Sfenks başı taraması,スフィンクス頭部スキャン,狮身人面像头部扫描,스핑크스 머리 스캔
+Anubis jackal,Anubis jackal,Anubis-Schakal,Chacal d'Anubis,Chacal de Anubis,Sciacallo di Anubi,Chacal de Anúbis,Szakal Anubisa,Шакал Анубиса,Anubis çakalı,アヌビスのジャッカル,阿努比斯胡狼,아누비스 자칼
+Bastet cat,Bastet cat,Bastet-Katze,Chat de Bastet,Gata de Bastet,Gatto di Bastet,Gata de Bastet,Kot Bastet,Кошка Бастет,Bastet kedisi,バステトの猫,巴斯特猫,바스테트 고양이
+Scarab,Scarab,Skarabäus,Scarabée,Escarabajo,Scarabeo,Escaravelho,Skarabeusz,Скарабей,Skarabe,スカラベ,圣甲虫,스카라베
+Steamship,Steamship,Dampfschiff,Bateau à vapeur,Barco de vapor,Battello a vapore,Navio a vapor,Parowiec,Пароход,Buharlı gemi,蒸気船,蒸汽船,증기선
+Textures,Textures,Texturen,Textures,Texturas,Texture,Texturas,Tekstury,Текстуры,Dokular,テクスチャ,纹理,텍스처
+Thank you for playing!,Thank you for playing!,Danke fürs Spielen!,Merci d'avoir joué !,¡Gracias por jugar!,Grazie per aver giocato!,Obrigado por jogar!,Dziękujemy za grę!,Спасибо за игру!,Oynadığın için teşekkürler!,遊んでくれてありがとう！,感谢游玩！,플레이해 주셔서 감사합니다!

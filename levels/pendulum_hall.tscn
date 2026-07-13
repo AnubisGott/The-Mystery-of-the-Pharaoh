@@ -50,13 +50,7 @@ offset_right = -24.0
 offset_bottom = 70.0
 grow_horizontal = 0
 grow_vertical = 2
-text = "W A S D - Move
-Mouse - Look
-Shift - Sprint
-Space - Jump
-M - Music on/off
-F11 - Fullscreen
-Esc - Menu"
+text = "HINT_STANDARD"
 horizontal_alignment = 2
 
 [node name="GodLabel" type="Label" parent="ControlsHint/Root"]
