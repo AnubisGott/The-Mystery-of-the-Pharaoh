@@ -23,6 +23,10 @@ func _ready() -> void:
 	quit_button.pressed.connect(_on_quit_pressed)
 	options_items.closed.connect(_on_options_closed)
 
+	if GameManager.touch_mode:
+		GameManager.scale_menu_for_touch(items)
+		GameManager.scale_menu_for_touch(options_items)
+
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause"):
@@ -57,7 +61,9 @@ func _on_options_closed() -> void:
 func close() -> void:
 	visible = false
 	get_tree().paused = false
-	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	# Phones have no mouse to capture (and doing so hides the touch UI).
+	if not GameManager.touch_mode:
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
 func _on_reset_pressed() -> void:

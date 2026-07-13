@@ -32,6 +32,10 @@ func _ready() -> void:
 	options_items.closed.connect(_on_options_closed)
 	level_buttons[0].grab_focus()
 
+	if GameManager.touch_mode:
+		GameManager.scale_menu_for_touch(menu_items)
+		GameManager.scale_menu_for_touch(options_items)
+
 	GameManager.play_music(MENU_MUSIC)
 
 

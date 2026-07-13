@@ -8,7 +8,10 @@ extends CanvasLayer
 # design), and only in touch mode (GameManager.touch_mode).
 
 const RADIUS: float = 64.0
-const PAUSE_RADIUS: float = 34.0
+# The auto-run levels have only two buttons: they sit big and centered
+# on either side, under the thumbs.
+const SIDE_RADIUS: float = 92.0
+const PAUSE_RADIUS: float = 40.0
 const MARGIN: float = 26.0
 const GAP: float = 20.0
 
@@ -29,10 +32,11 @@ func _ready() -> void:
 # button widths inward from that side, `row` upward from the bottom.
 # An empty `action` makes a button the level polls itself (is_pressed).
 func add_button(text: String, action: String, right: bool, col: int = 0, row: int = 0,
-		radius: float = RADIUS) -> TouchScreenButton:
+		radius: float = RADIUS, center_v: bool = false) -> TouchScreenButton:
 	var button := _make_round_button(text, radius, 30 if radius >= RADIUS else 22)
 	button.action = action
-	_anchors.append({"node": button, "right": right, "col": col, "row": row, "top": false})
+	_anchors.append({"node": button, "right": right, "col": col, "row": row,
+			"top": false, "center_v": center_v})
 	_layout()
 	return button
 
@@ -40,9 +44,10 @@ func add_button(text: String, action: String, right: bool, col: int = 0, row: in
 # Small pause toggle in the top-right corner. Routed through a real
 # input event so the pause menu's _unhandled_input sees the action.
 func add_pause_button() -> void:
-	var button := _make_round_button("II", PAUSE_RADIUS, 20)
+	var button := _make_round_button("II", PAUSE_RADIUS, 24)
 	button.pressed.connect(_emit_pause)
-	_anchors.append({"node": button, "right": true, "col": 0, "row": 0, "top": true})
+	_anchors.append({"node": button, "right": true, "col": 0, "row": 0, "top": true,
+			"center_v": false})
 	_layout()
 
 
@@ -103,7 +108,9 @@ func _layout() -> void:
 		else:
 			x = MARGIN + anchor["col"] * step
 		var y: float
-		if anchor["top"]:
+		if anchor.get("center_v", false):
+			y = (size.y - diameter) / 2.0
+		elif anchor["top"]:
 			y = MARGIN + anchor["row"] * step
 		else:
 			y = size.y - MARGIN - diameter - anchor["row"] * step

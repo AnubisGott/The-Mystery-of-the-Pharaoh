@@ -127,8 +127,8 @@ func _setup_touch_mode() -> void:
 	get_node("ControlsHint").visible = false
 	var touch: CanvasLayer = TouchControls.new()
 	add_child(touch)
-	touch.add_button(tr("JUMP"), "jump", true)
-	touch.add_button(tr("DUCK"), "duck", false)
+	touch.add_button(tr("JUMP"), "jump", true, 0, 0, touch.SIDE_RADIUS, true)
+	touch.add_button(tr("DUCK"), "duck", false, 0, 0, touch.SIDE_RADIUS, true)
 	touch.add_pause_button()
 
 

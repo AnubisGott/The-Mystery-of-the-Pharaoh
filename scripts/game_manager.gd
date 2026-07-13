@@ -68,12 +68,16 @@ var language: String = ""
 # testing): levels build on-screen controls, hide the keyboard hints and
 # drive movement per the mobile control scheme.
 var touch_mode: bool = false
+
+# The Level-2 sprint hint shows once per game start, not on every visit.
+var run_hint_shown: bool = false
 # Separate loudness for effects and music (0..1), each on its own audio
 # bus; the options sliders override the defaults.
 var sound_volume: float = 0.5
 var music_volume: float = 0.1
 
 var _music_player: AudioStreamPlayer
+var _last_go_back_msec: int = 0
 
 
 func _ready() -> void:
@@ -104,9 +108,45 @@ func _ready() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
 		quit_game()
+	elif what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		go_back()
+
+
+# Android's Back gesture is the phone's Esc key: it opens (and closes)
+# the pause menu instead of dropping out of the game. Android delivers it
+# either as this notification or as a Back key event, depending on the
+# device's navigation mode - both land here, so the debounce keeps a
+# doubled delivery from toggling the menu straight back shut.
+func go_back() -> void:
+	var now := Time.get_ticks_msec()
+	if now - _last_go_back_msec < 300:
+		return
+	_last_go_back_msec = now
+	var event := InputEventAction.new()
+	event.action = "pause"
+	event.pressed = true
+	Input.parse_input_event(event)
+
+
+# Phone-sized menus: the desktop buttons are far too small for a thumb.
+# Big enough to hit, small enough that all nine still fit on screen.
+static func scale_menu_for_touch(container: Node) -> void:
+	for child in container.get_children():
+		if child is Button:
+			child.custom_minimum_size = Vector2(400.0, 54.0)
+			child.add_theme_font_size_override("font_size", 25)
+		elif child is Label:
+			child.add_theme_font_size_override("font_size", 25)
+		elif child is HSlider:
+			child.custom_minimum_size = Vector2(400.0, 44.0)
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo \
+			and event.keycode == KEY_BACK:
+		go_back()
+		return
+
 	if event.is_action_pressed("toggle_music"):
 		set_music_enabled(not music_enabled)
 		return

@@ -196,6 +196,47 @@ func _play_intro(duration: float = 4.0) -> void:
 	player.set_process_unhandled_input(true)
 	player.set_physics_process(true)
 	_intro_running = false
+	_show_run_hint()
+
+
+# A short overlay reminding the player that Shift sprints - once per
+# game start, and never on phones (no Shift key there; they auto-run or
+# hold a button instead).
+func _show_run_hint(duration: float = 2.5) -> void:
+	if GameManager.touch_mode or GameManager.run_hint_shown:
+		return
+	if DisplayServer.get_name() == "headless":
+		return
+	GameManager.run_hint_shown = true
+
+	var layer := CanvasLayer.new()
+	layer.layer = 12
+	add_child(layer)
+
+	var label := Label.new()
+	label.text = tr("Run with Shift")
+	label.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	label.offset_left = -260.0
+	label.offset_right = 260.0
+	label.offset_top = 96.0
+	label.offset_bottom = 150.0
+	label.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.add_theme_font_size_override("font_size", 34)
+	label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.7))
+	label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
+	label.add_theme_constant_override("shadow_offset_x", 3)
+	label.add_theme_constant_override("shadow_offset_y", 3)
+	label.add_theme_color_override("font_outline_color", Color(0.15, 0.09, 0.03))
+	label.add_theme_constant_override("outline_size", 6)
+	layer.add_child(label)
+
+	var tween := create_tween()
+	tween.tween_interval(duration)
+	tween.tween_property(label, "modulate:a", 0.0, 0.6)
+	tween.tween_callback(layer.queue_free)
 
 
 # Android port scheme for Level 2: the corridor turns four times, so the

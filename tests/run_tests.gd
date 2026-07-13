@@ -920,6 +920,36 @@ func _touch_actions(level: Node) -> Array[String]:
 	return actions
 
 
+func test_run_hint_shows_once_per_session() -> void:
+	var hall := await _spawn_hall()
+	var before: bool = GameManager.run_hint_shown
+
+	# Headless has no screen to draw on, so the overlay is skipped there -
+	# what this pins down is the once-per-session bookkeeping.
+	GameManager.run_hint_shown = false
+	hall._show_run_hint()
+	_check(GameManager.run_hint_shown or DisplayServer.get_name() == "headless",
+			"the sprint hint did not mark itself as shown")
+
+	# A second visit to Level 2 must not show it again.
+	GameManager.run_hint_shown = true
+	var layers_before: int = hall.get_children().filter(
+			func(n: Node) -> bool: return n is CanvasLayer).size()
+	hall._show_run_hint()
+	var layers_after: int = hall.get_children().filter(
+			func(n: Node) -> bool: return n is CanvasLayer).size()
+	_check(layers_after == layers_before, "the sprint hint appeared a second time")
+
+	# The text exists in every language.
+	var previous: String = TranslationServer.get_locale()
+	TranslationServer.set_locale("de")
+	_check(tr("Run with Shift") == "Mit Shift rennen", "the sprint hint is not translated")
+	TranslationServer.set_locale(previous)
+
+	GameManager.run_hint_shown = before
+	await _free_hall(hall)
+
+
 func test_touch_mode_croc_hops() -> void:
 	GameManager.touch_mode = true
 	# The Level-1 rig lives in this scene too, and in touch mode its
