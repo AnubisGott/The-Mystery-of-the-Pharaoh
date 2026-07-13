@@ -674,13 +674,29 @@ func test_menu_has_level_entries() -> void:
 	add_child(menu)
 	await get_tree().physics_frame
 
+	# Top level: Select Level, Options, Quit - the levels live one step in.
+	_check(menu.get_node("Center/Panel/MenuItems").visible, "the top level menu is hidden")
+	_check(not menu.get_node("Center/Panel/LevelItems").visible,
+			"the level list shows before Select Level is pressed")
+
+	menu.get_node("Center/Panel/MenuItems/SelectLevelButton").pressed.emit()
+	_check(menu.get_node("Center/Panel/LevelItems").visible, "Select Level did not open the list")
+	_check(not menu.get_node("Center/Panel/MenuItems").visible,
+			"the top level stayed visible under the level list")
+
 	var expected_names: Array[String] = ["Sphinx", "Pendulum", "Stairs",
 			"Burial", "Slide", "Crocodiles", "Journey"]
 	for i in expected_names.size():
 		var button: Button = menu.get_node(
-				"Center/Panel/MenuItems/Level%dButton" % (i + 1))
+				"Center/Panel/LevelItems/Level%dButton" % (i + 1))
 		_check(button.text.contains(expected_names[i]),
 				"level %d entry missing its name" % (i + 1))
+
+	# ...and Back returns to the top level.
+	menu.get_node("Center/Panel/LevelItems/LevelBackButton").pressed.emit()
+	_check(menu.get_node("Center/Panel/MenuItems").visible, "Back did not return to the top level")
+	_check(not menu.get_node("Center/Panel/LevelItems").visible,
+			"the level list stayed open after Back")
 
 	var version: Label = menu.get_node("VersionLabel")
 	_check(version.text == "v" + str(ProjectSettings.get_setting(

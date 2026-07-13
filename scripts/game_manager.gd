@@ -129,16 +129,17 @@ func go_back() -> void:
 
 
 # Phone-sized menus: the desktop buttons are far too small for a thumb.
-# Big enough to hit, small enough that all nine still fit on screen.
-static func scale_menu_for_touch(container: Node) -> void:
+# `scale` doubles the short top menu; the long lists stay at 1.0 so all
+# of their entries still fit on screen.
+static func scale_menu_for_touch(container: Node, scale: float = 1.0) -> void:
 	for child in container.get_children():
 		if child is Button:
-			child.custom_minimum_size = Vector2(400.0, 54.0)
-			child.add_theme_font_size_override("font_size", 25)
+			child.custom_minimum_size = Vector2(400.0, 54.0) * scale
+			child.add_theme_font_size_override("font_size", int(25.0 * scale))
 		elif child is Label:
-			child.add_theme_font_size_override("font_size", 25)
+			child.add_theme_font_size_override("font_size", int(25.0 * scale))
 		elif child is HSlider:
-			child.custom_minimum_size = Vector2(400.0, 44.0)
+			child.custom_minimum_size = Vector2(400.0, 44.0) * scale
 
 
 func _unhandled_input(event: InputEvent) -> void:
