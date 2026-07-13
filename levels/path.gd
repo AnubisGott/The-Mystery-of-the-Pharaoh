@@ -47,6 +47,9 @@ const PRACTICE_INTERVAL: float = 2.4
 # in; regular practice spacing takes over afterwards.
 const INITIAL_SPEAR_DELAY: float = 2.0
 const RANDOM_SPEARS_START_Z: float = 18.0
+# Past the sphinx's paw line the player walks sheltered between its
+# legs: no spears on the last meters to the exit.
+const SPEAR_SHELTER_Z: float = -88.0
 
 @onready var player: CharacterBody3D = $Player
 @onready var track: Path3D = $Track
@@ -386,7 +389,9 @@ func _restart_spear_timer() -> void:
 # Only one spear may be on screen at a time: a low and a high spear
 # together would be impossible to dodge.
 func _on_spear_timer_timeout() -> void:
-	if player.global_position.z < RANDOM_SPEARS_START_Z and not spear_layer.has_active_spears():
+	if player.global_position.z < RANDOM_SPEARS_START_Z \
+			and player.global_position.z > SPEAR_SHELTER_Z \
+			and not spear_layer.has_active_spears():
 		spear_layer.spawn_spear(randf() < 0.5, randf() < 0.5)
 	_restart_spear_timer()
 
@@ -395,6 +400,8 @@ func _on_practice_timer_timeout() -> void:
 	# After the long lead-in, drop back to the regular practice cadence.
 	_practice_timer.wait_time = PRACTICE_INTERVAL
 	if spear_layer.has_active_spears():
+		return
+	if player.global_position.z <= SPEAR_SHELTER_Z:
 		return
 	spear_layer.spawn_spear(_practice_high, _practice_high)
 	_practice_high = not _practice_high

@@ -751,6 +751,26 @@ func test_display_settings_cycle_and_persist() -> void:
 	await get_tree().physics_frame
 
 
+func test_no_spears_in_the_sphinx_shelter() -> void:
+	# On the open path the spear timer spawns as usual...
+	player.global_position = Vector3(0.1, 1.0, 0.0)
+	await get_tree().physics_frame
+	level._on_spear_timer_timeout()
+	_check(layer.has_active_spears(), "no spear spawned on the open path")
+	layer._clear_spears()
+
+	# ...but between the sphinx's legs the player is sheltered.
+	player.global_position = Vector3(0.1, 1.0, -90.0)
+	await get_tree().physics_frame
+	level._on_spear_timer_timeout()
+	level._on_practice_timer_timeout()
+	_check(not layer.has_active_spears(), "spears spawned inside the sphinx shelter")
+
+	# The handlers rearm the timers; keep them silent for the other tests.
+	level._spear_timer.stop()
+	level._practice_timer.stop()
+
+
 func test_translation_csv_complete() -> void:
 	var file := FileAccess.open("res://localization/strings.csv", FileAccess.READ)
 	_check(file != null, "localization/strings.csv missing")

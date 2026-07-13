@@ -6,7 +6,7 @@ config_version=5
 [application]
 
 config/name="The Mystery of the Pharaoh"
-config/version="1.0.115"
+config/version="1.1.0"
 run/main_scene="res://main/main.tscn"
 config/icon="res://icon.png"
 config/features=PackedStringArray("4.7", "Forward Plus")
