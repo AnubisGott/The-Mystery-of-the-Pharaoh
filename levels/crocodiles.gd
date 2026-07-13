@@ -89,16 +89,6 @@ func _physics_process(_delta: float) -> void:
 			player.die_and_reset(_spawn_transform, true, false)
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	# Skip the intro or the finale on a fresh key or click - but not on
-	# key repeats or input left over from finishing the previous level
-	# (a short grace period swallows those).
-	if (_intro_running or _outro_running) and _intro_can_skip and event.is_pressed() \
-			and not event.is_echo() \
-			and (event is InputEventKey or event is InputEventMouseButton):
-		_intro_skip = true
-
-
 # ------------------------------------------------------------ landscape
 
 func _build_environment() -> void:
@@ -340,9 +330,19 @@ func _on_god_mode_changed(enabled: bool) -> void:
 
 # ---------------------------------------------------------------- intro
 
+func _unhandled_input(event: InputEvent) -> void:
+	# Esc skips the intro or the finale - a fresh press only, ignoring
+	# key repeats and input left over from gameplay (grace period).
+	if (_intro_running or _outro_running) and _intro_can_skip \
+			and event is InputEventKey \
+			and event.is_pressed() and not event.is_echo() \
+			and event.physical_keycode == KEY_ESCAPE:
+		_intro_skip = true
+
+
 # A ~4 s cinematic: the camera drifts over the river, crocodiles below
 # and the steamboat far ahead, zooming in and back out; mid-shot the
-# frame freezes for the level title. Any key or click skips it.
+# frame freezes for the level title. Esc skips it.
 func _play_intro(duration: float = 4.0) -> void:
 	_intro_running = true
 	_intro_skip = false
@@ -414,7 +414,7 @@ func _on_end_zone_entered() -> void:
 # The finale: the adventurer sprints down the dock in slow motion,
 # veers to the edge and leaps for the steamer's open foredeck - the cut
 # to Level 7 comes right at the highest point of the jump, landing
-# unseen. Any key or click skips straight to Level 7.
+# unseen. Esc skips straight to Level 7.
 func _play_outro_jump() -> void:
 	_intro_skip = false
 	_intro_can_skip = true
@@ -506,7 +506,7 @@ func _play_outro_jump() -> void:
 # The older finale, kept as a drop-in replacement (swap the call in
 # _on_end_zone_entered): the adventurer covers the last stretch of the
 # dock in slow motion and pulls up facing the ship, without jumping
-# aboard. Any key or click skips straight to Level 7.
+# aboard. Esc skips straight to Level 7.
 func _play_outro_run() -> void:
 	_intro_skip = false
 	_intro_can_skip = true

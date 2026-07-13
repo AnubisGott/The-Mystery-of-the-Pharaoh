@@ -150,16 +150,6 @@ func _on_player_respawned() -> void:
 	player.get_node("Visual/AnimationPlayer").play("Crouch_Idle", 0.1)
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	# Skip the intro on a fresh key or click - but not on key repeats
-	# or input left over from finishing the previous level (a short
-	# grace period swallows those).
-	if _intro_running and _intro_can_skip and event.is_pressed() \
-			and not event.is_echo() \
-			and (event is InputEventKey or event is InputEventMouseButton):
-		_intro_skip = true
-
-
 func _progress(z: float) -> float:
 	return clampf((SLIDE_START_Z - z) / (SLIDE_START_Z - SLIDE_END_Z), 0.0, 1.0)
 
@@ -316,9 +306,18 @@ func _on_god_mode_changed(enabled: bool) -> void:
 
 # ---------------------------------------------------------------- intro
 
+func _unhandled_input(event: InputEvent) -> void:
+	# Esc skips the intro - a fresh press only, ignoring key repeats
+	# and input left over from the previous level (grace period).
+	if _intro_running and _intro_can_skip and event is InputEventKey \
+			and event.is_pressed() and not event.is_echo() \
+			and event.physical_keycode == KEY_ESCAPE:
+		_intro_skip = true
+
+
 # A ~4 s cinematic: the camera hangs over the chute looking down into
 # the depth, zooming in and back out; mid-shot the frame freezes for
-# the level title. Any key or click skips it.
+# the level title. Esc skips it.
 func _play_intro(duration: float = 4.0) -> void:
 	_intro_running = true
 	_intro_skip = false

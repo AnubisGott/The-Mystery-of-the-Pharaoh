@@ -112,16 +112,6 @@ func _physics_process(delta: float) -> void:
 			best.interact()
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	# Skip the intro on a fresh key or click - but not on key repeats
-	# or input left over from finishing the previous level (a short
-	# grace period swallows those).
-	if _intro_running and _intro_can_skip and event.is_pressed() \
-			and not event.is_echo() \
-			and (event is InputEventKey or event is InputEventMouseButton):
-		_intro_skip = true
-
-
 # ---------------------------------------------------------------- rooms
 
 func _build_rooms() -> void:
@@ -407,9 +397,18 @@ func _on_god_mode_changed(enabled: bool) -> void:
 
 # ---------------------------------------------------------------- intro
 
+func _unhandled_input(event: InputEvent) -> void:
+	# Esc skips the intro - a fresh press only, ignoring key repeats
+	# and input left over from the previous level (grace period).
+	if _intro_running and _intro_can_skip and event is InputEventKey \
+			and event.is_pressed() and not event.is_echo() \
+			and event.physical_keycode == KEY_ESCAPE:
+		_intro_skip = true
+
+
 # A ~4 s cinematic: the camera drifts through the antechamber toward
 # the sealed door and its cold fire bowls, zooming in and back out;
-# mid-shot the frame freezes for the level title.
+# mid-shot the frame freezes for the level title. Esc skips it.
 func _play_intro(duration: float = 4.0) -> void:
 	_intro_running = true
 	_intro_skip = false

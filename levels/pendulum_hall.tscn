@@ -15,6 +15,7 @@ script = ExtResource("1")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 3)
 yaw_limit_degrees = 0.0
 sprint_allowed = true
+fall_sounds_enabled = false
 visual_lift = 0.0
 
 [node name="WinZone" type="Area3D" parent="."]

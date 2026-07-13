@@ -77,12 +77,8 @@ func _ready() -> void:
 	# to a lambda capture this scene strongly and leak it on scene change.
 	GameManager.god_mode_changed.connect(_on_god_mode_changed)
 
-	# The GLBs carry geometry only; the triplanar sandstone materials
-	# need no UVs and match the rest of the monument. The scan head
-	# keeps its own photo texture.
-	for mesh in $Monument/Sphinx.find_children("*", "MeshInstance3D"):
-		if not String(mesh.name).begins_with("SphinxHead"):
-			mesh.material_override = SANDSTONE_MATERIAL
+	# The pyramid GLB carries geometry only; the triplanar sandstone
+	# material needs no UVs. The sphinx scan keeps its own photo texture.
 	for mesh in $Monument/Pyramid.find_children("*", "MeshInstance3D"):
 		mesh.material_override = PYRAMID_MATERIAL
 
@@ -114,18 +110,17 @@ func _start_spear_timers() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	# Skip the intro on a fresh key or click - but not on key repeats
-	# or input left over from finishing the previous level (a short
-	# grace period swallows those).
-	if _intro_running and _intro_can_skip and event.is_pressed() \
-			and not event.is_echo() \
-			and (event is InputEventKey or event is InputEventMouseButton):
+	# Esc skips the intro - a fresh press only, ignoring key repeats
+	# and input left over from the previous level (grace period).
+	if _intro_running and _intro_can_skip and event is InputEventKey \
+			and event.is_pressed() and not event.is_echo() \
+			and event.physical_keycode == KEY_ESCAPE:
 		_intro_skip = true
 
 
 # A ~4 s cinematic: a spear glides past in slow motion while the
 # adventurer ducks under it, the camera zooming in and back out.
-# Any key or click skips it; gameplay starts afterwards.
+# Esc skips it; gameplay starts afterwards.
 func _play_intro(duration: float = 4.0) -> void:
 	_intro_running = true
 	_intro_skip = false
