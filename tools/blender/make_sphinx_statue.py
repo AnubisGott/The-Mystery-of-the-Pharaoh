@@ -179,8 +179,14 @@ gray = px[:, :3] @ np.array([0.299, 0.587, 0.114], dtype=np.float32)
 # Normalize against the statue's surface only: the atlas contains dark
 # unused padding that would drag the mean down and leave the visible
 # texels far brighter than the tint.
-surface = gray[gray > 0.15]
-gray /= max(surface.mean(), 1e-6)
+mask = gray > 0.15
+gray /= max(gray[mask].mean(), 1e-6)
+# The photos baked real-world shading into the albedo (the back of the
+# head is nearly black and reads like a wrong shadow in game). Compress
+# everything below the mean to 45% of its darkness — deep baked shade
+# flattens hard, highlights stay — then re-center on the tint.
+gray = np.where(gray < 1.0, 1.0 - (1.0 - gray) * 0.25, gray).astype(np.float32)
+gray /= max(gray[mask].mean(), 1e-6)
 for c in range(3):
     px[:, c] = np.clip(gray * tint[c], 0.0, 1.0)
 tinted = bpy.data.images.new("SphinxSandstone", src_img.size[0], src_img.size[1], alpha=False)

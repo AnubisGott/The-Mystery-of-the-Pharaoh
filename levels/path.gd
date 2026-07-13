@@ -1,4 +1,4 @@
-extends Node3D
+﻿extends Node3D
 
 const SANDSTONE_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_sphinx.tres")
 const LEVEL_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel01.mp3")
@@ -81,6 +81,16 @@ func _ready() -> void:
 	# material needs no UVs. The sphinx scan keeps its own photo texture.
 	for mesh in $Monument/Pyramid.find_children("*", "MeshInstance3D"):
 		mesh.material_override = PYRAMID_MATERIAL
+
+	# Desert bounce light: sand reflects plenty of sun, so a soft
+	# shadowless fill from the opposite side keeps the sun-averted faces
+	# (the back of the sphinx's head) from going near-black.
+	var fill := DirectionalLight3D.new()
+	fill.rotation_degrees = Vector3(-25.0, 180.0, 0.0)
+	fill.light_color = Color(0.95, 0.85, 0.7)
+	fill.light_energy = 0.6
+	fill.shadow_enabled = false
+	add_child(fill)
 
 	_spear_timer = Timer.new()
 	_spear_timer.one_shot = true
@@ -407,3 +417,4 @@ func _on_player_hit(hit_high: bool) -> void:
 	if GameManager.god_mode:
 		return
 	player.die_and_reset(_spawn_transform, hit_high)
+
