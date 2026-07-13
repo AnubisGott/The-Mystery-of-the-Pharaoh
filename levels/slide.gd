@@ -12,6 +12,7 @@ const WALL_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_sph
 const FLOOR_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_pyramid.tres")
 const Torch := preload("res://levels/torch.gd")
 const IntroTitle := preload("res://ui/intro_title.gd")
+const TouchControls := preload("res://ui/touch_controls.gd")
 
 const INTRO_HOLD: float = 1.4
 
@@ -91,10 +92,25 @@ func _ready() -> void:
 	_bump_player.bus = "Sfx"
 	add_child(_bump_player)
 
+	if GameManager.touch_mode:
+		_setup_touch_mode()
+
 	if intro_enabled and DisplayServer.get_name() != "headless":
 		_play_intro()
 	else:
 		_sliding = true
+
+
+# Android port scheme for Level 5: the chute carries the player; the
+# buttons steer left/right and jump the holes.
+func _setup_touch_mode() -> void:
+	get_node("ControlsHint").visible = false
+	var touch: CanvasLayer = TouchControls.new()
+	add_child(touch)
+	touch.add_button("<", "move_left", false)
+	touch.add_button(">", "move_right", false, 1)
+	touch.add_button(tr("JUMP"), "jump", true)
+	touch.add_pause_button()
 
 
 func _physics_process(delta: float) -> void:

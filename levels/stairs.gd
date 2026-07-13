@@ -11,6 +11,7 @@ const FLOOR_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_py
 const Torch := preload("res://levels/torch.gd")
 const Boulder := preload("res://hazards/boulder.gd")
 const IntroTitle := preload("res://ui/intro_title.gd")
+const TouchControls := preload("res://ui/touch_controls.gd")
 
 # How long the intro freezes mid-shot to stamp the level name on the
 # frame, at the standard 4 s duration (it scales with the duration).
@@ -32,6 +33,16 @@ const BOULDER_SPEED: float = 7.5
 # The spawn interval ramps from busy to relentless with climb progress.
 const INTERVAL_EASY: float = 1.0
 const INTERVAL_HARD: float = 0.4
+# The touch scheme dodges by jumping instead of side-stepping, which
+# needs more air between waves: the ramp tops out gentler and twin
+# boulders stay rare (the Android port design).
+const INTERVAL_HARD_TOUCH: float = 0.75
+const TWIN_CHANCE_TOUCH: float = 0.2
+# Climbing at 5 m/s the stairs rise 1.75 m/s under the player, so the
+# normal jump (3.8) lifts him barely 0.2 m clear of the steps - far too
+# low for a 1.5 m boulder. The touch scheme hurdles them instead: this
+# leap clears the boulder by a good margin.
+const JUMP_VELOCITY_TOUCH: float = 7.6
 # A wave is one boulder, sometimes two — never all three lanes at once,
 # so there is always a way through.
 const TWIN_CHANCE: float = 0.4
@@ -73,13 +84,47 @@ func _ready() -> void:
 	_boulder_timer.timeout.connect(_on_boulder_timer_timeout)
 	add_child(_boulder_timer)
 
+	if GameManager.touch_mode:
+		_setup_touch_mode()
+
 	if intro_enabled and DisplayServer.get_name() != "headless":
 		_play_intro()
 	else:
 		_boulder_timer.start(FIRST_BOULDER_DELAY)
 
 
-func _physics_process(_delta: float) -> void:
+# Android port scheme for Level 3: the adventurer climbs the middle of
+# the staircase on his own; the buttons hurdle the boulders and duck.
+func _setup_touch_mode() -> void:
+	get_node("ControlsHint").visible = false
+	player.jump_velocity = JUMP_VELOCITY_TOUCH
+	var touch: CanvasLayer = TouchControls.new()
+	add_child(touch)
+	touch.add_button(tr("JUMP"), "jump", true)
+	touch.add_button(tr("DUCK"), "duck", false)
+	touch.add_pause_button()
+
+
+# Keeps the player climbing straight up the stairs (toward -Z).
+func _drive_auto_run(delta: float) -> void:
+	if _intro_running or player.is_dying():
+		Input.action_release("move_forward")
+		return
+	player.rotation.y = lerp_angle(player.rotation.y, 0.0, minf(delta * 6.0, 1.0))
+	player._yaw = player.rotation.y
+	Input.action_press("move_forward")
+
+
+func _exit_tree() -> void:
+	# Auto-run holds move_forward down; do not leak it into other scenes.
+	if GameManager.touch_mode:
+		Input.action_release("move_forward")
+
+
+func _physics_process(delta: float) -> void:
+	if GameManager.touch_mode:
+		_drive_auto_run(delta)
+
 	# Safety net: below the ramp line means death.
 	var lp := to_local(player.global_position)
 	if lp.y < _ramp_y(lp.z) - 3.5 and not player.is_dying():
@@ -238,7 +283,8 @@ func _progress() -> float:
 
 # Base spawn interval for a given climb progress (jitter comes on top).
 func _spawn_interval(progress: float) -> float:
-	return lerpf(INTERVAL_EASY, INTERVAL_HARD, progress)
+	var hard := INTERVAL_HARD_TOUCH if GameManager.touch_mode else INTERVAL_HARD
+	return lerpf(INTERVAL_EASY, hard, progress)
 
 
 func _on_boulder_timer_timeout() -> void:
@@ -249,7 +295,8 @@ func _on_boulder_timer_timeout() -> void:
 		# never wall off all three lanes.
 		var lane := randi() % LANES.size()
 		_spawn_boulder(lane)
-		if randf() < TWIN_CHANCE:
+		var twin_chance := TWIN_CHANCE_TOUCH if GameManager.touch_mode else TWIN_CHANCE
+		if randf() < twin_chance:
 			_spawn_boulder((lane + 1 + randi() % 2) % LANES.size())
 	_boulder_timer.start(_spawn_interval(_progress()) * randf_range(0.85, 1.15))
 

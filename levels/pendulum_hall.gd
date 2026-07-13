@@ -13,6 +13,7 @@ const PendulumScript := preload("res://hazards/pendulum.gd")
 const CrackTileScript := preload("res://hazards/crack_tile.gd")
 const Torch := preload("res://levels/torch.gd")
 const IntroTitle := preload("res://ui/intro_title.gd")
+const TouchControls := preload("res://ui/touch_controls.gd")
 
 # How long the intro freezes mid-shot to stamp the level name on the
 # frame, at the standard 4 s duration (it scales with the duration).
@@ -108,6 +109,9 @@ func _ready() -> void:
 	# pendulum rolls a new random speed.
 	player.respawned.connect(_on_player_respawned)
 
+	if GameManager.touch_mode:
+		_setup_touch_mode()
+
 	if intro_enabled and DisplayServer.get_name() != "headless":
 		_play_intro()
 
@@ -194,7 +198,47 @@ func _play_intro(duration: float = 4.0) -> void:
 	_intro_running = false
 
 
-func _physics_process(_delta: float) -> void:
+# Android port scheme for Level 2: the corridor turns four times, so the
+# adventurer faces along the leg he is on by himself; the buttons walk
+# him forward or back and jump.
+func _setup_touch_mode() -> void:
+	get_node("ControlsHint").visible = false
+	var touch: CanvasLayer = TouchControls.new()
+	add_child(touch)
+	touch.add_button("^", "move_forward", false, 0, 1)
+	touch.add_button("v", "move_back", false, 0, 0)
+	touch.add_button(tr("JUMP"), "jump", true)
+	touch.add_pause_button()
+
+
+# The leg of the corridor the player stands on (or nearest to).
+func _leg_at(p: Vector3) -> int:
+	var best := 0
+	var best_distance := INF
+	for i in LEGS.size():
+		var origin: Vector3 = LEGS[i]["origin"]
+		var direction: Vector3 = LEGS[i]["dir"]
+		var length: float = _leg_u(END_D if i == CORNER_DS.size() else CORNER_DS[i], i)
+		var u: float = clampf((p - origin).dot(direction), 0.0, length)
+		var distance: float = (p - (origin + direction * u)).length()
+		if distance < best_distance:
+			best_distance = distance
+			best = i
+	return best
+
+
+func _face_along_corridor(delta: float) -> void:
+	if _intro_running or player.is_dying():
+		return
+	var yaw: float = LEGS[_leg_at(to_local(player.global_position))]["yaw"]
+	player.rotation.y = lerp_angle(player.rotation.y, yaw, minf(delta * 5.0, 1.0))
+	player._yaw = player.rotation.y
+
+
+func _physics_process(delta: float) -> void:
+	if GameManager.touch_mode:
+		_face_along_corridor(delta)
+
 	if player.global_position.y < KILL_Y and not player.is_dying():
 		# Same fall audio as the slide's holes: no whistle or crash on
 		# the way down, just the landing thud at the bottom.

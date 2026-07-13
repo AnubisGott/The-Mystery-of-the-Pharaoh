@@ -14,6 +14,7 @@ const Torch := preload("res://levels/torch.gd")
 const FireBowl := preload("res://levels/fire_bowl.gd")
 const GlyphDial := preload("res://levels/glyph_dial.gd")
 const IntroTitle := preload("res://ui/intro_title.gd")
+const TouchControls := preload("res://ui/touch_controls.gd")
 const SARCOPHAGUS: PackedScene = preload("res://models/sarcophagus.glb")
 const ANUBIS: PackedScene = preload("res://models/anubis.glb")
 const CAT: PackedScene = preload("res://models/cat.glb")
@@ -21,6 +22,10 @@ const RUMBLE_SOUND: AudioStream = preload("res://sounds/stone_rumble.wav")
 
 const INTRO_HOLD: float = 1.4
 const INTERACT_RANGE: float = 1.7
+# The touch direction pad: smaller buttons (they sit in a cross) and how
+# fast its left/right turn the adventurer (rad/s).
+const DPAD_RADIUS: float = 46.0
+const TURN_SPEED: float = 2.2
 
 # Chamber frame: antechamber (8 wide) in front of the burial chamber
 # (14 wide); the pit strip of the chamber floor slides open at the end.
@@ -47,6 +52,8 @@ var _pulling: bool = false
 var _intro_running: bool = false
 var _intro_skip: bool = false
 var _intro_can_skip: bool = false
+var _touch_turn_left: TouchScreenButton
+var _touch_turn_right: TouchScreenButton
 
 
 func _ready() -> void:
@@ -59,13 +66,49 @@ func _ready() -> void:
 	god_label.visible = GameManager.god_mode
 	GameManager.god_mode_changed.connect(_on_god_mode_changed)
 
+	if GameManager.touch_mode:
+		_setup_touch_mode()
+
 	if intro_enabled and DisplayServer.get_name() != "headless":
 		_play_intro()
+
+
+# Android port scheme for Level 4: a direction pad (walk forward/back,
+# turn left/right - there is no mouse to look with) and one Use button.
+func _setup_touch_mode() -> void:
+	get_node("ControlsHint").visible = false
+	var touch: CanvasLayer = TouchControls.new()
+	add_child(touch)
+	touch.add_button("^", "move_forward", false, 1, 2, DPAD_RADIUS)
+	touch.add_button("v", "move_back", false, 1, 0, DPAD_RADIUS)
+	_touch_turn_left = touch.add_button("<", "", false, 0, 1, DPAD_RADIUS)
+	_touch_turn_right = touch.add_button(">", "", false, 2, 1, DPAD_RADIUS)
+	touch.add_button(tr("USE"), "interact", true)
+	touch.add_pause_button()
+
+
+# The pad's left/right turn the adventurer instead of strafing, so the
+# whole chamber is reachable without a mouse.
+func _turn_with_pad(delta: float) -> void:
+	if _touch_turn_left == null or player.is_dying():
+		return
+	var turn := 0.0
+	if _touch_turn_left.is_pressed():
+		turn += 1.0
+	if _touch_turn_right.is_pressed():
+		turn -= 1.0
+	if turn == 0.0:
+		return
+	player.rotation.y = wrapf(player.rotation.y + turn * TURN_SPEED * delta, -PI, PI)
+	player._yaw = player.rotation.y
 
 
 func _physics_process(delta: float) -> void:
 	if _intro_running:
 		return
+
+	if GameManager.touch_mode:
+		_turn_with_pad(delta)
 	# The falling-down sound as the player drops into the pit (the
 	# player's own whistle logic may be off during the pull).
 	if floor_open and player._whistle_player != null \
@@ -107,7 +150,12 @@ func _physics_process(delta: float) -> void:
 			best = node
 	prompt_label.visible = best != null
 	if best != null:
-		prompt_label.text = tr("E or F - %s") % tr(best.prompt)
+		# On a phone the Use button does it - naming keyboard keys there
+		# would be nonsense.
+		if GameManager.touch_mode:
+			prompt_label.text = tr(best.prompt)
+		else:
+			prompt_label.text = tr("E or F - %s") % tr(best.prompt)
 		if Input.is_action_just_pressed("interact"):
 			best.interact()
 

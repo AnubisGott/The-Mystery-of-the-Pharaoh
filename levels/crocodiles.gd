@@ -13,6 +13,7 @@ const SAND_ROUGHNESS: Texture2D = preload("res://textures/aerial_sand_rough_1k.j
 const SAND_NORMAL: Texture2D = preload("res://textures/aerial_sand_nor_gl_1k.jpg")
 const Crocodile := preload("res://hazards/crocodile.gd")
 const IntroTitle := preload("res://ui/intro_title.gd")
+const TouchControls := preload("res://ui/touch_controls.gd")
 const SPLASH_SOUND: AudioStream = preload("res://sounds/splash_blub.wav")
 
 const INTRO_HOLD: float = 1.4
@@ -29,6 +30,19 @@ const CROC_LENGTH: float = 2.0
 const GAP_NEAR: float = 1.2
 const GAP_FAR: float = 3.4
 
+# The Android port turns the crossing into hops: each button leaps once
+# in its direction. Late in the river the backs lie up to ~5.4 m apart,
+# too far to aim by eye, so a hop locks onto the nearest surfaced croc
+# in that direction and flies a ballistic arc to it.
+const HOP_RADIUS: float = 52.0
+const HOP_JUMP_VELOCITY: float = 5.2
+const HOP_MAX_DISTANCE: float = 6.2
+const HOP_MIN_DISTANCE: float = 0.6
+const HOP_CONE: float = 0.5          # how far off-axis a croc may lie
+const HOP_DEFAULT_DISTANCE: float = 3.0   # nothing to aim at: a plain leap
+const HOP_MAX_SPEED: float = 11.0
+const CROC_SUNK_MARGIN: float = 0.25
+
 @onready var player: CharacterBody3D = $Player
 @onready var god_label: Label = $ControlsHint/Root/GodLabel
 
@@ -44,6 +58,10 @@ var _intro_running: bool = false
 var _intro_skip: bool = false
 var _intro_can_skip: bool = false
 var _outro_running: bool = false
+var _hop_buttons: Array[Dictionary] = []
+var _hopping: bool = false
+var _hop_request: Vector3 = Vector3.ZERO
+var _hop_request_age: float = 0.0
 
 
 func _ready() -> void:
@@ -75,11 +93,115 @@ func _ready() -> void:
 	god_label.visible = GameManager.god_mode
 	GameManager.god_mode_changed.connect(_on_god_mode_changed)
 
+	if GameManager.touch_mode:
+		_setup_touch_mode()
+
 	if intro_enabled and DisplayServer.get_name() != "headless":
 		_play_intro()
 
 
-func _physics_process(_delta: float) -> void:
+# Android port scheme for Level 6: four buttons, one hop each. No free
+# walking - the crossing becomes a leap from back to back.
+func _setup_touch_mode() -> void:
+	get_node("ControlsHint").visible = false
+	var touch: CanvasLayer = TouchControls.new()
+	add_child(touch)
+	# A cross under the right thumb: forward up, back down, left and
+	# right beside them (col counts inward from the right edge).
+	_hop_buttons = [
+		{"dir": Vector3(0, 0, -1), "node": touch.add_button("^", "", true, 1, 2, HOP_RADIUS)},
+		{"dir": Vector3(0, 0, 1), "node": touch.add_button("v", "", true, 1, 0, HOP_RADIUS)},
+		{"dir": Vector3(-1, 0, 0), "node": touch.add_button("<", "", true, 2, 1, HOP_RADIUS)},
+		{"dir": Vector3(1, 0, 0), "node": touch.add_button(">", "", true, 0, 1, HOP_RADIUS)},
+	]
+	# Edge-triggered: a quick tap can begin and end between two physics
+	# frames, and polling the button would never see it.
+	for entry in _hop_buttons:
+		var button: TouchScreenButton = entry["node"]
+		button.pressed.connect(_on_hop_pressed.bind(entry["dir"]))
+	touch.add_pause_button()
+
+
+func _on_hop_pressed(direction: Vector3) -> void:
+	_hop_request = direction
+	_hop_request_age = 0.0
+
+
+func _drive_hops(delta: float) -> void:
+	if _intro_running or _outro_running or player.is_dying():
+		_hop_request = Vector3.ZERO
+		return
+
+	# A hop ends when the feet are back on something solid.
+	if _hopping:
+		if player.is_on_floor() and player.velocity.y <= 0.01:
+			_hopping = false
+			player.external_motion = false
+		return
+
+	if _hop_request == Vector3.ZERO:
+		return
+	if player.is_on_floor():
+		var direction := _hop_request
+		_hop_request = Vector3.ZERO
+		_hop(direction)
+		return
+	# Tapped mid-air: hold it briefly, then drop it.
+	_hop_request_age += delta
+	if _hop_request_age > 0.25:
+		_hop_request = Vector3.ZERO
+
+
+# One leap in `direction`, aimed at the nearest surfaced croc that way.
+func _hop(direction: Vector3) -> void:
+	var from: Vector3 = player.global_position
+	var target: Vector3 = _hop_target(direction, from)
+	var flat := Vector2(target.x - from.x, target.z - from.z)
+	var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
+	var air_time: float = 2.0 * HOP_JUMP_VELOCITY / gravity
+	var speed: float = minf(flat.length() / air_time, HOP_MAX_SPEED)
+	var course := flat.normalized() * speed
+
+	player.velocity = Vector3(course.x, HOP_JUMP_VELOCITY, course.y)
+	player.external_motion = true
+	_hopping = true
+	# Leap facing the way he is going.
+	player.rotation.y = atan2(-direction.x, -direction.z)
+	player._yaw = player.rotation.y
+	var anim: AnimationPlayer = player.get_node("Visual/AnimationPlayer")
+	anim.speed_scale = 1.0
+	anim.play("Jump_Start", 0.1)
+
+
+# The nearest surfaced croc within reach in `direction`; a plain leap
+# when there is nothing to aim at (into the water, most likely).
+func _hop_target(direction: Vector3, from: Vector3) -> Vector3:
+	var best: Node3D = null
+	var best_distance := INF
+	for croc in get_tree().get_nodes_in_group("crocodiles"):
+		if not is_ancestor_of(croc):
+			continue
+		if croc.position.y < croc.surface_y - CROC_SUNK_MARGIN:
+			continue   # under water: no landing spot
+		var to_croc: Vector3 = croc.global_position - from
+		to_croc.y = 0.0
+		var distance := to_croc.length()
+		if distance < HOP_MIN_DISTANCE or distance > HOP_MAX_DISTANCE:
+			continue
+		if to_croc.normalized().dot(direction) < HOP_CONE:
+			continue
+		if distance < best_distance:
+			best_distance = distance
+			best = croc
+	if best != null:
+		return Vector3(best.global_position.x, from.y, best.global_position.z)
+	return from + direction * HOP_DEFAULT_DISTANCE
+
+
+func _physics_process(delta: float) -> void:
+	if GameManager.touch_mode:
+		_drive_hops(delta)
+
 	if to_local(player.global_position).y < KILL_CENTER_Y and not player.is_dying():
 		# Blub blub blub: going under is audible.
 		_splash_player.play()

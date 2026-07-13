@@ -771,6 +771,225 @@ func test_no_spears_in_the_sphinx_shelter() -> void:
 	level._practice_timer.stop()
 
 
+func test_touch_mode_level1_auto_runs() -> void:
+	_check(level.get_node_or_null("TouchControls") == null,
+			"touch controls present in desktop mode")
+
+	GameManager.touch_mode = true
+	level._setup_touch_mode()
+	var touch: Node = level.get_node_or_null("TouchControls")
+	_check(touch != null, "touch controls missing in touch mode")
+	var actions: Array[String] = []
+	if touch:
+		for child in touch.get_children():
+			if child is TouchScreenButton and child.action != "":
+				actions.append(child.action)
+	_check(actions.has("jump") and actions.has("duck"),
+			"jump/duck buttons missing (found: %s)" % [actions])
+	_check(not level.get_node("ControlsHint").visible,
+			"keyboard hints still visible in touch mode")
+
+	# The auto-run driver must carry the player down the path by itself.
+	var z_start: float = player.global_position.z
+	for i in 60:
+		await get_tree().physics_frame
+	_check(player.global_position.z < z_start - 1.0,
+			"auto-run did not move the player (z %.2f -> %.2f)"
+			% [z_start, player.global_position.z])
+
+	# Back to desktop mode for the rest of the suite.
+	GameManager.touch_mode = false
+	Input.action_release("move_forward")
+	if touch:
+		touch.free()
+	level.get_node("ControlsHint").visible = true
+	await get_tree().physics_frame
+
+
+func test_touch_mode_stairs_hurdles_boulders() -> void:
+	# The touch scheme dodges boulders by jumping, so a timed hurdle MUST
+	# clear one - the climb rises under the player, which eats most of a
+	# normal jump.
+	GameManager.touch_mode = true
+	var stairs := await _spawn_stairs()
+	var stairs_player: CharacterBody3D = stairs.get_node("Player")
+	stairs._boulder_timer.stop()
+
+	var survived: bool = await _hurdle_attempt(stairs, stairs_player, true)
+	_check(survived, "a timed hurdle did not clear the boulder")
+
+	# ...and without jumping the boulder still kills (no free ride).
+	var survived_idle: bool = await _hurdle_attempt(stairs, stairs_player, false)
+	_check(not survived_idle, "the boulder rolled through the player harmlessly")
+
+	GameManager.touch_mode = false
+	Input.action_release("move_forward")
+	Input.action_release("jump")
+	stairs.queue_free()
+	await get_tree().physics_frame
+
+
+# Sends a boulder down the player's lane; jumps when it is 8 m away if
+# `jump` is set. Returns true when the player is still alive afterwards.
+func _hurdle_attempt(stairs: Node3D, stairs_player: CharacterBody3D, jump: bool) -> bool:
+	for i in 120:
+		await get_tree().physics_frame
+		if not stairs_player.is_dying():
+			break
+	stairs_player.global_position = stairs.to_global(
+			Vector3(0.0, stairs._ramp_y(-10.0) + 1.2, -10.0))
+	await get_tree().physics_frame
+
+	var boulder: Node3D = stairs._spawn_boulder(1)
+	boulder.position = Vector3(0.0, stairs._ramp_y(-28.0) + 0.75, -28.0)
+	var jumped := false
+	for i in 240:
+		await get_tree().physics_frame
+		if not is_instance_valid(boulder):
+			break
+		var pz: float = stairs.to_local(stairs_player.global_position).z
+		if jump and not jumped and pz - boulder.position.z <= 8.0:
+			Input.action_press("jump")
+			jumped = true
+		elif jumped and pz - boulder.position.z < -3.0:
+			Input.action_release("jump")
+			break
+		if stairs_player.is_dying():
+			break
+	Input.action_release("jump")
+	var alive: bool = not stairs_player.is_dying()
+	if is_instance_valid(boulder):
+		boulder.queue_free()
+	await get_tree().physics_frame
+	return alive
+
+
+func test_touch_mode_hall_and_chamber_controls() -> void:
+	GameManager.touch_mode = true
+
+	# Level 2: forward/back/jump, and the adventurer turns himself into
+	# each leg of the corridor (there is no mouse to look with).
+	var hall := await _spawn_hall()
+	var hall_actions: Array[String] = _touch_actions(hall)
+	for action in ["move_forward", "move_back", "jump"]:
+		_check(hall_actions.has(action), "hall touch button for %s missing" % action)
+	var yaw_leg2: float = hall.LEGS[2]["yaw"]
+	var hall_player: CharacterBody3D = hall.get_node("Player")
+	hall_player.global_position = hall.to_global(Vector3(-50.0, 1.0, -20.0))
+	for i in 40:
+		await get_tree().physics_frame
+	_check(absf(angle_difference(hall_player.rotation.y, yaw_leg2)) < 0.2,
+			"the adventurer did not face along corridor leg 2 (yaw %.2f, want %.2f)"
+			% [hall_player.rotation.y, yaw_leg2])
+	await _free_hall(hall)
+
+	# Level 4: direction pad plus one Use button.
+	var chamber: Node3D = load("res://levels/burial_chamber.tscn").instantiate()
+	chamber.intro_enabled = false
+	chamber.position = Vector3(0.0, 0.0, 900.0)
+	add_child(chamber)
+	await get_tree().physics_frame
+	var chamber_actions: Array[String] = _touch_actions(chamber)
+	for action in ["move_forward", "move_back", "interact"]:
+		_check(chamber_actions.has(action), "chamber touch button for %s missing" % action)
+	_check(chamber._touch_turn_left != null and chamber._touch_turn_right != null,
+			"the chamber direction pad has no turn buttons")
+
+	# With no pad button held the adventurer must not spin on his own.
+	var chamber_player: CharacterBody3D = chamber.get_node("Player")
+	var yaw_before: float = chamber_player.rotation.y
+	for i in 20:
+		chamber._turn_with_pad(1.0 / 60.0)
+	_check(absf(angle_difference(chamber_player.rotation.y, yaw_before)) < 0.01,
+			"the direction pad turned the adventurer with nothing pressed")
+
+	GameManager.touch_mode = false
+	chamber.queue_free()
+	await get_tree().physics_frame
+
+
+# The input actions the level's on-screen buttons press.
+func _touch_actions(level: Node) -> Array[String]:
+	var actions: Array[String] = []
+	var touch: Node = level.get_node_or_null("TouchControls")
+	if touch == null:
+		return actions
+	for child in touch.get_children():
+		if child is TouchScreenButton and child.action != "":
+			actions.append(child.action)
+	return actions
+
+
+func test_touch_mode_croc_hops() -> void:
+	GameManager.touch_mode = true
+	# The Level-1 rig lives in this scene too, and in touch mode its
+	# auto-run holds move_forward down - which would walk the crocodile
+	# player around. Only ever one level runs in the real game.
+	level.set_physics_process(false)
+	Input.action_release("move_forward")
+
+	var crocs := await _spawn_crocs()
+	var crocs_player: CharacterBody3D = crocs.get_node("Player")
+
+	# Four hop buttons, one per direction.
+	_check(crocs._hop_buttons.size() == 4, "level 6 has %d hop buttons, want 4"
+			% crocs._hop_buttons.size())
+
+	# Freeze the crocs surfaced and stand on the first one.
+	for croc in get_tree().get_nodes_in_group("crocodiles"):
+		croc.frozen = true
+	var first: Vector3 = crocs._croc_positions[0]
+	crocs_player.global_position = crocs.to_global(first + Vector3(0, 1.6, 0))
+	for i in 60:
+		await get_tree().physics_frame
+		if crocs_player.is_on_floor():
+			break
+	_check(crocs_player.is_on_floor(), "the player never landed on the first croc")
+	var z_before: float = crocs.to_local(crocs_player.global_position).z
+
+	# A forward hop must carry him onto a croc further down the river -
+	# dry, not swimming. Goes through the button's press signal: a quick
+	# tap begins and ends between physics frames, so polling would miss it.
+	crocs._on_hop_pressed(Vector3(0, 0, -1))
+	await get_tree().physics_frame
+	_check(crocs._hopping, "a tapped hop button did not start a hop")
+	_check(crocs_player.external_motion, "the hop did not take over the velocity")
+	for i in 120:
+		await get_tree().physics_frame
+		if not crocs._hopping:
+			break
+	var landed: Vector3 = crocs.to_local(crocs_player.global_position)
+	_check(not crocs_player.is_dying(), "the forward hop drowned the player")
+	_check(landed.z < z_before - 1.0,
+			"the hop did not carry him downriver (z %.2f -> %.2f)" % [z_before, landed.z])
+	_check(not crocs_player.external_motion,
+			"the level still owns the velocity after landing")
+
+	GameManager.touch_mode = false
+	level.set_physics_process(true)
+	crocs.queue_free()
+	await get_tree().physics_frame
+
+
+func test_touch_mode_slide_buttons() -> void:
+	GameManager.touch_mode = true
+	var slide := await _spawn_slide()
+	var touch: Node = slide.get_node_or_null("TouchControls")
+	_check(touch != null, "slide touch controls missing")
+	var actions: Array[String] = []
+	if touch:
+		for child in touch.get_children():
+			if child is TouchScreenButton and child.action != "":
+				actions.append(child.action)
+	for action in ["move_left", "move_right", "jump"]:
+		_check(actions.has(action), "slide button for %s missing" % action)
+	_check(not slide.get_node("ControlsHint").visible,
+			"keyboard hints still visible on the touch slide")
+	GameManager.touch_mode = false
+	slide.queue_free()
+	await get_tree().physics_frame
+
+
 func test_translation_csv_complete() -> void:
 	var file := FileAccess.open("res://localization/strings.csv", FileAccess.READ)
 	_check(file != null, "localization/strings.csv missing")

@@ -4,6 +4,7 @@ const SANDSTONE_MATERIAL: StandardMaterial3D = preload("res://materials/sandston
 const LEVEL_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel01.mp3")
 const PYRAMID_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_pyramid.tres")
 const IntroTitle := preload("res://ui/intro_title.gd")
+const TouchControls := preload("res://ui/touch_controls.gd")
 
 # How long the intro freezes mid-shot to stamp the level name on the
 # frame, at the standard 4 s duration (it scales with the duration).
@@ -109,12 +110,49 @@ func _ready() -> void:
 	# the long lead-in and the slow first spear come back each time.
 	player.respawned.connect(_on_player_respawned)
 
+	if GameManager.touch_mode:
+		_setup_touch_mode()
+
 	# A short cinematic before play; the spear timers start after it.
 	# Headless runs (tests) go straight to gameplay.
 	if intro_enabled and DisplayServer.get_name() != "headless":
 		_play_intro()
 	else:
 		_start_spear_timers()
+
+
+# Android port scheme for Level 1: the adventurer runs the path on his
+# own; the player only times jumps and ducks via the two buttons.
+func _setup_touch_mode() -> void:
+	get_node("ControlsHint").visible = false
+	var touch: CanvasLayer = TouchControls.new()
+	add_child(touch)
+	touch.add_button(tr("JUMP"), "jump", true)
+	touch.add_button(tr("DUCK"), "duck", false)
+	touch.add_pause_button()
+
+
+# Steers the player along the track and keeps him moving; jumping and
+# ducking stay with the player (the touch buttons press the actions).
+func _drive_auto_run(delta: float) -> void:
+	if _intro_running or player.is_dying():
+		Input.action_release("move_forward")
+		return
+	var p := player.global_position
+	var offset := track.curve.get_closest_offset(Vector3(p.x, 0.0, p.z))
+	var ahead := track.curve.sample_baked(minf(offset + 4.0, track.curve.get_baked_length()))
+	var direction := Vector3(ahead.x - p.x, 0.0, ahead.z - p.z)
+	if direction.length_squared() > 0.01:
+		var heading := atan2(-direction.x, -direction.z)
+		player.rotation.y = lerp_angle(player.rotation.y, heading, minf(delta * 6.0, 1.0))
+		player._yaw = player.rotation.y
+	Input.action_press("move_forward")
+
+
+func _exit_tree() -> void:
+	# Auto-run holds move_forward down; do not leak it into other scenes.
+	if GameManager.touch_mode:
+		Input.action_release("move_forward")
 
 
 func _start_spear_timers() -> void:
@@ -371,7 +409,10 @@ func _hash01(n: int) -> float:
 	return v - floor(v)
 
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
+	if GameManager.touch_mode:
+		_drive_auto_run(delta)
+
 	var p := player.global_position
 	var closest := track.curve.get_closest_point(Vector3(p.x, 0.0, p.z))
 	var offset := Vector2(p.x - closest.x, p.z - closest.z)

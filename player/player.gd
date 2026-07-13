@@ -19,6 +19,10 @@ signal respawned
 # Levels where falling is routine (the crocodile crossing) turn the
 # falling sounds off.
 @export var fall_sounds_enabled: bool = true
+# While set, the level owns the horizontal velocity (the mobile hops of
+# Level 6 fly a ballistic arc). Gravity, collisions and landing stay with
+# the player. Never set on desktop.
+var external_motion: bool = false
 
 const STAND_HEIGHT: float = 1.8
 const DUCK_HEIGHT: float = 1.3
@@ -139,8 +143,10 @@ func _physics_process(delta: float) -> void:
 	var input_vector := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	var direction := (global_transform.basis * Vector3(input_vector.x, 0.0, input_vector.y)).normalized()
 
-	velocity.x = direction.x * speed
-	velocity.z = direction.z * speed
+	# A hop in flight keeps the velocity the level gave it.
+	if not external_motion:
+		velocity.x = direction.x * speed
+		velocity.z = direction.z * speed
 
 	if not is_on_floor():
 		velocity.y -= _gravity * delta
@@ -232,6 +238,9 @@ func reset_to_start(spawn: Transform3D) -> void:
 	if _is_ducking:
 		_set_ducking(false)
 
+	# A hop cut short by death must not leave the level owning the
+	# velocity - the respawned player would be unable to move.
+	external_motion = false
 	global_transform = spawn
 	velocity = Vector3.ZERO
 	_yaw = 0.0

@@ -63,6 +63,11 @@ var window_size: Vector2i = Vector2i(1152, 648)
 # Locale code from LANGUAGES; empty until resolved (saved setting, or the
 # OS language on first launch).
 var language: String = ""
+
+# True on touchscreen devices (or forced via PHARAOH_TOUCH=1 for desktop
+# testing): levels build on-screen controls, hide the keyboard hints and
+# drive movement per the mobile control scheme.
+var touch_mode: bool = false
 # Separate loudness for effects and music (0..1), each on its own audio
 # bus; the options sliders override the defaults.
 var sound_volume: float = 0.5
@@ -73,6 +78,11 @@ var _music_player: AudioStreamPlayer
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	# Touch controls belong to the phone/tablet builds only. Checking the
+	# platform, not the hardware: a Windows PC with a touch monitor must
+	# still get the unchanged desktop game.
+	touch_mode = OS.has_feature("mobile") \
+			or OS.get_environment("PHARAOH_TOUCH") == "1"
 	_create_buses()
 	_extend_font_fallbacks()
 	_load_settings()
