@@ -56,9 +56,10 @@ const FLOOR_D_SEGMENTS := [
 ]
 # The last hole (157-160) is taken off a crumbling tile, and on a phone
 # the run-up is a walk - there is no sprint key to hold. The landing
-# platform reaches this much further back there, which is the whole
-# difference between a sprint jump and a standing one.
-const LAST_HOLE_SHRINK_TOUCH: float = 1.5
+# platform reaches this much further back there, which leaves a gap of
+# about 1.5 m to clear: a walking jump covers nearly 4 m, so the leap has
+# room to spare even when the tile gives way early.
+const LAST_HOLE_SHRINK_TOUCH: float = 2.5
 
 # The intro gauntlet: hole 2 (d 23-26), crumbling tiles (26-30),
 # hole 3 (30-33) with no solid ground between them. The finale leg has

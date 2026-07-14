@@ -42,6 +42,10 @@ const HOP_CONE: float = 0.5          # how far off-axis a croc may lie
 const HOP_DEFAULT_DISTANCE: float = 3.0   # nothing to aim at: a plain leap
 const HOP_MAX_SPEED: float = 11.0
 const CROC_SUNK_MARGIN: float = 0.25
+# ...and the camera swings off to one side. From straight behind, the
+# crocs are seen down their own spines: the back hides the head, and the
+# eyes turning red are the only warning that a back is about to sink.
+const CAM_YAW_TOUCH: float = 22.0   # degrees, over the right shoulder
 
 @onready var player: CharacterBody3D = $Player
 @onready var god_label: Label = $ControlsHint/Root/GodLabel
@@ -125,6 +129,17 @@ func _setup_touch_mode() -> void:
 		var button: TouchScreenButton = entry["node"]
 		button.pressed.connect(_on_hop_pressed.bind(entry["dir"]))
 	touch.add_pause_button()
+
+	_apply_touch_camera()
+	# Drowning resets the player's camera; the angle has to come back with it.
+	player.respawned.connect(_apply_touch_camera)
+
+
+# The crossing is watched over the right shoulder rather than from dead
+# astern: the crocs lie head-away, and only from the side does the glow of
+# the eyes show over the back.
+func _apply_touch_camera() -> void:
+	player.camera_pivot.rotation.y = deg_to_rad(CAM_YAW_TOUCH)
 
 
 func _on_hop_pressed(direction: Vector3) -> void:

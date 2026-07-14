@@ -36,12 +36,15 @@ const OBSTACLES: Array[Vector2] = [
 ]
 
 # The phone ride dodges fewer blocks, so it rides further instead: the
-# chute runs on past the desktop's end, with two more holes and a last
-# handful of blocks - all beyond z = -110, where the desktop chute stops.
-const SLIDE_END_Z_TOUCH: float = -150.0
-const HOLES_TOUCH_EXTRA: Array[float] = [-108.0, -132.0]
+# chute runs on for another 80 m past the desktop's end, with four more
+# holes and a last handful of blocks - all beyond z = -110, where the
+# desktop chute stops. The ride is the long one there, and the last
+# stretch alternates hole, block, hole, block down to the water.
+const SLIDE_END_Z_TOUCH: float = -190.0
+const HOLES_TOUCH_EXTRA: Array[float] = [-108.0, -132.0, -152.0, -172.0]
 const OBSTACLES_TOUCH_EXTRA: Array[Vector2] = [
 	Vector2(-1.2, -116.0), Vector2(0.9, -126.0), Vector2(-0.6, -140.0),
+	Vector2(0.4, -162.0), Vector2(-1.0, -182.0),
 ]
 
 # On a phone the ride is watched from higher up and further back, looking
@@ -58,6 +61,15 @@ const WALL_HEIGHT_TOUCH: float = 6.5
 const CHUTE_TOP_EXTRA_TOUCH: float = 8.0   # shell length above the start
 # ... and the blocks are thinned out to at least this far apart.
 const MIN_OBSTACLE_GAP_TOUCH: float = 10.0
+# The phone ride is a brighter one. From the raised camera the chute runs far
+# ahead, and at desktop lighting the stretch between two torches is a dark
+# tunnel a block can hide in: the torches come twice as often, the cave light
+# is up and the haze is thinned, so a block reads while there is still time
+# to steer around it.
+const TORCH_SPACING: float = 12.0
+const TORCH_SPACING_TOUCH: float = 6.0
+const AMBIENT_ENERGY_TOUCH: float = 0.55
+const FOG_DENSITY_TOUCH: float = 0.012
 
 const SPEED_START: float = 8.0
 const SPEED_END: float = 12.5
@@ -331,6 +343,7 @@ func _build_geometry() -> void:
 		area.body_entered.connect(_on_obstacle_hit)
 
 	# Torches down the shaft.
+	var spacing: float = TORCH_SPACING_TOUCH if GameManager.touch_mode else TORCH_SPACING
 	var side := 1.0
 	var z := -6.0
 	while z > _end_z() + 4.0:
@@ -340,7 +353,7 @@ func _build_geometry() -> void:
 				_ramp_y(z) + 2.5, z)
 		add_child(torch)
 		side = -side
-		z -= 12.0
+		z -= spacing
 
 	# The water cavern at the bottom.
 	var water := StandardMaterial3D.new()
@@ -396,12 +409,12 @@ func _build_environment() -> void:
 	env.background_color = Color(0.012, 0.01, 0.008)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color(0.5, 0.4, 0.3)
-	env.ambient_light_energy = 0.25
+	env.ambient_light_energy = AMBIENT_ENERGY_TOUCH if GameManager.touch_mode else 0.25
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	env.glow_enabled = true
 	env.fog_enabled = true
 	env.fog_light_color = Color(0.06, 0.045, 0.03)
-	env.fog_density = 0.025
+	env.fog_density = FOG_DENSITY_TOUCH if GameManager.touch_mode else 0.025
 	var world_env := WorldEnvironment.new()
 	world_env.environment = env
 	add_child(world_env)

@@ -27,6 +27,19 @@ const STEP_RISE: float = STEP_RUN * SLOPE
 const CORRIDOR_WIDTH: float = 4.4
 const WALL_HEIGHT: float = 4.5
 const TOP_Y: float = (STAIRS_START_Z - STAIRS_END_Z) * SLOPE
+# The pitched shell of the staircase overhangs each flat platform by about
+# a meter. Its walls are rotated around X, so their faces stay in exactly
+# the planes the platform walls sit in - two coincident surfaces, which the
+# phone's depth buffer cannot separate: the wall flickers at the foot and at
+# the head of the stairs. The platform walls stand this much further into the
+# corridor, so where the two overlap the platform wall is plainly the nearer
+# one. (Inward, not outward: outward would open a slit at the floor edge.)
+const PLATFORM_WALL_OFFSET: float = 0.06
+# The phone climb runs on for another 48 m: the boulders come at a
+# gentler pace there (two lanes, no twin waves), so the staircase is the
+# longer one. Everything at the top - platform, doorway, exit sign and
+# win zone - follows it up.
+const STAIRS_END_Z_TOUCH: float = -160.0
 
 const LANES: Array[float] = [-1.4, 0.0, 1.4]
 # On a phone the climb is dodged left and right like on the desktop, but
@@ -116,6 +129,15 @@ func _boulder_radius() -> float:
 	return BOULDER_RADIUS_TOUCH if GameManager.touch_mode else Boulder.RADIUS
 
 
+# Where the staircase tops out, and how high that is.
+func _end_z() -> float:
+	return STAIRS_END_Z_TOUCH if GameManager.touch_mode else STAIRS_END_Z
+
+
+func _top_y() -> float:
+	return (STAIRS_START_Z - _end_z()) * SLOPE
+
+
 # The lanes the boulders roll down: three on the desktop, two on a phone.
 func _lanes() -> Array:
 	return LANES_TOUCH if GameManager.touch_mode else LANES
@@ -154,21 +176,23 @@ func _physics_process(delta: float) -> void:
 
 # Height of the walkable ramp line at local z.
 func _ramp_y(z: float) -> float:
-	return clampf((STAIRS_START_Z - z) * SLOPE, 0.0, TOP_Y)
+	return clampf((STAIRS_START_Z - z) * SLOPE, 0.0, _top_y())
 
 
 func _build_geometry() -> void:
 	var pitch := atan(SLOPE)
+	var end_z := _end_z()
+	var top_y := _top_y()
 
 	# Flat start and top platforms.
 	_add_box(Vector3(0, -0.2, 2.25), Vector3(CORRIDOR_WIDTH, 0.4, 8.5), FLOOR_MATERIAL)
-	_add_box(Vector3(0, TOP_Y - 0.2, STAIRS_END_Z - 4.0),
+	_add_box(Vector3(0, top_y - 0.2, end_z - 4.0),
 			Vector3(CORRIDOR_WIDTH, 0.4, 8.0), FLOOR_MATERIAL)
 
 	# The walkable surface is one invisible ramp through the step noses.
 	var normal := Vector3(0, cos(pitch), sin(pitch))
-	var ramp_mid := Vector3(0, TOP_Y * 0.5, (STAIRS_START_Z + STAIRS_END_Z) * 0.5)
-	var ramp_len := (STAIRS_START_Z - STAIRS_END_Z) / cos(pitch)
+	var ramp_mid := Vector3(0, top_y * 0.5, (STAIRS_START_Z + end_z) * 0.5)
+	var ramp_len := (STAIRS_START_Z - end_z) / cos(pitch)
 	_add_box(ramp_mid - normal * 0.2, Vector3(CORRIDOR_WIDTH, 0.4, ramp_len),
 			FLOOR_MATERIAL, pitch, true, false)
 
@@ -176,7 +200,7 @@ func _build_geometry() -> void:
 	var step_mesh := BoxMesh.new()
 	step_mesh.size = Vector3(CORRIDOR_WIDTH, STEP_RISE, STEP_RUN)
 	step_mesh.material = FLOOR_MATERIAL
-	var steps := int((STAIRS_START_Z - STAIRS_END_Z) / STEP_RUN)
+	var steps := int((STAIRS_START_Z - end_z) / STEP_RUN)
 	for i in steps:
 		var step := MeshInstance3D.new()
 		step.mesh = step_mesh
@@ -186,25 +210,26 @@ func _build_geometry() -> void:
 
 	# Walls and ceilings: flat pieces over the platforms, pitched slabs
 	# along the stairs (walls reach below the ramp to line the holes).
-	var mid_y := TOP_Y * 0.5
-	var mid_z := (STAIRS_START_Z + STAIRS_END_Z) * 0.5
-	var slope_len := (STAIRS_START_Z - STAIRS_END_Z) / cos(pitch) + 2.0
+	var mid_y := top_y * 0.5
+	var mid_z := (STAIRS_START_Z + end_z) * 0.5
+	var slope_len := (STAIRS_START_Z - end_z) / cos(pitch) + 2.0
 	for side: float in [-1.0, 1.0]:
 		var x: float = side * (CORRIDOR_WIDTH * 0.5 + 0.2)
-		_add_box(Vector3(x, 2.8, 2.25), Vector3(0.4, 7.0, 8.5), WALL_MATERIAL)
+		var platform_x: float = x - side * PLATFORM_WALL_OFFSET
+		_add_box(Vector3(platform_x, 2.8, 2.25), Vector3(0.4, 7.0, 8.5), WALL_MATERIAL)
 		_add_box(Vector3(x, mid_y, mid_z) + normal * 0.25,
 				Vector3(0.4, WALL_HEIGHT + 4.0, slope_len), WALL_MATERIAL, pitch)
-		_add_box(Vector3(x, TOP_Y + 2.8, STAIRS_END_Z - 4.0),
+		_add_box(Vector3(platform_x, top_y + 2.8, end_z - 4.0),
 				Vector3(0.4, 7.0, 8.5), WALL_MATERIAL)
 	_add_box(Vector3(0, WALL_HEIGHT, 2.25), Vector3(5.2, 0.4, 8.5), WALL_MATERIAL)
 	_add_box(Vector3(0, mid_y, mid_z) + normal * WALL_HEIGHT,
 			Vector3(5.2, 0.4, slope_len), WALL_MATERIAL, pitch)
-	_add_box(Vector3(0, TOP_Y + WALL_HEIGHT, STAIRS_END_Z - 4.0),
+	_add_box(Vector3(0, top_y + WALL_HEIGHT, end_z - 4.0),
 			Vector3(5.2, 0.4, 8.5), WALL_MATERIAL)
 
 	# Closing walls: behind the spawn and behind the exit doorway.
 	_add_box(Vector3(0, 2.8, 6.7), Vector3(5.2, 7.0, 0.4), WALL_MATERIAL)
-	_add_box(Vector3(0, TOP_Y + 2.8, STAIRS_END_Z - 8.2),
+	_add_box(Vector3(0, top_y + 2.8, end_z - 8.2),
 			Vector3(5.2, 7.0, 0.4), WALL_MATERIAL)
 
 	# The dark exit doorway and its sign on the top platform.
@@ -216,7 +241,7 @@ func _build_geometry() -> void:
 	doorway_mesh.size = Vector3(2.6, 2.7, 0.2)
 	doorway_mesh.material = dark
 	doorway.mesh = doorway_mesh
-	doorway.position = Vector3(0, TOP_Y + 1.35, STAIRS_END_Z - 7.9)
+	doorway.position = Vector3(0, top_y + 1.35, end_z - 7.9)
 	add_child(doorway)
 
 	var sign_material := StandardMaterial3D.new()
@@ -229,8 +254,13 @@ func _build_geometry() -> void:
 	sign_mesh.size = Vector3(0.9, 0.4, 0.12)
 	sign_mesh.material = sign_material
 	exit_sign.mesh = sign_mesh
-	exit_sign.position = Vector3(0.95, TOP_Y + 2.4, STAIRS_END_Z - 7.75)
+	exit_sign.position = Vector3(0.95, top_y + 2.4, end_z - 7.75)
 	add_child(exit_sign)
+
+	# The win zone is placed in the scene, at the desktop top; the longer
+	# phone climb carries it up to its own doorway.
+	if GameManager.touch_mode:
+		$WinZone.position = Vector3(0.0, top_y + 1.2, end_z - 6.8)
 
 
 func _add_box(center: Vector3, size: Vector3, material: Material,
@@ -262,7 +292,7 @@ func _build_torches() -> void:
 	# From the start platform up past the exit platform, alternating.
 	var side := 1.0
 	var z := 2.0
-	while z > STAIRS_END_Z - 5.0:
+	while z > _end_z() - 5.0:
 		var torch := Torch.new()
 		torch.basis = Basis.looking_at(Vector3(-side, 0, 0))
 		torch.position = Vector3(side * (CORRIDOR_WIDTH * 0.5 - 0.05),
@@ -294,7 +324,7 @@ func _build_environment() -> void:
 # How far up the player has climbed, 0 at the bottom to 1 at the top.
 func _progress() -> float:
 	var lp := to_local(player.global_position)
-	return clampf((STAIRS_START_Z - lp.z) / (STAIRS_START_Z - STAIRS_END_Z), 0.0, 1.0)
+	return clampf((STAIRS_START_Z - lp.z) / (STAIRS_START_Z - _end_z()), 0.0, 1.0)
 
 
 # Base spawn interval for a given climb progress (jitter comes on top).
@@ -328,7 +358,7 @@ func _spawn_boulder(lane: int = -1) -> Node3D:
 	boulder.radius = _boulder_radius()
 	boulder.flatten_z = STAIRS_START_Z
 	boulder.despawn_z = 5.5
-	var z := maxf(STAIRS_END_Z, to_local(player.global_position).z - SPAWN_AHEAD_Z)
+	var z := maxf(_end_z(), to_local(player.global_position).z - SPAWN_AHEAD_Z)
 	boulder.position = Vector3(lanes[lane], _ramp_y(z) + boulder.radius, z)
 	add_child(boulder)
 	boulder.player_hit.connect(_on_boulder_hit)

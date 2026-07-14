@@ -837,6 +837,17 @@ func test_touch_mode_stairs_dodge_two_lanes() -> void:
 
 	_check(stairs._lanes().size() == 2, "the phone stairs do not run on two lanes")
 
+	# The phone climb is the longer one, and the top of the staircase - the
+	# platform, the doorway and the win zone - moved up with it.
+	_check(stairs._end_z() < stairs.STAIRS_END_Z - 30.0,
+			"the phone staircase is no longer than the desktop one (%.0f)" % stairs._end_z())
+	var stairs_win: Area3D = stairs.get_node("WinZone")
+	var win_local: Vector3 = stairs.to_local(stairs_win.global_position)
+	_check(win_local.z < stairs._end_z(),
+			"the win zone stayed at the old top of the stairs (z %.0f)" % win_local.z)
+	_check(win_local.y > stairs._top_y() and win_local.y < stairs._top_y() + 3.0,
+			"the win zone is not on the new top platform (y %.1f)" % win_local.y)
+
 	# The dodge is the quick move: half a second has to cover the whole
 	# lane change, boulders come down fast.
 	var stairs_player: CharacterBody3D = stairs.get_node("Player")
@@ -869,6 +880,17 @@ func test_touch_mode_stairs_dodge_two_lanes() -> void:
 
 	for boulder in get_tree().get_nodes_in_group("boulders"):
 		boulder.queue_free()
+
+	# And the added stretch is real staircase: set down near the new top, he
+	# stands on it instead of dropping through the world.
+	var high_z: float = stairs._end_z() + 8.0
+	stairs_player.global_position = stairs.to_global(
+			Vector3(0.0, stairs._ramp_y(high_z) + 1.0, high_z))
+	for i in 40:
+		await get_tree().physics_frame
+	_check(stairs_player.is_on_floor(), "no steps under the extended climb at z=%.0f" % high_z)
+	_check(not stairs_player.is_dying(), "the extended climb killed the player on its own")
+
 	GameManager.touch_mode = false
 	Input.action_release("move_forward")
 	stairs.queue_free()
@@ -969,6 +991,54 @@ func test_touch_mode_hall_and_chamber_controls() -> void:
 	GameManager.touch_mode = false
 	chamber.queue_free()
 	await get_tree().physics_frame
+
+
+# The finale's last hole has to go down at a walk: a phone has no sprint
+# key, and the take-off is a crumbling tile. Walk him at it and jump.
+func test_touch_hall_last_hole_clears_at_a_walk() -> void:
+	GameManager.touch_mode = true
+	var hall := await _spawn_hall()
+	var hall_player: CharacterBody3D = hall.get_node("Player")
+
+	# Two pendulums guard that stretch, and their speeds are rolled fresh
+	# every run: one of them swinging into the take-off is a death this test
+	# is not about. Clear the blades, keep the crumbling tiles.
+	for pendulum in get_tree().get_nodes_in_group("pendulums"):
+		if hall.is_ancestor_of(pendulum):
+			pendulum.queue_free()
+	await get_tree().physics_frame
+
+	# Onto the tile field before the hole, facing up the last leg.
+	hall_player.global_position = hall._center_at_d(151.0) + Vector3.UP * 1.2
+	hall_player.velocity = Vector3.ZERO
+	for i in 10:
+		await get_tree().physics_frame
+
+	Input.action_press("move_forward")
+	var jumped := false
+	var d := 0.0
+	for i in 240:
+		await get_tree().physics_frame
+		d = hall._d_at(hall.to_local(hall_player.global_position))
+		if jumped:
+			Input.action_release("jump")
+		elif d > 155.4 and hall_player.is_on_floor():
+			Input.action_press("jump")
+			jumped = true
+		if d > 162.0 or hall_player.is_dying():
+			break
+	Input.action_release("move_forward")
+	Input.action_release("jump")
+
+	var landed: Vector3 = hall.to_local(hall_player.global_position)
+	_check(jumped, "the walk never reached the last hole (d=%.1f)" % d)
+	_check(not hall_player.is_dying(), "the last hole killed the walking adventurer")
+	_check(d > 159.0, "the walking jump fell short of the landing (d=%.1f)" % d)
+	_check(landed.y > -1.0, "the adventurer dropped into the last hole (y=%.1f)" % landed.y)
+
+	GameManager.touch_mode = false
+	Input.action_release("move_forward")
+	await _free_hall(hall)
 
 
 # The input actions the level's on-screen buttons press.
@@ -1093,6 +1163,18 @@ func test_touch_mode_croc_hops() -> void:
 	_check(not crocs_player.external_motion,
 			"the level still owns the velocity after landing")
 
+	# The crossing is watched from the side, not from dead astern: seen down
+	# their own spines the crocs hide their eyes behind their backs, and the
+	# eyes going red are the only warning before a back sinks.
+	_check(absf(crocs_player.camera_pivot.rotation.y) > deg_to_rad(10.0),
+			"the phone camera sits straight behind the adventurer (yaw %.0f deg)"
+			% rad_to_deg(crocs_player.camera_pivot.rotation.y))
+	# Drowning resets the player's camera; the angle has to come back with it.
+	crocs_player.reset_to_start(crocs._spawn_transform)
+	await get_tree().physics_frame
+	_check(absf(crocs_player.camera_pivot.rotation.y) > deg_to_rad(10.0),
+			"the camera angle was lost on the respawn")
+
 	GameManager.touch_mode = false
 	level.set_physics_process(true)
 	crocs.queue_free()
@@ -1161,7 +1243,7 @@ func test_touch_mode_slide_buttons() -> void:
 		var gap: float = absf(blocks[i].y - blocks[i - 1].y)
 		_check(gap >= slide.MIN_OBSTACLE_GAP_TOUCH - 0.01,
 				"only %.1f m between touch blocks %d and %d" % [gap, i - 1, i])
-	_check(slide._end_z() < slide.SLIDE_END_Z - 20.0,
+	_check(slide._end_z() < slide.SLIDE_END_Z - 60.0,
 			"the touch chute is not longer than the desktop one (%.0f)" % slide._end_z())
 	_check(slide._holes().size() > slide.HOLES.size(),
 			"the longer touch chute got no extra holes")
@@ -1174,9 +1256,10 @@ func test_touch_mode_slide_buttons() -> void:
 	_check(end_local.z < slide._end_z(), "the touch exit zone stayed at the old chute end")
 	_check(end_local.y < slide._end_y() - 4.0, "the touch exit zone is not down in the water")
 
-	# And the new stretch is real chute: set down in it, he keeps riding
-	# instead of dropping through the world.
-	var far_z := -137.0
+	# And the new stretch is real chute: set down in it (past the desktop's
+	# end, between a hole and a block), he keeps riding instead of dropping
+	# through the world.
+	var far_z := -164.0
 	var rider: CharacterBody3D = slide.get_node("Player")
 	rider.global_position = slide.to_global(Vector3(1.5, slide._ramp_y(far_z) + 1.0, far_z))
 	slide._sliding = true
