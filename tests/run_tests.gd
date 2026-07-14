@@ -684,13 +684,20 @@ func test_menu_has_level_entries() -> void:
 	_check(not menu.get_node("Center/Panel/MenuItems").visible,
 			"the top level stayed visible under the level list")
 
+	# The six played levels; the seventh is the credits roll and is not
+	# offered here - it has its own entry on the top level.
 	var expected_names: Array[String] = ["Sphinx", "Pendulum", "Stairs",
-			"Burial", "Slide", "Crocodiles", "Journey"]
+			"Burial", "Slide", "Crocodiles"]
 	for i in expected_names.size():
 		var button: Button = menu.get_node(
 				"Center/Panel/LevelItems/Level%dButton" % (i + 1))
 		_check(button.text.contains(expected_names[i]),
 				"level %d entry missing its name" % (i + 1))
+	_check(menu.level_buttons.size() == expected_names.size(),
+			"the level list offers %d entries, want %d"
+			% [menu.level_buttons.size(), expected_names.size()])
+	_check(menu.get_node_or_null("Center/Panel/LevelItems/Level7Button") == null,
+			"the credits are still listed as a level")
 
 	# ...and Back returns to the top level.
 	menu.get_node("Center/Panel/LevelItems/LevelBackButton").pressed.emit()
@@ -702,6 +709,29 @@ func test_menu_has_level_entries() -> void:
 	_check(version.text == "v" + str(ProjectSettings.get_setting(
 			"application/config/version", "?")),
 			"version label does not show the project version")
+
+	# The credits sit up front, under Options and above Quit: the boat trip
+	# home can be watched without playing the game through first.
+	var top_entries: Array[String] = []
+	for child in menu.get_node("Center/Panel/MenuItems").get_children():
+		if child is Button:
+			top_entries.append(child.name)
+	_check(top_entries == ["SelectLevelButton", "OptionsButton", "CreditsButton",
+			"QuitButton"], "the top menu entries are not in order: %s" % [top_entries])
+	_check(menu.credits_button.text == "Credits",
+			"the credits entry is not labelled: %s" % menu.credits_button.text)
+	_check(menu._credits_level() == GameManager.LEVEL_SCENES.size() - 1,
+			"the credits entry does not start the last level")
+	_check(GameManager.LEVEL_SCENES[menu._credits_level()] == "res://levels/nile_credits.tscn",
+			"the last level is not the credits scene")
+	# ...and it says so in every language.
+	var previous_locale: String = TranslationServer.get_locale()
+	for entry in GameManager.LANGUAGES:
+		TranslationServer.set_locale(entry[0])
+		_check(not tr("Credits").is_empty(), "no credits label in %s" % entry[0])
+	TranslationServer.set_locale("de")
+	_check(tr("Credits") == "Abspann", "the credits entry is not translated")
+	TranslationServer.set_locale(previous_locale)
 
 	# The Options button swaps to the options panel and back.
 	menu.get_node("Center/Panel/MenuItems/OptionsButton").pressed.emit()
