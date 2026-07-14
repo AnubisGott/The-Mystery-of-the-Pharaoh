@@ -835,7 +835,10 @@ func test_touch_mode_stairs_dodge_two_lanes() -> void:
 	_check(not actions.has("jump") and not actions.has("duck"),
 			"the stairs still offer jump/duck on a phone")
 
-	_check(stairs._lanes().size() == 2, "the phone stairs do not run on two lanes")
+	_check(stairs._lanes().size() == 2,
+			"the phone climb does not start on two lanes")
+	_check(stairs._boulder_radius() > stairs.Boulder.RADIUS,
+			"the two-lane boulders are not the fat ones")
 
 	# The phone climb is the longer one, and the top of the staircase - the
 	# platform, the doorway and the win zone - moved up with it.
@@ -866,7 +869,8 @@ func test_touch_mode_stairs_dodge_two_lanes() -> void:
 			"half a second of dodging got from lane %.1f only to %.1f, not %.1f"
 			% [lanes[0], landed_x, lanes[1]])
 
-	# Fifty waves, never a twin: two lanes must always leave a way past.
+	# Fifty waves down here, never a twin: two lanes must always leave a way
+	# past, and a twin would wall both of them off.
 	for i in 50:
 		for boulder in get_tree().get_nodes_in_group("boulders"):
 			boulder.queue_free()
@@ -877,6 +881,49 @@ func test_touch_mode_stairs_dodge_two_lanes() -> void:
 		if wave > 1:
 			_check(false, "a wave of %d boulders blocked both lanes" % wave)
 			break
+
+	for boulder in get_tree().get_nodes_in_group("boulders"):
+		boulder.queue_free()
+
+	# Past the middle of the climb the third lane opens, and with it the
+	# desktop's twin waves - on leaner boulders, three of which the corridor
+	# has room for side by side.
+	var half_z: float = lerpf(stairs.STAIRS_START_Z, stairs._end_z(),
+			stairs.THREE_LANE_PROGRESS_TOUCH + 0.1)
+	stairs_player.global_position = stairs.to_global(
+			Vector3(0.0, stairs._ramp_y(half_z) + 1.0, half_z))
+	await get_tree().physics_frame
+	_check(stairs._lanes().size() == 3,
+			"the second half of the phone climb did not open the third lane")
+	_check(is_equal_approx(stairs._boulder_radius(), stairs.Boulder.RADIUS),
+			"the three-lane boulders are still the fat two-lane ones")
+
+	# A hundred waves up here: twins do turn up, and never a wave that fills
+	# all three lanes - there is always a lane to dodge into.
+	var twins := 0
+	var lanes_x: Array = stairs._lanes()
+	for i in 100:
+		for boulder in get_tree().get_nodes_in_group("boulders"):
+			boulder.queue_free()
+		await get_tree().physics_frame
+		stairs._on_boulder_timer_timeout()
+		stairs._boulder_timer.stop()
+		var wave: Array = get_tree().get_nodes_in_group("boulders")
+		if wave.size() > 2:
+			_check(false, "a wave of %d boulders walled off all three lanes" % wave.size())
+			break
+		if wave.size() == 2:
+			twins += 1
+			# ...and the two sit in different lanes, so the third is free.
+			_check(absf(wave[0].position.x - wave[1].position.x) > 0.5,
+					"a twin wave rolled two boulders down the same lane")
+			var free_lanes: Array = lanes_x.filter(func(x: float) -> bool:
+				for boulder in wave:
+					if absf(boulder.position.x - x) < 0.5:
+						return false
+				return true)
+			_check(free_lanes.size() >= 1, "a twin wave left no lane open")
+	_check(twins > 5, "the three-lane climb rolled %d twin waves in a hundred" % twins)
 
 	for boulder in get_tree().get_nodes_in_group("boulders"):
 		boulder.queue_free()

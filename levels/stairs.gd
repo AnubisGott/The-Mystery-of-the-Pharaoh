@@ -42,13 +42,15 @@ const PLATFORM_WALL_OFFSET: float = 0.06
 const STAIRS_END_Z_TOUCH: float = -160.0
 
 const LANES: Array[float] = [-1.4, 0.0, 1.4]
-# On a phone the climb is dodged left and right like on the desktop, but
-# with two lanes instead of three: one boulder always leaves a free side,
-# and the two buttons map cleanly onto them.
+# The phone climb starts on two lanes: one boulder always leaves a free side,
+# and the two buttons map cleanly onto them. At the halfway mark the third
+# lane opens and the rest of the climb is the desktop's - twin waves and all.
 const LANES_TOUCH: Array[float] = [-1.3, 1.3]
+const THREE_LANE_PROGRESS_TOUCH: float = 0.5
 const BOULDER_SPEED: float = 7.5
-# With two lanes the boulders are heftier: half the corridor wide, against
-# a third of it on the desktop's three-lane climb.
+# On two lanes the boulders are heftier: half the corridor wide. Once the
+# third lane opens they are the desktop's leaner ones - three of those side
+# by side is what the corridor has room for.
 const BOULDER_RADIUS_TOUCH: float = CORRIDOR_WIDTH / 4.0
 # How much quicker the phone climb steps sideways than it walks.
 const STRAFE_BOOST_TOUCH: float = 2.2
@@ -110,8 +112,8 @@ func _ready() -> void:
 
 
 # Android port scheme for Level 3: the adventurer climbs on his own and
-# the two buttons dodge the boulders left and right - the desktop's
-# gameplay, on two lanes.
+# the two buttons dodge the boulders left and right - the desktop's gameplay,
+# on two lanes to begin with and on three past the middle of the staircase.
 func _setup_touch_mode() -> void:
 	get_node("ControlsHint").visible = false
 	# A thumb dodges later than a finger on a key, so the sideways step is
@@ -124,9 +126,16 @@ func _setup_touch_mode() -> void:
 	touch.add_pause_button()
 
 
-# The boulders the level rolls: fat two-lane ones on a phone.
+# Whether the third lane has opened: the phone climb dodges on two lanes
+# until the middle of the staircase, on three from there to the top.
+func _three_lanes() -> bool:
+	return not GameManager.touch_mode or _progress() >= THREE_LANE_PROGRESS_TOUCH
+
+
+# The boulders the level rolls: the fat ones while the climb runs on two
+# lanes, the leaner three-lane ones once it opens up.
 func _boulder_radius() -> float:
-	return BOULDER_RADIUS_TOUCH if GameManager.touch_mode else Boulder.RADIUS
+	return Boulder.RADIUS if _three_lanes() else BOULDER_RADIUS_TOUCH
 
 
 # Where the staircase tops out, and how high that is.
@@ -138,9 +147,10 @@ func _top_y() -> float:
 	return (STAIRS_START_Z - _end_z()) * SLOPE
 
 
-# The lanes the boulders roll down: three on the desktop, two on a phone.
+# The lanes the boulders roll down: three on the desktop, and on a phone two
+# for the first half of the climb, three for the second.
 func _lanes() -> Array:
-	return LANES_TOUCH if GameManager.touch_mode else LANES
+	return LANES if _three_lanes() else LANES_TOUCH
 
 
 # Keeps the player climbing straight up the stairs (toward -Z).
@@ -337,13 +347,13 @@ func _on_boulder_timer_timeout() -> void:
 	# The final stretch stays boulder-free so the arrival at the top is
 	# never cheap-shotted from point-blank range.
 	if _progress() < CALM_PROGRESS:
-		# One boulder, sometimes a twin in a DIFFERENT lane: a wave can
-		# never wall off all three lanes. On a phone there are only two
-		# lanes, so a wave is always a single boulder.
+		# One boulder, sometimes a twin in a DIFFERENT lane: a wave can never
+		# wall off all three lanes. Two lanes leave no room for a twin at all,
+		# so the first half of the phone climb rolls single boulders.
 		var lanes := _lanes()
 		var lane := randi() % lanes.size()
 		_spawn_boulder(lane)
-		if not GameManager.touch_mode and randf() < TWIN_CHANCE:
+		if lanes.size() > 2 and randf() < TWIN_CHANCE:
 			_spawn_boulder((lane + 1 + randi() % 2) % lanes.size())
 	_boulder_timer.start(_spawn_interval(_progress()) * randf_range(0.85, 1.15))
 
