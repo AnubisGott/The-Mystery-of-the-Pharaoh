@@ -21,6 +21,10 @@ const LEVEL_SCENES: Array[String] = [
 
 const SETTINGS_PATH: String = "user://settings.cfg"
 
+# The gold of the exit signs and the god-mode label: menu section headers
+# wear it so they read as titles, not as one more entry to tap.
+const MENU_HEADER_COLOR: Color = Color(1.0, 0.85, 0.3)
+
 # Supported locales in menu order, each with its own native name (shown
 # untranslated on the language button). Must match the columns of
 # localization/strings.csv.
@@ -129,17 +133,29 @@ func go_back() -> void:
 
 
 # Phone-sized menus: the desktop buttons are far too small for a thumb.
-# `scale` doubles the short top menu; the long lists stay at 1.0 so all
-# of their entries still fit on screen.
+# `scale` doubles the short top menu; the long lists stay smaller so all
+# of their entries still fit on screen. The button text is sized generously
+# - a thumb-sized button with tiny lettering reads as empty.
 static func scale_menu_for_touch(container: Node, scale: float = 1.0) -> void:
 	for child in container.get_children():
 		if child is Button:
-			child.custom_minimum_size = Vector2(400.0, 54.0) * scale
-			child.add_theme_font_size_override("font_size", int(25.0 * scale))
+			child.custom_minimum_size = Vector2(480.0, 56.0) * scale
+			child.add_theme_font_size_override("font_size", int(30.0 * scale))
 		elif child is Label:
-			child.add_theme_font_size_override("font_size", int(25.0 * scale))
+			child.add_theme_font_size_override("font_size", int(30.0 * scale))
 		elif child is HSlider:
-			child.custom_minimum_size = Vector2(400.0, 44.0) * scale
+			child.custom_minimum_size = Vector2(480.0, 44.0) * scale
+
+
+# Drops every buffered or still-held input. A burst of taps during a scene
+# change or an intro is otherwise delivered to whatever scene is current
+# when the engine next flushes - so the taps "replay" into the next level.
+# On a phone, where every control is a tap, that was easy to trigger; this
+# is called at each scene transition to draw a clean line.
+func flush_input() -> void:
+	Input.flush_buffered_events()
+	for action in InputMap.get_actions():
+		Input.action_release(action)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -351,6 +367,7 @@ func start_game() -> void:
 func start_level(index: int) -> void:
 	current_level = clampi(index, 0, LEVEL_SCENES.size() - 1)
 	get_tree().paused = false
+	flush_input()
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	get_tree().change_scene_to_file(LEVEL_SCENES[current_level])
 
@@ -361,6 +378,7 @@ func complete_level() -> void:
 	current_level += 1
 	if current_level < LEVEL_SCENES.size():
 		get_tree().paused = false
+		flush_input()
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		get_tree().call_deferred("change_scene_to_file", LEVEL_SCENES[current_level])
 	else:
@@ -369,12 +387,14 @@ func complete_level() -> void:
 
 func show_main_menu() -> void:
 	get_tree().paused = false
+	flush_input()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	get_tree().change_scene_to_file(MAIN_MENU_SCENE)
 
 
 func win_game() -> void:
 	get_tree().paused = false
+	flush_input()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	game_won.emit()
 	get_tree().call_deferred("change_scene_to_file", WIN_SCREEN_SCENE)

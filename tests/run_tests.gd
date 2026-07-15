@@ -425,12 +425,20 @@ func test_escape_opens_pause_menu() -> void:
 	await _await_input_dispatch()
 	_check(menu.visible, "ESC did not open the pause menu")
 	_check(get_tree().paused, "ESC did not pause the game")
-	var labels: Array[String] = []
+	# Playing entries first, then a divider, then the ways out of the level:
+	# Resume, Reset Level | Main Menu, Options, Quit Game.
+	var order: Array[String] = []
 	for button in menu.get_node("Root/Center/Panel/Items").get_children():
 		if button is Button:
-			labels.append(button.text)
-	for expected in ["Resume", "Options", "Reset Level", "Main Menu", "Quit Game"]:
-		_check(labels.has(expected), "pause menu misses entry: %s" % expected)
+			order.append(button.name)
+	_check(order == ["ResumeButton", "ResetButton", "MenuButton", "OptionsButton",
+			"QuitButton"], "pause menu entries out of order: %s" % [order])
+	_check(menu.get_node_or_null("Root/Center/Panel/Items/Separator") != null,
+			"the pause menu has no divider between staying and leaving")
+	# The "Paused" title reads as a header, not one more entry to tap.
+	var pause_title: Label = menu.get_node("Root/Center/Panel/Items/Title")
+	_check(pause_title.has_theme_color_override("font_color"),
+			"the Paused title is not coloured apart from the entries")
 
 	# Options are reachable from the pause menu too.
 	menu.get_node("Root/Center/Panel/Items/OptionsButton").pressed.emit()
@@ -451,6 +459,33 @@ func test_escape_opens_pause_menu() -> void:
 	menu.get_node("Root/Center/Panel/Items/ResumeButton").pressed.emit()
 	_check(not get_tree().paused, "Resume did not unpause")
 	_check(not menu.visible, "Resume did not hide the menu")
+
+
+# A burst of taps must not survive a scene change: flush_input drops every
+# held or buffered action, so nothing replays into the next level.
+func test_flush_input_drops_held_actions() -> void:
+	Input.action_press("jump")
+	Input.action_press("move_forward")
+	await get_tree().physics_frame
+	_check(Input.is_action_pressed("jump"), "could not hold an action to flush")
+	GameManager.flush_input()
+	_check(not Input.is_action_pressed("jump"), "flush_input left jump held")
+	_check(not Input.is_action_pressed("move_forward"), "flush_input left move_forward held")
+
+
+# Phone menu buttons carry a thumb-sized font, not the desktop's small one.
+func test_touch_menu_buttons_are_enlarged() -> void:
+	var box := VBoxContainer.new()
+	var button := Button.new()
+	box.add_child(button)
+	add_child(box)
+	GameManager.scale_menu_for_touch(box, 2.0)
+	_check(button.get_theme_font_size("font_size") >= 50,
+			"touch menu font too small: %d" % button.get_theme_font_size("font_size"))
+	_check(button.custom_minimum_size.y >= 100.0,
+			"touch menu button too short: %.0f" % button.custom_minimum_size.y)
+	box.queue_free()
+	await get_tree().physics_frame
 
 
 func test_god_mode_prevents_reset() -> void:
@@ -739,6 +774,10 @@ func test_menu_has_level_entries() -> void:
 	_check(not menu.get_node("Center/Panel/MenuItems").visible, "menu stayed visible under options")
 	_check(menu.get_node("Center/Panel/OptionsItems/SoundSlider") != null, "sound slider missing")
 	_check(menu.get_node("Center/Panel/OptionsItems/MusicSlider") != null, "music slider missing")
+	# The options title is a header, coloured apart from the buttons below it.
+	var options_title: Label = menu.get_node("Center/Panel/OptionsItems/OptionsTitle")
+	_check(options_title.has_theme_color_override("font_color"),
+			"the options title is not coloured as a header")
 	menu.get_node("Center/Panel/OptionsItems/BackButton").pressed.emit()
 	_check(menu.get_node("Center/Panel/MenuItems").visible, "back did not return to the menu")
 
@@ -1926,6 +1965,39 @@ func test_credits_scene_has_rolling_credits() -> void:
 	for i in 30:
 		await get_tree().physics_frame
 	_check(credits._scroll.position.y < y_before, "credits do not scroll upward")
+	credits.queue_free()
+	await get_tree().physics_frame
+
+
+# The steamer sits in living water: a foam collar, bow rings and a wake,
+# riding at the waterline and animating as the boat steams down the Nile.
+func test_credits_boat_has_animated_water() -> void:
+	var credits: Node3D = load("res://levels/nile_credits.tscn").instantiate()
+	credits.position = Vector3(1800.0, 0.0, 0.0)
+	add_child(credits)
+	await get_tree().process_frame
+	_check(credits._water_fx != null, "the credits boat has no water around it")
+	_check(credits._ripples.size() >= 4,
+			"too few water elements: %d" % credits._ripples.size())
+	_check(is_equal_approx(credits._water_fx.position.y, credits.WATER_Y),
+			"the foam does not sit at the waterline")
+
+	# A bow ring is one of the swelling, fading rings (not the collar or wake).
+	var ring: Dictionary = {}
+	for r in credits._ripples:
+		if not r.get("collar", false) and not r.get("wake", false):
+			ring = r
+			break
+	_check(not ring.is_empty(), "no bow ripple ring among the water elements")
+	var phase_before: float = ring.get("phase", -1.0)
+	for i in 20:
+		await get_tree().process_frame
+	_check(not is_equal_approx(ring["phase"], phase_before),
+			"the bow ripples do not animate")
+	# The foam tracks the boat down the river rather than sitting still.
+	_check(is_equal_approx(credits._water_fx.position.z, credits._boat.position.z),
+			"the water did not follow the boat downriver")
+
 	credits.queue_free()
 	await get_tree().physics_frame
 

@@ -1,8 +1,9 @@
 extends CanvasLayer
 
-# In-level pause menu, opened with ESC: Resume, Reset Level, Main Menu
-# and Quit Game. Lives in each level scene; it keeps processing while
-# the tree is paused so it can unpause again.
+# In-level pause menu, opened with ESC: Resume and Reset Level up top, then
+# a divider, then leaving the level - Main Menu, Options, Quit Game. Lives
+# in each level scene; it keeps processing while the tree is paused so it
+# can unpause again.
 
 @onready var resume_button: Button = $Root/Center/Panel/Items/ResumeButton
 @onready var options_button: Button = $Root/Center/Panel/Items/OptionsButton
@@ -61,6 +62,9 @@ func _on_options_closed() -> void:
 func close() -> void:
 	visible = false
 	get_tree().paused = false
+	# A phone pauses by tapping; the taps that piled up while the menu was
+	# open must not spill into the game the instant it resumes.
+	GameManager.flush_input()
 	# Phones have no mouse to capture (and doing so hides the touch UI).
 	if not GameManager.touch_mode:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -68,6 +72,7 @@ func close() -> void:
 
 func _on_reset_pressed() -> void:
 	get_tree().paused = false
+	GameManager.flush_input()
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	get_tree().reload_current_scene()
 

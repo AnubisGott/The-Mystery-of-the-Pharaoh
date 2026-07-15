@@ -22,6 +22,7 @@ const MARGIN: float = 26.0
 const GAP: float = 20.0
 
 var _anchors: Array[Dictionary] = []
+var _last_pause_msec: int = 0
 
 
 func _init() -> void:
@@ -62,6 +63,13 @@ func add_pause_button(label: String = "II") -> void:
 
 
 func _emit_pause() -> void:
+	# A thumb resting on the corner fires this button many times a second;
+	# without a guard the menu opens and shuts and opens again. One toggle
+	# per third of a second is plenty.
+	var now := Time.get_ticks_msec()
+	if now - _last_pause_msec < 300:
+		return
+	_last_pause_msec = now
 	var event := InputEventAction.new()
 	event.action = "pause"
 	event.pressed = true

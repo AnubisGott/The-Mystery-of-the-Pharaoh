@@ -53,6 +53,8 @@ theme_override_constants/separation = 12
 
 [node name="Title" type="Label" parent="Root/Center/Panel/Items"]
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
+theme_override_font_sizes/font_size = 22
 text = "Paused"
 horizontal_alignment = 1
 
@@ -61,20 +63,24 @@ custom_minimum_size = Vector2(260, 40)
 layout_mode = 2
 text = "Resume"
 
-[node name="OptionsButton" type="Button" parent="Root/Center/Panel/Items"]
-custom_minimum_size = Vector2(260, 40)
-layout_mode = 2
-text = "Options"
-
 [node name="ResetButton" type="Button" parent="Root/Center/Panel/Items"]
 custom_minimum_size = Vector2(260, 40)
 layout_mode = 2
 text = "Reset Level"
 
+[node name="Separator" type="HSeparator" parent="Root/Center/Panel/Items"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+
 [node name="MenuButton" type="Button" parent="Root/Center/Panel/Items"]
 custom_minimum_size = Vector2(260, 40)
 layout_mode = 2
 text = "Main Menu"
+
+[node name="OptionsButton" type="Button" parent="Root/Center/Panel/Items"]
+custom_minimum_size = Vector2(260, 40)
+layout_mode = 2
+text = "Options"
 
 [node name="QuitButton" type="Button" parent="Root/Center/Panel/Items"]
 custom_minimum_size = Vector2(260, 40)

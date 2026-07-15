@@ -79,6 +79,13 @@ var _scroll: VBoxContainer
 var _time: float = 0.0
 var _view_height: float = 648.0
 
+# The foam collar, bow rings and wake around the hull. Kept at the waterline
+# in world space (the boat bobs; the water does not) and slid along with the
+# boat each frame.
+const WATER_Y: float = -0.28
+var _water_fx: Node3D
+var _ripples: Array[Dictionary] = []
+
 
 func _ready() -> void:
 	# The track plays once, not looped: its end is what ends the level.
@@ -112,6 +119,11 @@ func _process(delta: float) -> void:
 	for cluster in _banks:
 		var rel := fposmod(_boat.position.z + 155.0 - cluster.position.z, ring)
 		cluster.position.z = _boat.position.z + 155.0 - rel
+
+	# The foam rides at the waterline under the boat, never bobbing with it.
+	if _water_fx:
+		_water_fx.position.z = _boat.position.z
+		_animate_water(delta)
 
 	# The scroll wraps around endlessly; leaving is the music's (or the
 	# ESC key's) job. The height is re-read so window changes mid-roll
@@ -209,6 +221,7 @@ func _build_scene() -> void:
 
 	_boat = NileProps.build_boat()
 	add_child(_boat)
+	_build_water_fx()
 
 	# The adventurer lounges in a deck chair on the open hurricane deck
 	# aft of the funnels, sunglasses on, angled toward the camera.
@@ -233,6 +246,85 @@ func _build_scene() -> void:
 	_boat.add_child(cam)
 	cam.look_at(_boat.to_global(Vector3(0, 2.0, -1.5)), Vector3.UP)
 	cam.current = true
+
+
+# Living water around the steamer: a foam collar hugging the hull, bow rings
+# that swell out and fade, and a churned wake fanning out astern.
+func _build_water_fx() -> void:
+	_water_fx = Node3D.new()
+	_water_fx.position = Vector3(0, WATER_Y, 0)
+	add_child(_water_fx)
+
+	# A collar of foam around the hull, breathing slowly.
+	var collar := _foam_ring(0.82, 1.0, Vector3(2.4, 1.0, 6.4))
+	collar["collar"] = true
+	collar["phase"] = 0.0
+	_water_fx.add_child(collar["node"])
+	_ripples.append(collar)
+
+	# Bow waves: rings swelling out from the bow and fading, staggered so one
+	# is always spreading.
+	for i in 3:
+		var ring := _foam_ring(0.9, 1.0, Vector3.ONE)
+		ring["collar"] = false
+		ring["phase"] = float(i) / 3.0
+		_water_fx.add_child(ring["node"])
+		_ripples.append(ring)
+
+	# The wake: two thin foam strips fanning out astern in a V.
+	for side: float in [-1.0, 1.0]:
+		var strip := MeshInstance3D.new()
+		var strip_mesh := BoxMesh.new()
+		strip_mesh.size = Vector3(0.5, 0.05, 13.0)
+		var strip_mat := _foam_material(0.32)
+		strip_mesh.material = strip_mat
+		strip.mesh = strip_mesh
+		strip.position = Vector3(side * 2.4, 0.0, 8.5)
+		strip.rotation.y = side * 0.14
+		_water_fx.add_child(strip)
+		_ripples.append({"node": strip, "wake": true, "mat": strip_mat, "phase": 0.0})
+
+
+# A flat foam ring (lies on the water, XZ plane) with its own material.
+func _foam_ring(inner: float, outer: float, ring_scale: Vector3) -> Dictionary:
+	var mesh := TorusMesh.new()
+	mesh.inner_radius = inner
+	mesh.outer_radius = outer
+	var mat := _foam_material(0.5)
+	mesh.material = mat
+	var node := MeshInstance3D.new()
+	node.mesh = mesh
+	node.scale = ring_scale
+	return {"node": node, "mat": mat}
+
+
+func _foam_material(alpha: float) -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.albedo_color = Color(0.86, 0.93, 0.96, alpha)
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	return mat
+
+
+# The collar breathes, the wake shimmers, and each bow ring swells out from
+# the bow and fades as it travels aft.
+func _animate_water(delta: float) -> void:
+	for r in _ripples:
+		var mat: StandardMaterial3D = r["mat"]
+		if r.get("collar", false):
+			mat.albedo_color.a = 0.32 + 0.14 * sin(_time * 1.3)
+		elif r.get("wake", false):
+			var node: MeshInstance3D = r["node"]
+			mat.albedo_color.a = 0.26 + 0.1 * sin(_time * 2.1 + node.position.x)
+		else:
+			r["phase"] = fmod(r["phase"] + delta * 0.4, 1.0)
+			var p: float = r["phase"]
+			var node: MeshInstance3D = r["node"]
+			var s := lerpf(1.0, 4.2, p)
+			node.scale = Vector3(s * 0.7, 1.0, s)
+			node.position.z = -4.5 + p * 5.0
+			mat.albedo_color.a = (1.0 - p) * 0.5
 
 
 # A wooden deck chair with striped canvas, facing local +Z.
