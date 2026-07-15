@@ -28,3 +28,18 @@ blender --background --python tools/blender/make_sphinx.py -- models/sphinx.glb
 covering movement, spears, the path, god mode, and the monument. The
 exit code is the number of failures. Tests drive real physics and
 input, so a full run takes a few seconds.
+
+## Licensing
+
+The **source code** is licensed **MIT** (see [`LICENSE`](LICENSE)). MIT covers
+the code only.
+
+The **assets** — 3D models, textures, sound effects and music — each carry
+their own license (CC-BY-4.0, CC0, or third-party terms). See
+[`ASSETS-LICENSE.md`](ASSETS-LICENSE.md) for the full map, and the per-folder
+`CREDITS.md` files (`models/`, `textures/`, `sounds/`) for attributions.
+
+One caveat worth knowing before redistributing: everything under
+**`soundAndMusic/`** — both the music and the sound effects — is **Suno Pro**
+output used under [Suno's terms](https://suno.com/terms-of-service), which is
+not a free license. The free-licensed effects in `sounds/` are unaffected.

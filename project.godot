@@ -6,7 +6,7 @@ config_version=5
 [application]
 
 config/name="The Mystery of the Pharaoh"
-config/version="1.2.9"
+config/version="1.2.10"
 run/main_scene="res://main/main.tscn"
 config/icon="res://icon.png"
 ; Android's Back gesture opens the pause menu instead of quitting.
