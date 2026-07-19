@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://cpob3oa10lmi2"
+path="res://.godot/imported/The Sound Of Something Falling And Hitting The Ground.wav-802c6a159211481eadbdbc7c872fe81f.sample"
+
+[deps]
+
+source_file="res://soundAndMusic/sounds/The Sound Of Something Falling And Hitting The Ground.wav"
+dest_files=["res://.godot/imported/The Sound Of Something Falling And Hitting The Ground.wav-802c6a159211481eadbdbc7c872fe81f.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

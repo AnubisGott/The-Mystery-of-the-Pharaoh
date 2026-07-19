@@ -1,7 +1,7 @@
 ﻿extends Node3D
 
 const SANDSTONE_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_sphinx.tres")
-const LEVEL_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel01.mp3")
+const LEVEL_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel01.ogg")
 const PYRAMID_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_pyramid.tres")
 const IntroTitle := preload("res://ui/intro_title.gd")
 const TouchControls := preload("res://ui/touch_controls.gd")

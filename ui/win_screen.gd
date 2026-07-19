@@ -1,6 +1,6 @@
 extends Control
 
-const WIN_JINGLE: AudioStream = preload("res://soundAndMusic/sounds/LevelEndSuccess.mp3")
+const WIN_JINGLE: AudioStream = preload("res://soundAndMusic/sounds/LevelEndSuccess.wav")
 
 @onready var play_again_button: Button = $Center/Panel/MenuItems/PlayAgainButton
 @onready var quit_button: Button = $Center/Panel/MenuItems/QuitButton

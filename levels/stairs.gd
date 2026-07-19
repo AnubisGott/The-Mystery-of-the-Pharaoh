@@ -5,7 +5,7 @@ extends Node3D
 # more and more often the higher the player climbs. The exit is at
 # the top.
 
-const LEVEL_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel03.mp3")
+const LEVEL_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel03.ogg")
 const WALL_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_sphinx.tres")
 const FLOOR_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_pyramid.tres")
 const Torch := preload("res://levels/torch.gd")

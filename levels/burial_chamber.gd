@@ -7,7 +7,7 @@ extends Node3D
 # symbols; when both dials show their wall glyph at the same time the
 # floor opens — the player falls through, and the level ends.
 
-const LEVEL_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel04.mp3")
+const LEVEL_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel04.ogg")
 const WALL_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_sphinx.tres")
 const FLOOR_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_pyramid.tres")
 const Torch := preload("res://levels/torch.gd")

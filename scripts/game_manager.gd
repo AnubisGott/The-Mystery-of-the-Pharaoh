@@ -82,6 +82,14 @@ var music_volume: float = 0.1
 
 var _music_player: AudioStreamPlayer
 var _last_go_back_msec: int = 0
+# Web only: the browser keeps the AudioContext suspended until the first user
+# gesture, so music started before then (the menu track loads at page start)
+# stays silent. Set once the first input unlocks audio, after which the current
+# track is restarted. [[web-audio-suspended-context]]
+var _web_audio_unlocked: bool = false
+# Web only: whether the boot-time music player has been swapped for one
+# created at scene time (see play_music).
+var _web_music_player_rebuilt: bool = false
 
 
 func _ready() -> void:
@@ -91,6 +99,12 @@ func _ready() -> void:
 	# still get the unchanged desktop game.
 	touch_mode = OS.has_feature("mobile") \
 			or OS.get_environment("PHARAOH_TOUCH") == "1"
+	# In the browser the canvas fills the whole page, but the desktop/Android
+	# default (stretch disabled) pins the picture to a corner and leaves the
+	# input hitboxes offset from what is drawn. Scale the game to fit the
+	# canvas - web only, so the native builds keep their exact 1:1 look.
+	if OS.has_feature("web"):
+		_apply_web_stretch()
 	_create_buses()
 	_extend_font_fallbacks()
 	_load_settings()
@@ -156,6 +170,25 @@ func flush_input() -> void:
 	Input.flush_buffered_events()
 	for action in InputMap.get_actions():
 		Input.action_release(action)
+
+
+# Web only: catch the first user gesture (it is what the browser uses to
+# unlock the AudioContext) and restart the music, which the browser muted
+# while the context was still suspended at page load. `_input` sees the event
+# even though the menu button also consumes it; a short delay lets the context
+# finish resuming before the restart. Desktop and Android never enter here.
+func _input(event: InputEvent) -> void:
+	if _web_audio_unlocked or not OS.has_feature("web"):
+		return
+	if not event.is_pressed():
+		return
+	if not (event is InputEventMouseButton or event is InputEventKey \
+			or event is InputEventScreenTouch):
+		return
+	_web_audio_unlocked = true
+	await get_tree().create_timer(0.3).timeout
+	if music_enabled and _music_player.stream != null:
+		_music_player.play()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -293,9 +326,26 @@ func available_window_sizes() -> Array[Vector2i]:
 	return sizes
 
 
+# Fit the game to the browser canvas: canvas_items keeps the 2D menus crisp
+# while scaling them, and the expand aspect fills the page without black bars,
+# revealing a little more of the 3D scene on the wider axis. The base design
+# size stays the desktop viewport, so the menus keep their proportions.
+func _apply_web_stretch() -> void:
+	if DisplayServer.get_name() == "headless":
+		return
+	var window := get_window()
+	window.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
+	window.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
+	window.content_scale_size = Vector2i(1152, 648)
+
+
 func _apply_display() -> void:
 	# Headless runs (tests) have no real window to change.
 	if DisplayServer.get_name() == "headless":
+		return
+	# The browser owns the canvas; window mode/size/position do not apply
+	# there, and the web stretch is set once at startup (_apply_web_stretch).
+	if OS.has_feature("web"):
 		return
 	var window := get_window()
 	if fullscreen:
@@ -342,6 +392,30 @@ func _load_settings() -> void:
 func play_music(stream: AudioStream, loop: bool = true) -> void:
 	if stream is AudioStreamMP3 or stream is AudioStreamOggVorbis:
 		stream.loop = loop
+	elif stream is AudioStreamWAV:
+		if loop:
+			# A forward loop needs an explicit end frame (defaults to 0).
+			stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
+			var bytes_per_frame: int = 2 if stream.format == AudioStreamWAV.FORMAT_16_BITS else 1
+			if stream.stereo:
+				bytes_per_frame *= 2
+			stream.loop_end = stream.data.size() / bytes_per_frame
+		else:
+			stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
+	# Web only: replace the boot-time player on first use. The original is
+	# created while the engine (and the browser audio driver) is still
+	# starting up; a player registered that early stays silent in the
+	# browser. Rebuilding here - the first play_music comes from a scene's
+	# _ready, well after startup - registers it like any scene player.
+	# [[web-audio-suspended-context]]
+	if OS.has_feature("web") and not _web_music_player_rebuilt:
+		_web_music_player_rebuilt = true
+		_music_player.queue_free()
+		_music_player = AudioStreamPlayer.new()
+		_music_player.volume_db = -6.0
+		_music_player.bus = "Music"
+		add_child(_music_player)
+		_music_player.finished.connect(func() -> void: music_finished.emit())
 	_music_player.stream = stream
 	if music_enabled:
 		_music_player.play()

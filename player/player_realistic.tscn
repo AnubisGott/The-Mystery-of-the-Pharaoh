@@ -6,8 +6,8 @@
 [ext_resource type="AudioStream" path="res://sounds/footstep_sand_2.wav" id="4"]
 [ext_resource type="AudioStream" path="res://sounds/footstep_sand_3.wav" id="5"]
 [ext_resource type="AudioStream" path="res://sounds/footstep_sand_4.wav" id="6"]
-[ext_resource type="AudioStream" path="res://soundAndMusic/sounds/Dying Sound Hit By Spear.mp3" id="7"]
-[ext_resource type="AudioStream" path="res://soundAndMusic/sounds/The Sound Of Something Falling And Hitting The Ground.mp3" id="8"]
+[ext_resource type="AudioStream" path="res://soundAndMusic/sounds/Dying Sound Hit By Spear.wav" id="7"]
+[ext_resource type="AudioStream" path="res://soundAndMusic/sounds/The Sound Of Something Falling And Hitting The Ground.wav" id="8"]
 [ext_resource type="AudioStream" path="res://sounds/bomb_whistle.wav" id="9"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]

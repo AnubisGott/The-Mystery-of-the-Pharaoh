@@ -108,6 +108,15 @@ func _unhandled_input(event: InputEvent) -> void:
 	if get_tree().paused:
 		return
 
+	# Web only: the browser drops pointer lock on Esc or focus loss and Godot
+	# does not re-request it on its own, leaving mouse look frozen. A click in
+	# the running game re-captures it (browsers require capture requests to
+	# come from a user gesture, so this is the earliest possible moment).
+	if OS.has_feature("web") and event is InputEventMouseButton and event.pressed \
+			and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		return
+
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		_apply_look(event.relative)
 

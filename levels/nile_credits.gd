@@ -4,7 +4,7 @@ extends Node3D
 # while the credits roll over the scene in an endless loop. The level
 # ends when the music finishes or on ESC.
 
-const LEVEL_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel07.mp3")
+const LEVEL_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel07.ogg")
 const CHARACTER: PackedScene = preload("res://models/adventurer_realistic.glb")
 const TouchControls := preload("res://ui/touch_controls.gd")
 

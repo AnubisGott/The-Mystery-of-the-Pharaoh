@@ -5,8 +5,8 @@ extends Node3D
 # distance d along the corridor centerline. Pendulums swing into
 # recessed wall pockets; the gaps between floor segments are the jump
 # holes and crumble fields.
-const LEVEL_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel02.mp3")
-const AMBIENT_PAD: AudioStream = preload("res://soundAndMusic/sounds/Pad-Sound.mp3")
+const LEVEL_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel02.ogg")
+const AMBIENT_PAD: AudioStream = preload("res://soundAndMusic/sounds/Pad-Sound.wav")
 const WALL_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_sphinx.tres")
 const FLOOR_MATERIAL: StandardMaterial3D = preload("res://materials/sandstone_pyramid.tres")
 const PendulumScript := preload("res://hazards/pendulum.gd")

@@ -5,7 +5,7 @@ extends Control
 # seventh - the credits roll - is not a level to pick, it has its own entry.
 # Esc - on Android the Back gesture - steps back out again.
 
-const MENU_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel01.mp3")
+const MENU_MUSIC: AudioStream = preload("res://soundAndMusic/music/AztekenherausforderungLevel01.ogg")
 
 @onready var level_buttons: Array[Button] = [
 	$Center/Panel/LevelItems/Level1Button,
