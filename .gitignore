@@ -3,7 +3,15 @@
 .import/
 export.cfg
 
-# Build output
+# Build output (the presets and the build scripts are committed; the exported
+# binaries in build/<target>/ are not - same layout as the Wertstoffe repo).
+/build/*
+!/build/.gdignore
+!/build/build-all.bat
+!/build/build-windows.bat
+!/build/build-linux.bat
+!/build/build-android.bat
+!/build/build-web.bat
 builds/
 exports/
 *.exe
