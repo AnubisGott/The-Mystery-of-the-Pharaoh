@@ -94,10 +94,12 @@ var _web_music_player_rebuilt: bool = false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	# Touch controls belong to the phone/tablet builds only. Checking the
+	# Touch controls belong to the phone/tablet platforms only - the Android
+	# app and the browser ON a phone (web_android/web_ios). Checking the
 	# platform, not the hardware: a Windows PC with a touch monitor must
-	# still get the unchanged desktop game.
+	# still get the unchanged desktop game, in the browser too.
 	touch_mode = OS.has_feature("mobile") \
+			or OS.has_feature("web_android") or OS.has_feature("web_ios") \
 			or OS.get_environment("PHARAOH_TOUCH") == "1"
 	# In the browser the canvas fills the whole page, but the desktop/Android
 	# default (stretch disabled) pins the picture to a corner and leaves the

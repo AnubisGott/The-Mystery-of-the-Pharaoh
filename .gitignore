@@ -12,6 +12,7 @@ export.cfg
 !/build/build-linux.bat
 !/build/build-android.bat
 !/build/build-web.bat
+!/build/test-web.bat
 builds/
 exports/
 *.exe
