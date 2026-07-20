@@ -13,6 +13,7 @@ export.cfg
 !/build/build-android.bat
 !/build/build-web.bat
 !/build/test-web.bat
+!/build/web-https-server.py
 builds/
 exports/
 *.exe

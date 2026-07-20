@@ -651,7 +651,11 @@ func test_win_screen_plays_success_jingle() -> void:
 	var music: AudioStreamPlayer = GameManager._music_player
 	_check(music.playing, "win jingle not playing")
 	_check(music.stream == win_screen.WIN_JINGLE, "win screen playing wrong track")
-	_check(not music.stream.loop, "win jingle should not loop")
+	# AudioStreamWAV has loop_mode, not the `loop` of MP3/Ogg streams - reading
+	# `loop` here errors out and yields null, which quietly satisfied the old
+	# assertion instead of checking anything.
+	_check(music.stream.loop_mode == AudioStreamWAV.LOOP_DISABLED,
+			"win jingle should not loop")
 
 	win_screen.queue_free()
 	await get_tree().physics_frame
